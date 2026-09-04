@@ -1,5 +1,10 @@
 # GitHub Actions deploys through OIDC: no long-lived AWS keys anywhere. Scope tradeoff in ADR-0006.
 
+locals {
+  github_owner     = split("/", var.github_repo)[0]
+  github_repo_name = split("/", var.github_repo)[1]
+}
+
 resource "aws_iam_openid_connect_provider" "github" {
   url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
@@ -19,12 +24,15 @@ data "aws_iam_policy_document" "github_assume" {
       variable = "token.actions.githubusercontent.com:aud"
       values   = ["sts.amazonaws.com"]
     }
-    # Jobs that target a GitHub environment present `sub = repo:<repo>:environment:<name>`;
-    # plain jobs on main present the ref form. Allow both, nothing else.
+    # GitHub's subject now embeds owner/repo IDs: `repo:<owner>@<id>/<repo>@<id>:<scope>`.
+    # Jobs targeting a GitHub environment present `environment:dev`; plain jobs present the ref.
+    # Wildcards cover only the numeric IDs; owner and repo names stay pinned.
     condition {
-      test     = "StringEquals"
+      test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
+        "repo:${local.github_owner}@*/${local.github_repo_name}@*:ref:refs/heads/main",
+        "repo:${local.github_owner}@*/${local.github_repo_name}@*:environment:dev",
         "repo:${var.github_repo}:ref:refs/heads/main",
         "repo:${var.github_repo}:environment:dev",
       ]

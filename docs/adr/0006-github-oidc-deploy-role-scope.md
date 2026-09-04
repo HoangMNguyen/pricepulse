@@ -8,8 +8,9 @@ secrets, or a role assumed through GitHub's OIDC provider. Terraform for this st
 
 ## Decision
 
-`pricepulse-dev-github-deploy` is assumable only by `repo:HoangMNguyen/pricepulse:ref:refs/heads/main`
-via OIDC (`aud = sts.amazonaws.com`). It carries the AWS-managed `PowerUserAccess` policy plus an
+`pricepulse-dev-github-deploy` is assumable only via OIDC (`aud = sts.amazonaws.com`) by subjects
+`repo:HoangMNguyen@<id>/pricepulse@<id>:environment:dev` or `...:ref:refs/heads/main` (GitHub embeds
+owner/repo IDs in the subject; the trust policy wildcards only those IDs). It carries the AWS-managed `PowerUserAccess` policy plus an
 inline policy allowing `iam:*` only on `role/pricepulse-*` and `policy/pricepulse-*`, and
 `iam:CreateServiceLinkedRole`. The `deploy` workflow runs in the `dev` GitHub environment so a
 required reviewer can gate applies.
