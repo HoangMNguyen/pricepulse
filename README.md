@@ -1,10 +1,12 @@
 # PricePulse
 
+**Live: [pricepulse.hoangmnguyen.com](https://pricepulse.hoangmnguyen.com)** · [API docs](https://pricepulse.hoangmnguyen.com/docs)
+
 Tracks every IKEA US offer and the full UNIQLO US catalog once a day, stores the price history in
 PostgreSQL, detects sales two ways (what the retailer flags *and* what the history shows), and
 emails a digest. Anyone can watch a product (email double opt-in) and browse, sort, filter, and
 share deal pages. Built to demonstrate production-grade **FastAPI + PostgreSQL + AWS serverless**
-engineering at a < $5/month running cost.
+engineering; measured running cost ≈ $0.55/month.
 
 ![deals dashboard](docs/img/deals.webp)
 
@@ -115,19 +117,34 @@ Python, Terraform, and Actions dependencies current weekly.
 
 ## Cost
 
-| Item | Monthly |
-| --- | --- |
-| Neon Free (PostgreSQL 16, 0.25 CU, suspends when idle; ≈ 15–20 of 100 included CU-hours) | $0 |
-| Lambda, API Gateway, EventBridge Scheduler, S3, SES, SNS, SSM parameters | ≈ $0 (always-free allowances / sub-cent) |
-| CloudFront (1 TB / 10 M requests always free), ACM certificate | $0 |
-| Route 53 hosted zone (only with a custom domain) | $0.50 |
-| CloudWatch logs (14-day retention) + alarms | < $0.50 |
-| NAT gateway, always-on database | **$0 — avoided by design** (would be ~$32 and ~$44) |
+Estimated from the account's Cost Explorer and free-tier usage after the cutover (the account's
+12-month free tiers have expired; only always-free allowances apply):
 
-Measured before the move: Aurora Serverless v2 at 0–1 ACU cost ≈ $1–3/month and resumed in
-5–15 s; Neon resumes in ≈ 0.5 s ([ADR-0009](docs/adr/0009-neon-instead-of-aurora.md)).
+| Item | Basis | Monthly |
+| --- | --- | --- |
+| Route 53 hosted zone for the subdomain | $0.50/zone; alias queries to CloudFront are free | **$0.50** |
+| API Gateway HTTP API | ~10k origin requests (cache misses + uncached routes) at $1/M | $0.01 |
+| S3 raw + outbox | ~45 MB/month growth, 365-day retention, ≤ 0.5 GB at $0.023/GB | $0.01 |
+| SES | ~60 digests + confirmations at $0.10/1k | $0.01 |
+| Lambda | ~5k GB-s, ~15k invocations vs. always-free 400k GB-s / 1M | $0 |
+| CloudFront + ACM | always-free 1 TB, 10M requests, 1,000 invalidation paths (≈ 60 used) | $0 |
+| CloudWatch | 8 custom metrics / 6 alarms (10/10 free), ~50 MB logs (5 GB free) | $0 |
+| EventBridge Scheduler, SNS, SSM + KMS, Budgets, data transfer | inside always-free allowances | $0 |
+| Neon Free | ≈ 10–25 of 100 included CU-hours, 35 MB of 0.5 GB storage | $0 |
+| **Total** | | **≈ $0.55** |
+
+Before the move, Aurora Serverless v2 at 0–1 ACU alone cost ≈ $1–3/month and resumed in 5–15 s;
+Neon resumes in ≈ 1 s ([ADR-0009](docs/adr/0009-neon-instead-of-aurora.md)). Cold path today:
+Lambda init 2.5 s + first request ≈ 3 s; warm 0.1 s; CloudFront serves cached pages regardless.
 A $5 AWS Budget with 80 %/100 % notifications guards the account. `terraform destroy` removes
 everything, the Neon project included.
+
+## Operating it
+
+Everything an operator needs is in [docs/RUNBOOK.md](docs/RUNBOOK.md): credentials layout, AWS
+login, re-running a scrape or a failed key, watch administration, the CDN, SES, alarms, DNS
+delegation (this deployment delegates `pricepulse.hoangmnguyen.com` from Porkbun to Route 53
+through the Porkbun API), and tear-down.
 
 ## Data & ethics
 

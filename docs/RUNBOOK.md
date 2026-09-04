@@ -7,6 +7,40 @@ All commands assume `aws login` done, region `us-east-1`, `NEON_API_KEY` exporte
 sql() { psql "$(terraform output -raw migrator_database_url)" -Atc "$1"; }
 ```
 
+
+## Credentials & connections
+
+Operator secrets live outside the repo in `~/.config/pricepulse/secrets.env` (mode 600):
+`AWS_PROFILE`/`AWS_REGION`, `TF_STATE_BUCKET`, `NEON_API_KEY`, `NEON_ORG_ID`, `NEON_PROJECT_ID`,
+`PORKBUN_API_KEY`, `PORKBUN_SECRET_KEY`. Load them before any command below:
+
+```bash
+set -a; . ~/.config/pricepulse/secrets.env; set +a
+aws login --profile cci-deploy                   # browser device flow; sessions expire after hours
+aws sts get-caller-identity --query Account      # 471112846501
+curl -sS -H "Authorization: Bearer $NEON_API_KEY" https://console.neon.tech/api/v2/users/me | jq .email
+```
+
+GitHub Actions has the same three secrets it needs (`AWS_DEPLOY_ROLE_ARN`, `TF_STATE_BUCKET`,
+`NEON_API_KEY`); rotate with `gh secret set`.
+
+## DNS (Porkbun -> Route 53)
+
+`pricepulse.hoangmnguyen.com` is a Route 53 zone (Terraform) delegated by four NS records at
+Porkbun, created through the Porkbun API. The parent domain's other records are untouched.
+
+```bash
+auth="{\"apikey\":\"$PORKBUN_API_KEY\",\"secretapikey\":\"$PORKBUN_SECRET_KEY\"}"
+curl -sS -X POST https://api.porkbun.com/api/json/v3/dns/retrieve/hoangmnguyen.com -H 'content-type: application/json' -d "$auth" | jq '.records[] | {id,name,type,content}'
+# add one NS record (repeat per name server from `terraform output name_servers`):
+curl -sS -X POST https://api.porkbun.com/api/json/v3/dns/create/hoangmnguyen.com -H 'content-type: application/json' \
+  -d "{\"apikey\":\"$PORKBUN_API_KEY\",\"secretapikey\":\"$PORKBUN_SECRET_KEY\",\"name\":\"pricepulse\",\"type\":\"NS\",\"content\":\"ns-297.awsdns-37.com\",\"ttl\":\"600\"}"
+# delete by id: POST .../dns/delete/hoangmnguyen.com/<id>
+```
+
+If the zone is ever recreated its name servers change: update the four NS records. Delegation
+check: `dig NS pricepulse.hoangmnguyen.com @1.1.1.1`.
+
 ## Re-run a failed key
 
 ```bash
@@ -91,6 +125,15 @@ runs emit no `ProductsSeen` datapoint on purpose.
 Neon console → project `pricepulse-dev` shows compute hours, storage and connections. Roles:
 `app_migrator` (owner, used by `migrate`), `app_rw` (process/api), `app_ro` (humans). Rotate an app
 password: `terraform taint random_password.app_rw && terraform apply && scripts/bootstrap_db.sh`.
+
+## Terraform state lock
+
+An interrupted `apply` (killed process, lost session) leaves the S3 lock in place:
+
+```bash
+aws s3 cp s3://$TF_STATE_BUCKET/dev/terraform.tfstate.tflock - | jq -r .ID   # confirm nothing is running first
+terraform -chdir=infra/envs/dev force-unlock -force <id>
+```
 
 ## Tear down
 
