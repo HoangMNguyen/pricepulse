@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+SortKey = Literal["discount", "savings", "price_asc", "price_desc", "name", "newest", "ending_soon"]
 
 
 class DealOut(BaseModel):
@@ -25,6 +28,13 @@ class DealOut(BaseModel):
     valid_to: date | None
     is_on_sale: bool
     current_observed_at: datetime
+    first_seen_at: datetime
+    is_new: bool
+    previous_price: Decimal | None
+    previous_observed_at: datetime | None
+    drop_vs_previous_pct: Decimal
+    savings: Decimal
+    days_left: int | None
 
 
 class ProductOut(DealOut):
@@ -37,6 +47,13 @@ class ProductOut(DealOut):
 class DealsPage(BaseModel):
     items: list[DealOut]
     next_cursor: str | None
+    total: int
+
+
+class CategoryOut(BaseModel):
+    source: str
+    category: str
+    products: int
 
 
 class HistoryPoint(BaseModel):

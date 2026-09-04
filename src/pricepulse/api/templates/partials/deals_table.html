@@ -1,22 +1,27 @@
-{% for d in items %}
-<tr>
-  <td><a href="/products/{{ d.product_id }}">{{ d.name }}</a>{% if d.category %} <small>· {{ d.category }}</small>{% endif %}</td>
-  <td><span class="badge {{ d.source }}">{{ d.source }}</span></td>
-  <td class="num">${{ '%.2f' % d.current_price }}</td>
-  <td class="num">{% if d.reference_price and d.reference_price > d.current_price %}<s>${{ '%.2f' % d.reference_price }}</s>{% else %}—{% endif %}</td>
-  <td class="num">{% if d.discount_pct > 0 %}<span class="pct">-{{ d.discount_pct }}%</span>{% else %}—{% endif %}</td>
-  <td>{% if d.retailer_tag %}<small>{{ d.retailer_tag }}</small>{% endif %}</td>
-  <td>{% if d.valid_to %}<small>{{ d.valid_to }}</small>{% endif %}</td>
-</tr>
-{% else %}
-{% if not append %}<tr><td colspan="7"><em>No products match.</em></td></tr>{% endif %}
-{% endfor %}
-{% if next_cursor %}
-<tr id="more">
-  <td colspan="7" style="text-align:center">
-    <button class="secondary outline"
-            hx-get="/partials/deals?cursor={{ next_cursor }}&source={{ params.source }}&min_discount={{ params.min_discount }}&q={{ params.q | urlencode }}{% if params.flagged_only %}&flagged_only=true{% endif %}"
-            hx-target="#more" hx-swap="outerHTML">Load more</button>
-  </td>
-</tr>
-{% endif %}
+{% macro th(label, sort, alt=None) -%}
+{%- set active = params.sort == sort or (alt and params.sort == alt) -%}
+<th{% if label in ('Now', 'Off', 'Save') %} class="num"{% endif %}>
+  <button type="button" class="sort{% if active %} active{% endif %}" data-sort="{{ sort }}"{% if alt %} data-alt="{{ alt }}"{% endif %} onclick="setSort(this)">{{ label }}{% if active %} {{ '▼' if params.sort in ('discount', 'savings', 'price_desc', 'newest') else '▲' }}{% endif %}</button>
+</th>
+{%- endmacro %}
+<div id="deals-wrap">
+  <p><small>Showing {{ items|length }} of {{ total }} · {{ sort_labels[params.sort] }}</small></p>
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        {{ th('Product', 'name') }}
+        <th>Source</th>
+        {{ th('Now', 'price_asc', 'price_desc') }}
+        <th class="num">Was</th>
+        {{ th('Off', 'discount') }}
+        {{ th('Save', 'savings') }}
+        <th>Tag</th>
+        {{ th('Until', 'ending_soon') }}
+      </tr>
+    </thead>
+    <tbody id="deals">
+      {% include "partials/deals_rows.html" %}
+    </tbody>
+  </table>
+</div>

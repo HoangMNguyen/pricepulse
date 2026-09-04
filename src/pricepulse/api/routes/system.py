@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import pricepulse
 from pricepulse.api import queries
 from pricepulse.api.deps import ReadConn
-from pricepulse.api.schemas import Health, RunOut, SourceStats
+from pricepulse.api.schemas import CategoryOut, Health, RunOut, SourceStats
 
 router = APIRouter()
 
@@ -29,3 +29,8 @@ def runs(conn: ReadConn, limit: int = Query(20, ge=1, le=200)) -> list[dict]:
 @router.get("/v1/stats", response_model=list[SourceStats])
 def stats(conn: ReadConn) -> list[dict]:
     return queries.stats(conn)
+
+
+@router.get("/v1/categories", response_model=list[CategoryOut])
+def categories(conn: ReadConn) -> list[dict]:
+    return queries.categories(conn)

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query
 
 from pricepulse.api import queries
 from pricepulse.api.deps import ReadConn
-from pricepulse.api.schemas import DealsPage, HistoryPoint, ProductOut
+from pricepulse.api.schemas import DealsPage, HistoryPoint, ProductOut, SortKey
 
 router = APIRouter(prefix="/v1")
 
@@ -15,24 +15,34 @@ router = APIRouter(prefix="/v1")
 def deals(
     conn: ReadConn,
     source: str | None = None,
+    category: str | None = Query(None, max_length=100),
     min_discount: Decimal = Query(Decimal("0"), ge=0, le=100),
+    min_price: Decimal | None = Query(None, ge=0),
+    max_price: Decimal | None = Query(None, ge=0),
     flagged_only: bool = False,
+    on_sale_only: bool = False,
     q: str | None = Query(None, max_length=100),
+    sort: SortKey = "discount",
     limit: int = Query(50, ge=1, le=queries.MAX_LIMIT),
     cursor: str | None = None,
 ) -> dict:
-    items, next_cursor = queries.list_deals(
+    items, next_cursor, total = queries.list_deals(
         conn,
         queries.DealFilters(
             source=source,
+            category=category,
             min_discount=min_discount,
+            min_price=min_price,
+            max_price=max_price,
             flagged_only=flagged_only,
+            on_sale_only=on_sale_only,
             q=q,
+            sort=sort,
             limit=limit,
             cursor=cursor,
         ),
     )
-    return {"items": items, "next_cursor": next_cursor}
+    return {"items": items, "next_cursor": next_cursor, "total": total}
 
 
 @router.get("/products/{product_id}", response_model=ProductOut)

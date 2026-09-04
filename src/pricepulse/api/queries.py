@@ -4,22 +4,48 @@ from __future__ import annotations
 
 import base64
 import binascii
+import json
 from dataclasses import dataclass
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from fastapi import HTTPException
 from sqlalchemy import Connection, text
 
+from pricepulse.domain.pricing import discount_pct
+
 MAX_LIMIT = 200
 SOURCE_CODES = {1: "ikea", 2: "uniqlo"}
 SOURCE_IDS = {v: k for k, v in SOURCE_CODES.items()}
 
+# key -> (column, direction). Dict order is the UI order.
+SORTS: dict[str, tuple[str, str]] = {
+    "discount": ("s.discount_pct", "DESC"),
+    "savings": ("s.savings", "DESC"),
+    "price_asc": ("s.current_price", "ASC"),
+    "price_desc": ("s.current_price", "DESC"),
+    "name": ("s.name", "ASC"),
+    "newest": ("s.first_seen_at", "DESC"),
+    "ending_soon": ("s.valid_to", "ASC"),  # implies s.valid_to IS NOT NULL
+}
+DEFAULT_SORT = "discount"
+SORT_LABELS = {
+    "discount": "Biggest % off",
+    "savings": "Biggest $ saving",
+    "price_asc": "Price: low to high",
+    "price_desc": "Price: high to low",
+    "name": "Name",
+    "newest": "Newest",
+    "ending_soon": "Ending soon",
+}
+
 _SUMMARY_COLUMNS = """
     s.product_id, s.source_id, s.name, s.category, s.url, s.image_url, s.currency,
+    s.first_seen_at, s.last_seen_at,
     s.current_price, s.current_observed_at, s.retailer_sale_flag, s.retailer_tag, s.valid_to,
     s.list_price, s.reference_price, s.mode_price_90d, s.min_price_90d, s.max_price_90d,
-    s.observations_90d, s.discount_pct
+    s.observations_90d, s.discount_pct, s.previous_price, s.previous_observed_at, s.savings
 """
 _SUMMARY_SELECT = f"SELECT {_SUMMARY_COLUMNS} FROM product_price_summary s"  # noqa: S608 - constant
 
@@ -29,35 +55,62 @@ class DealFilters:
     source: str | None = None
     min_discount: Decimal = Decimal("0")
     flagged_only: bool = False
+    on_sale_only: bool = False
+    category: str | None = None
+    min_price: Decimal | None = None
+    max_price: Decimal | None = None
     q: str | None = None
+    sort: str = DEFAULT_SORT
     limit: int = 50
     cursor: str | None = None
 
 
-def encode_cursor(discount_pct: Decimal, product_id: int) -> str:
-    return base64.urlsafe_b64encode(f"{discount_pct}:{product_id}".encode()).decode().rstrip("=")
+def encode_cursor(sort: str, value: Any, product_id: int) -> str:
+    raw = json.dumps({"s": sort, "v": str(value), "id": product_id}, separators=(",", ":"))
+    return base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
 
 
-def decode_cursor(cursor: str) -> tuple[Decimal, int]:
+def _parse_cursor_value(sort: str, value: str) -> Any:
+    if sort in ("discount", "savings", "price_asc", "price_desc"):
+        return Decimal(value)
+    if sort == "newest":
+        return datetime.fromisoformat(value)
+    if sort == "ending_soon":
+        return date.fromisoformat(value)
+    return value  # name
+
+
+def decode_cursor(cursor: str, sort: str) -> tuple[Any, int]:
     try:
         padded = cursor + "=" * (-len(cursor) % 4)
-        pct, pid = base64.urlsafe_b64decode(padded).decode().split(":", 1)
-        return Decimal(pct), int(pid)
-    except (ValueError, binascii.Error, InvalidOperation, UnicodeDecodeError) as exc:
+        data = json.loads(base64.urlsafe_b64decode(padded))
+        cursor_sort, value, pid = data["s"], data["v"], int(data["id"])
+    except (ValueError, KeyError, TypeError, binascii.Error, UnicodeDecodeError) as exc:
+        raise HTTPException(400, "malformed cursor") from exc
+    if cursor_sort != sort:
+        raise HTTPException(400, "cursor does not match sort")
+    try:
+        return _parse_cursor_value(sort, value), pid
+    except (ValueError, InvalidOperation, TypeError) as exc:
         raise HTTPException(400, "malformed cursor") from exc
 
 
-def row_to_dict(row: Any) -> dict[str, Any]:
+def row_to_dict(row: Any, now: datetime | None = None) -> dict[str, Any]:
+    now = now or datetime.now(UTC)
     d = dict(row._mapping)
     d["source"] = SOURCE_CODES.get(d.pop("source_id"), "unknown")
     d["is_on_sale"] = bool(d["discount_pct"] > 0 or d["retailer_sale_flag"])
+    d["is_new"] = d["first_seen_at"] >= now - timedelta(hours=24)
+    d["drop_vs_previous_pct"] = discount_pct(d["current_price"], d.get("previous_price"))
+    d["days_left"] = (d["valid_to"] - now.date()).days if d.get("valid_to") else None
     return d
 
 
-def list_deals(conn: Connection, f: DealFilters) -> tuple[list[dict[str, Any]], str | None]:
-    limit = max(1, min(f.limit, MAX_LIMIT))
+def _where(f: DealFilters, with_cursor: bool) -> tuple[list[str], dict[str, Any]]:
+    if f.sort not in SORTS:
+        raise HTTPException(400, "unknown sort")
     where = ["s.discount_pct >= :min_discount"]
-    params: dict[str, Any] = {"min_discount": f.min_discount, "limit": limit + 1}
+    params: dict[str, Any] = {"min_discount": f.min_discount}
     if f.source:
         if f.source not in SOURCE_IDS:
             raise HTTPException(400, f"unknown source {f.source!r}")
@@ -65,26 +118,53 @@ def list_deals(conn: Connection, f: DealFilters) -> tuple[list[dict[str, Any]], 
         params["source_id"] = SOURCE_IDS[f.source]
     if f.flagged_only:
         where.append("s.retailer_sale_flag")
+    if f.on_sale_only:
+        where.append("(s.discount_pct > 0 OR s.retailer_sale_flag)")
+    if f.category:
+        where.append("s.category = :category")
+        params["category"] = f.category
+    if f.min_price is not None:
+        where.append("s.current_price >= :min_price")
+        params["min_price"] = f.min_price
+    if f.max_price is not None:
+        where.append("s.current_price <= :max_price")
+        params["max_price"] = f.max_price
     if f.q:
         where.append("s.name ILIKE '%' || :q || '%'")
         params["q"] = f.q
-    if f.cursor:
-        pct, pid = decode_cursor(f.cursor)
-        where.append(
-            "(s.discount_pct < :c_pct OR (s.discount_pct = :c_pct AND s.product_id > :c_pid))"
-        )
-        params.update(c_pct=pct, c_pid=pid)
+    if f.sort == "ending_soon":
+        where.append("s.valid_to IS NOT NULL")
+    if with_cursor and f.cursor:
+        value, pid = decode_cursor(f.cursor, f.sort)
+        col, direction = SORTS[f.sort]
+        op = "<" if direction == "DESC" else ">"
+        where.append(f"({col} {op} :c_v OR ({col} = :c_v AND s.product_id > :c_id))")
+        params.update(c_v=value, c_id=pid)
+    return where, params
+
+
+def list_deals(conn: Connection, f: DealFilters) -> tuple[list[dict[str, Any]], str | None, int]:
+    """One page of deals plus the next keyset cursor and the total matching count."""
+    limit = max(1, min(f.limit, MAX_LIMIT))
+    where, params = _where(f, with_cursor=True)  # validates sort, source, cursor
+    count_where, count_params = _where(f, with_cursor=False)
+    col, direction = SORTS[f.sort]
+    total = conn.execute(
+        text(f"SELECT count(*) FROM product_price_summary s WHERE {' AND '.join(count_where)}"),  # noqa: S608 - fragments are constants
+        count_params,
+    ).scalar_one()
     sql = (
         f"{_SUMMARY_SELECT} WHERE {' AND '.join(where)} "  # noqa: S608 - fragments are constants
-        "ORDER BY s.discount_pct DESC, s.product_id ASC LIMIT :limit"
+        f"ORDER BY {col} {direction}, s.product_id ASC LIMIT :limit"
     )
-    rows = conn.execute(text(sql), params).all()
-    items = [row_to_dict(r) for r in rows[:limit]]
+    rows = conn.execute(text(sql), {**params, "limit": limit + 1}).all()
+    now = datetime.now(UTC)
+    items = [row_to_dict(r, now) for r in rows[:limit]]
     next_cursor = None
     if len(rows) > limit and items:
-        last = items[-1]
-        next_cursor = encode_cursor(last["discount_pct"], last["product_id"])
-    return items, next_cursor
+        last = rows[limit - 1]._mapping
+        next_cursor = encode_cursor(f.sort, last[col.removeprefix("s.")], last["product_id"])
+    return items, next_cursor, int(total)
 
 
 def get_product(conn: Connection, product_id: int) -> dict[str, Any]:
@@ -110,6 +190,27 @@ def get_history(conn: Connection, product_id: int, days: int) -> list[dict[str, 
         {"id": product_id, "days": days},
     ).all()
     return [dict(r._mapping) for r in rows]
+
+
+def categories(conn: Connection) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        text(
+            """
+            SELECT s.source_id, s.category, count(*) AS products
+            FROM product_price_summary s
+            WHERE s.category IS NOT NULL
+            GROUP BY 1, 2 ORDER BY 1, 2
+            """
+        )
+    ).all()
+    return [
+        {
+            "source": SOURCE_CODES.get(r.source_id, "unknown"),
+            "category": r.category,
+            "products": int(r.products),
+        }
+        for r in rows
+    ]
 
 
 def list_runs(conn: Connection, limit: int) -> list[dict[str, Any]]:

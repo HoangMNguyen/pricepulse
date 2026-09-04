@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, text
 
+from pricepulse.api import queries
 from pricepulse.api.app import create_app
 from pricepulse.config import Settings
 
@@ -17,7 +20,9 @@ HEADERS = {"X-API-Key": "test-key"}
 
 
 def seed(engine: Engine, n: int = 12) -> None:
-    """n IKEA products with discounts n*2%, n*2-2%, ... plus one Uniqlo flagged product."""
+    """n IKEA products with discounts n*2%, n*2-2%, ... plus one Uniqlo flagged product and one
+    IKEA product that is not on sale. first_seen_at is spread over 3 days (i % 3 days ago);
+    product n has valid_to in 2 days; product n-1 has an earlier, higher observation."""
     with engine.begin() as c:
         run_id = c.execute(
             text(
@@ -29,23 +34,58 @@ def seed(engine: Engine, n: int = 12) -> None:
         for i in range(1, n + 1):
             pid = c.execute(
                 text(
-                    "INSERT INTO product (source_id, external_id, name, url) "
-                    "VALUES (1, :ext, :name, 'https://ikea.example/' || :ext) RETURNING id"
+                    "INSERT INTO product (source_id, external_id, name, category, url, "
+                    "first_seen_at) VALUES (1, :ext, :name, :cat, 'https://ikea.example/' || :ext, "
+                    "now() - make_interval(days => :age)) RETURNING id"
                 ),
-                {"ext": f"ikea-{i}", "name": f"KALLAX shelf {i}"},
+                {
+                    "ext": f"ikea-{i}",
+                    "name": f"KALLAX shelf {i}",
+                    "cat": "Storage & organization" if i % 2 == 0 else "Baby & kids",
+                    "age": i % 3,
+                },
             ).scalar()
+            if i == n - 1:
+                c.execute(
+                    text(
+                        "INSERT INTO price_observation (product_id, observed_at, run_id, price, "
+                        "list_price, retailer_sale_flag, retailer_tag) "
+                        "VALUES (:pid, now() - INTERVAL '1 hour', :run, 90, 100, true, "
+                        "'FAMILY_PRICE')"
+                    ),
+                    {"pid": pid, "run": run_id},
+                )
             c.execute(
                 text(
                     "INSERT INTO price_observation (product_id, observed_at, run_id, price, "
-                    "list_price, retailer_sale_flag, retailer_tag) "
-                    "VALUES (:pid, now(), :run, :price, 100, true, 'FAMILY_PRICE')"
+                    "list_price, retailer_sale_flag, retailer_tag, valid_to) "
+                    "VALUES (:pid, now(), :run, :price, 100, true, 'FAMILY_PRICE', :valid_to)"
                 ),
-                {"pid": pid, "run": run_id, "price": Decimal(100 - 2 * i)},
+                {
+                    "pid": pid,
+                    "run": run_id,
+                    "price": Decimal(100 - 2 * i),
+                    "valid_to": date.today() + timedelta(days=2) if i == n else None,
+                },
             )
         pid = c.execute(
             text(
-                "INSERT INTO product (source_id, external_id, name, url) "
-                "VALUES (2, 'E1-000', 'AIRism tee', 'https://uniqlo.example/E1') RETURNING id"
+                "INSERT INTO product (source_id, external_id, name, category, url) VALUES "
+                "(1, 'ikea-full', 'BILLY bookcase', 'Storage & organization', "
+                "'https://ikea.example/billy') RETURNING id"
+            )
+        ).scalar()
+        c.execute(
+            text(
+                "INSERT INTO price_observation (product_id, observed_at, run_id, price, "
+                "retailer_sale_flag) VALUES (:pid, now(), :run, 59, false)"
+            ),
+            {"pid": pid, "run": run_id},
+        )
+        pid = c.execute(
+            text(
+                "INSERT INTO product (source_id, external_id, name, category, url) VALUES "
+                "(2, 'E1-000', 'AIRism tee', 'MEN', 'https://uniqlo.example/E1') RETURNING id"
             )
         ).scalar()
         c.execute(
@@ -94,7 +134,7 @@ def test_deals_ordered_and_keyset_paginated(client: TestClient) -> None:
         cursor = page["next_cursor"]
         if not cursor:
             break
-    assert len(seen) == 13
+    assert len(seen) == 14
 
 
 def test_deals_filters(client: TestClient) -> None:
@@ -106,6 +146,105 @@ def test_deals_filters(client: TestClient) -> None:
     assert client.get("/v1/deals", params={"q": "AIRism"}).json()["items"][0]["source"] == "uniqlo"
     assert client.get("/v1/deals", params={"source": "nope"}).status_code == 400
     assert client.get("/v1/deals", params={"cursor": "!!!"}).status_code == 400
+
+
+def _walk(client: TestClient, **params: object) -> tuple[list[dict], list[int]]:
+    items, totals, cursor = [], [], None
+    while True:
+        page = client.get("/v1/deals", params={**params, "limit": 4, "cursor": cursor}).json()
+        items.extend(page["items"])
+        totals.append(page["total"])
+        cursor = page["next_cursor"]
+        if not cursor:
+            return items, totals
+
+
+def _sort_key(sort: str, item: dict) -> object:
+    col = queries.SORTS[sort][0].removeprefix("s.")
+    value = item[col]
+    if sort in ("discount", "savings", "price_asc", "price_desc"):
+        return Decimal(value)
+    if sort == "newest":
+        return datetime.fromisoformat(value)
+    if sort == "ending_soon":
+        return date.fromisoformat(value)
+    return value
+
+
+@pytest.mark.parametrize("sort", list(queries.SORTS))
+def test_every_sort_walks_all_pages_in_order(client: TestClient, sort: str) -> None:
+    items, totals = _walk(client, sort=sort)
+    ids = [i["product_id"] for i in items]
+    assert len(ids) == len(set(ids)), "pages overlap"
+    expected = {
+        i["product_id"]
+        for i in client.get("/v1/deals", params={"limit": 200}).json()["items"]
+        if sort != "ending_soon" or i["valid_to"] is not None
+    }
+    assert set(ids) == expected
+    assert set(totals) == {len(ids)}, "total must equal the walked count on every page"
+    if sort == "ending_soon":
+        assert len(ids) == 1
+    desc = queries.SORTS[sort][1] == "DESC"
+    for a, b in zip(items, items[1:], strict=False):
+        ka, kb = _sort_key(sort, a), _sort_key(sort, b)
+        if ka == kb:
+            assert a["product_id"] < b["product_id"]
+        else:
+            assert (ka > kb) if desc else (ka < kb)
+
+
+def test_cursor_is_bound_to_its_sort(client: TestClient) -> None:
+    cursor = client.get("/v1/deals", params={"sort": "discount", "limit": 4}).json()["next_cursor"]
+    r = client.get("/v1/deals", params={"sort": "savings", "limit": 4, "cursor": cursor})
+    assert r.status_code == 400 and r.json()["detail"] == "cursor does not match sort"
+    assert client.get("/v1/deals", params={"sort": "sideways"}).status_code == 422
+
+
+def test_deals_filters_by_category_price_and_sale_state(client: TestClient) -> None:
+    storage = client.get("/v1/deals", params={"category": "Storage & organization"}).json()
+    assert storage["total"] == 7 and all(
+        i["category"] == "Storage & organization" for i in storage["items"]
+    )
+    assert client.get("/v1/deals", params={"min_price": 90}).json()["total"] == 5
+    cheap = client.get("/v1/deals", params={"max_price": 80}).json()
+    assert {i["name"] for i in cheap["items"]} == {
+        "KALLAX shelf 10",
+        "KALLAX shelf 11",
+        "KALLAX shelf 12",
+        "BILLY bookcase",
+        "AIRism tee",
+    }
+    everything = client.get("/v1/deals").json()
+    on_sale = client.get("/v1/deals", params={"on_sale_only": "true"}).json()
+    assert everything["total"] == 14 and on_sale["total"] == 13
+    assert all(i["is_on_sale"] for i in on_sale["items"])
+    assert client.get("/v1/deals", params={"flagged_only": "true"}).json()["total"] == 13
+
+
+def test_categories_per_source(client: TestClient) -> None:
+    cats = client.get("/v1/categories").json()
+    assert cats == [
+        {"source": "ikea", "category": "Baby & kids", "products": 6},
+        {"source": "ikea", "category": "Storage & organization", "products": 7},
+        {"source": "uniqlo", "category": "MEN", "products": 1},
+    ]
+
+
+def test_badges_on_seeded_rows(client: TestClient) -> None:
+    by_name = {i["name"]: i for i in client.get("/v1/deals", params={"limit": 200}).json()["items"]}
+    twelve, eleven, one = (
+        by_name["KALLAX shelf 12"],
+        by_name["KALLAX shelf 11"],
+        by_name["KALLAX shelf 1"],
+    )
+    assert twelve["is_new"] is True and twelve["days_left"] == 2 and twelve["savings"] == "24.00"
+    assert twelve["drop_vs_previous_pct"] == "0.0" and twelve["previous_price"] is None
+    assert eleven["previous_price"] == "90.00" and eleven["drop_vs_previous_pct"] == "13.3"
+    assert eleven["discount_pct"] == "22.0"
+    assert client.get(f"/v1/products/{eleven['product_id']}").json()["observations_90d"] == 2
+    assert one["is_new"] is False and one["days_left"] is None and one["savings"] == "2.00"
+    assert by_name["BILLY bookcase"]["is_on_sale"] is False
 
 
 def test_product_and_history(client: TestClient) -> None:
@@ -122,7 +261,7 @@ def test_runs_and_stats(client: TestClient) -> None:
     runs = client.get("/v1/runs").json()
     assert runs[0]["status"] == "succeeded" and runs[0]["source"] == "ikea"
     stats = {s["source"]: s for s in client.get("/v1/stats").json()}
-    assert stats["ikea"]["products"] == 12 and stats["ikea"]["on_sale"] == 12
+    assert stats["ikea"]["products"] == 13 and stats["ikea"]["on_sale"] == 12
     assert stats["uniqlo"]["on_sale"] == 1
 
 
@@ -147,9 +286,41 @@ def test_watch_flow_requires_api_key(client: TestClient) -> None:
 def test_dashboard_renders(client: TestClient) -> None:
     home = client.get("/")
     assert home.status_code == 200 and "Current deals" in home.text
+    assert "Showing 14 of 14" in home.text and "Biggest % off" in home.text
     partial = client.get("/partials/deals", params={"min_discount": 20})
     assert partial.status_code == 200 and partial.text.count("<tr>") == 3
+    assert "<table" not in partial.text
     pid = client.get("/v1/deals", params={"limit": 1}).json()["items"][0]["product_id"]
     page = client.get(f"/products/{pid}")
     assert page.status_code == 200 and "KALLAX shelf 12" in page.text
+    assert '<meta property="og:title" content="KALLAX shelf 12">' in page.text
     assert client.get("/products/999999").status_code == 404
+
+
+def test_dashboard_sort_and_filters_are_url_state(client: TestClient) -> None:
+    page = client.get("/", params={"sort": "price_asc", "source": "ikea"})
+    assert page.status_code == 200
+    assert '<option value="price_asc" selected>' in page.text
+    assert '<option value="ikea" selected>' in page.text
+    now_cell = r'>ikea</span></td>\s*<td class="num">\$([\d.]+)</td>'
+    prices = re.findall(now_cell, page.text)
+    assert len(prices) == 13 and Decimal(prices[0]) <= Decimal(prices[1])
+    assert "Showing 13 of 13 · Price: low to high" in page.text
+    baby = client.get("/", params={"category": "Baby & kids"})
+    assert "Showing 6 of 6" in baby.text and baby.text.count("KALLAX shelf") == 6
+    assert 'value="Baby &amp; kids" selected' in baby.text
+    assert client.get("/", params={"sort": "sideways"}).status_code == 422
+    # blank number inputs (what a browser submits for an empty <input type=number>) mean "unset"
+    blank = client.get("/", params={"min_price": "", "max_price": "", "min_discount": ""})
+    assert blank.status_code == 200 and "Showing 14 of 14" in blank.text
+    assert client.get("/", params={"min_price": "abc"}).status_code == 422
+    assert client.get("/", params={"min_discount": "101"}).status_code == 422
+
+
+def test_dashboard_load_more_uses_cursor(client: TestClient) -> None:
+    first = client.get("/v1/deals", params={"sort": "name", "limit": 4}).json()
+    partial = client.get("/partials/deals", params={"sort": "name", "cursor": first["next_cursor"]})
+    assert partial.status_code == 200 and "<table" not in partial.text
+    names = re.findall(r'<a href="/products/\d+">([^<]+)</a>', partial.text)
+    assert names and first["items"][-1]["name"] < names[0]
+    assert "KALLAX shelf 1</a>" not in partial.text

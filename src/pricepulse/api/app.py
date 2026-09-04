@@ -20,6 +20,7 @@ def create_app() -> FastAPI:
         description="IKEA US + UNIQLO US price history, sale detection, and alerts.",
     )
     app.state.templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+    app.state.templates.env.globals["qs"] = dashboard.qs
 
     @app.exception_handler(NoResultFound)
     async def _not_found(_: Request, __: NoResultFound) -> JSONResponse:

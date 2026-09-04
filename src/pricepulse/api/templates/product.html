@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% block title %}{{ product.name }} · PricePulse{% endblock %}
+{% block head %}
+  <meta property="og:title" content="{{ product.name }}">
+  {% if product.image_url %}<meta property="og:image" content="{{ product.image_url }}">{% endif %}
+  <meta property="og:description" content="${{ '%.2f' % product.current_price }}{% if product.discount_pct > 0 %} · −{{ product.discount_pct }}%{% endif %} at {{ product.source|upper }}">
+  <meta property="og:type" content="product">
+{% endblock %}
 {% block content %}
+<p><a href="/">← Back to deals</a></p>
 <article>
   <header>
     <span class="badge {{ product.source }}">{{ product.source }}</span>
