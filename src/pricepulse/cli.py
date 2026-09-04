@@ -53,7 +53,7 @@ def notify(
 
     settings = get_settings()
     result = ProcessResult.from_dict(json.loads(key_json.read_text()))
-    digests = build_digests(result, settings.alert_recipients)
+    digests = build_digests(result, settings.alert_recipients, settings.public_base_url)
     if dry_run:
         for to, digest in digests.items():
             typer.echo(f"--- to: {to}\n{render_text(digest)}")
@@ -62,6 +62,28 @@ def notify(
     if not settings.ses_sender:
         raise typer.BadParameter("SES_SENDER is not set")
     typer.echo(f"sent {send_digests(digests, settings.ses_sender)} email(s)")
+
+
+@app.command()
+def mailer(
+    key: str = typer.Option(..., help="outbox key, e.g. outbox/watch_confirm/2026-09-04/<id>.json"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="print the email instead of sending"),
+) -> None:
+    """Send one transactional email from the outbox (what the mailer Lambda does per S3 event)."""
+    from pricepulse.config import get_settings
+    from pricepulse.services.mail import render_confirm, send_email
+    from pricepulse.storage.outbox import make_outbox
+
+    settings = get_settings()
+    message = make_outbox(settings).get(key)
+    subject, html, text, unsubscribe = render_confirm(message, settings.public_base_url)
+    if dry_run:
+        typer.echo(f"--- to: {message['email']}\nsubject: {subject}\n{text}")
+        return
+    if not settings.ses_sender:
+        raise typer.BadParameter("SES_SENDER is not set")
+    send_email(message["email"], subject, html, text, settings.ses_sender, unsubscribe)
+    typer.echo(f"sent to {message['email']}")
 
 
 @app.command()

@@ -99,6 +99,13 @@ class WatchOut(BaseModel):
     email: str
     min_discount_pct: Decimal
     created_at: datetime
+    confirmed_at: datetime | None
+
+
+class WatchPendingOut(BaseModel):
+    email: str
+    product_id: int
+    min_discount_pct: Decimal
 
 
 class Health(BaseModel):

@@ -37,6 +37,7 @@ class AlertOut:
     new_price: Decimal
     discount_pct: Decimal
     emails: list[str] = field(default_factory=list)
+    watch_tokens: dict[str, str] = field(default_factory=dict)  # email -> unsubscribe token
 
 
 @dataclass(slots=True)
@@ -71,6 +72,7 @@ class ProcessResult:
                 new_price=Decimal(a["new_price"]),
                 discount_pct=Decimal(a["discount_pct"]),
                 emails=list(a.get("emails", [])),
+                watch_tokens=dict(a.get("watch_tokens", {})),
             )
             for a in data.get("alerts", [])
         ]
@@ -136,14 +138,15 @@ def classify_alerts(
                 )
             )
         if dropped:
-            emails = [w.email for w in watches.get(pid, []) if pct >= w.min_discount_pct]
-            if emails:
+            hits = [w for w in watches.get(pid, []) if pct >= w.min_discount_pct]
+            if hits:
                 alerts.append(
                     AlertOut(
                         kind="watch_hit",
                         old_price=before.price,
                         discount_pct=pct,
-                        emails=emails,
+                        emails=[w.email for w in hits],
+                        watch_tokens={w.email: w.token for w in hits},
                         **common,
                     )
                 )

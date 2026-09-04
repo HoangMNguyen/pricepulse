@@ -9,9 +9,10 @@ from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
+from sqlalchemy import text
 
 from pricepulse.api import queries
-from pricepulse.api.deps import ReadConn
+from pricepulse.api.deps import ReadConn, WriteConn
 from pricepulse.api.schemas import SortKey
 
 router = APIRouter(include_in_schema=False)
@@ -168,3 +169,46 @@ def deals_partial(
 @router.get("/products/{product_id}", response_class=HTMLResponse)
 def product_page(request: Request, conn: ReadConn, product_id: int) -> HTMLResponse:
     return _render(request, "product.html", product=queries.get_product(conn, product_id))
+
+
+def _watch_status(request: Request, row: object | None, state: str) -> HTMLResponse:
+    if row is None:
+        response = _render(request, "watch_status.html", state="not_found", watch=None)
+        response.status_code = 404
+        return response
+    return _render(request, "watch_status.html", state=state, watch=row)
+
+
+@router.get("/watches/confirm/{token}", response_class=HTMLResponse)
+def confirm_watch(request: Request, conn: WriteConn, token: str) -> HTMLResponse:
+    row = conn.execute(
+        text(
+            """
+            WITH w AS (
+              UPDATE watch SET confirmed_at = COALESCE(confirmed_at, now())
+              WHERE token = :t RETURNING product_id, email, min_discount_pct
+            )
+            SELECT w.product_id, w.email, w.min_discount_pct, p.name
+            FROM w JOIN product p ON p.id = w.product_id
+            """
+        ),
+        {"t": token},
+    ).first()
+    return _watch_status(request, row, "confirmed")
+
+
+@router.get("/watches/unsubscribe/{token}", response_class=HTMLResponse)
+def unsubscribe_watch(request: Request, conn: WriteConn, token: str) -> HTMLResponse:
+    row = conn.execute(
+        text(
+            """
+            WITH w AS (
+              DELETE FROM watch WHERE token = :t RETURNING product_id, email, min_discount_pct
+            )
+            SELECT w.product_id, w.email, w.min_discount_pct, p.name
+            FROM w JOIN product p ON p.id = w.product_id
+            """
+        ),
+        {"t": token},
+    ).first()
+    return _watch_status(request, row, "unsubscribed")

@@ -5,7 +5,8 @@
 {% endmacro %}
 {% if d.watch_hits %}
 WATCHED ITEMS DROPPED ({{ d.watch_hits | length }})
-{% for a in d.watch_hits %}{{ line(a) }}{% endfor %}
+{% for a in d.watch_hits %}{{ line(a) }}  Unsubscribe: {{ d.base_url }}/watches/unsubscribe/{{ a.watch_tokens[d.recipient] }}
+{% endfor %}
 
 {% endif %}
 {% if d.new_deals %}
@@ -25,4 +26,5 @@ NEWLY FLAGGED BY RETAILER ({{ d.retailer_flags | length }}{% if d.retailer_flags
 {% endif %}
 
 {% endif %}
-Sent by PricePulse — https://github.com/HoangMNguyen/pricepulse
+{% if d.watcher_only %}You receive this because you confirmed a watch on PricePulse.
+{% endif %}Sent by PricePulse — https://github.com/HoangMNguyen/pricepulse

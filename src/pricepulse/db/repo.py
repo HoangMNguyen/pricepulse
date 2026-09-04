@@ -29,6 +29,7 @@ class WatchRow:
     product_id: int
     email: str
     min_discount_pct: Decimal
+    token: str
 
 
 def claim_run(conn: Connection, source_id: int, raw_object_key: str) -> int | None:
@@ -141,14 +142,18 @@ def insert_observations(
 
 
 def watches_for(conn: Connection, product_ids: Iterable[int]) -> dict[int, list[WatchRow]]:
+    """Confirmed watches only: unconfirmed rows never produce mail."""
     rows = conn.execute(
-        text("SELECT product_id, email, min_discount_pct FROM watch WHERE product_id = ANY(:ids)"),
+        text(
+            "SELECT product_id, email, min_discount_pct, token FROM watch "
+            "WHERE product_id = ANY(:ids) AND confirmed_at IS NOT NULL"
+        ),
         {"ids": list(product_ids)},
     )
     out: dict[int, list[WatchRow]] = {}
     for r in rows:
         out.setdefault(int(r.product_id), []).append(
-            WatchRow(int(r.product_id), r.email, r.min_discount_pct)
+            WatchRow(int(r.product_id), r.email, r.min_discount_pct, r.token)
         )
     return out
 

@@ -174,8 +174,8 @@ def test_watch_hit_carries_watcher_email(conn: Engine, settings: Settings) -> No
     with conn.begin() as c:
         c.execute(
             text(
-                "INSERT INTO watch (product_id, email, min_discount_pct) "
-                "SELECT id, 'watcher@example.com', 5 FROM product"
+                "INSERT INTO watch (product_id, email, min_discount_pct, token, confirmed_at) "
+                "SELECT id, 'watcher@example.com', 5, 'tok-' || id, now() FROM product"
             )
         )
     k2 = s.put(
@@ -185,7 +185,9 @@ def test_watch_hit_carries_watcher_email(conn: Engine, settings: Settings) -> No
     kinds = sorted(a.kind for a in result.alerts)
     assert kinds == ["watch_hit"]  # 10% drop is below the global 20% threshold
     assert result.alerts[0].emails == ["watcher@example.com"]
+    assert result.alerts[0].watch_tokens == {"watcher@example.com": "tok-1"}
     payload = result.to_dict()
+    assert payload["alerts"][0]["watch_tokens"] == {"watcher@example.com": "tok-1"}
     assert payload["alerts"][0]["new_price"] == "90.00"
     json.dumps(payload)  # Lambda return value must be JSON-serializable
 

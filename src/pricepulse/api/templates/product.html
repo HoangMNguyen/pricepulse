@@ -32,14 +32,14 @@
 </article>
 
 <article>
-  <header><strong>Watch this product</strong></header>
+  <header><strong>Watch this product</strong> <small>· email me when it drops by at least</small></header>
   <form id="watch" onsubmit="return createWatch(event)" class="grid">
     <input type="email" name="email" placeholder="you@example.com" required>
     <input type="number" name="min_discount_pct" value="10" min="0" max="100" step="0.5" aria-label="minimum % drop">
-    <input type="password" name="api_key" placeholder="API key" required>
     <button type="submit">Watch</button>
   </form>
   <p id="watch-result"></p>
+  <p><small>You will get one confirmation email first; every alert carries an unsubscribe link.</small></p>
 </article>
 
 <script src="{{ cdn.chart[0] }}" integrity="{{ cdn.chart[1] }}" crossorigin="anonymous"></script>
@@ -61,12 +61,17 @@
     const f = new FormData(ev.target);
     const res = await fetch('/v1/watches', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'X-API-Key': f.get('api_key') },
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ product_id: PRODUCT_ID, email: f.get('email'), min_discount_pct: Number(f.get('min_discount_pct')) }),
     });
     const body = await res.json();
-    document.getElementById('watch-result').textContent =
-      res.ok ? `Watching as ${body.email} (id ${body.id}).` : `Error ${res.status}: ${body.detail}`;
+    const out = document.getElementById('watch-result');
+    out.textContent = '';
+    if (res.status === 202) {
+      out.append('Check ', Object.assign(document.createElement('strong'), { textContent: body.email }), ' for a confirmation link.');
+    } else {
+      out.textContent = typeof body.detail === 'string' ? body.detail : `Error ${res.status}`;
+    }
     return false;
   }
 </script>

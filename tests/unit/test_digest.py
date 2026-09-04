@@ -8,7 +8,9 @@ from pricepulse.config import get_settings
 from pricepulse.lambda_handlers import notify
 from pricepulse.services.digest import RETAILER_FLAG_CAP, build_digests
 from pricepulse.services.ingest import AlertOut, ProcessResult
-from pricepulse.services.mail import render_html, render_text, send_digests
+from pricepulse.services.mail import render_confirm, render_html, render_text, send_digests
+
+BASE = "https://pp.example"
 
 
 class _Ctx:
@@ -29,6 +31,7 @@ def alert(kind: str, name: str, pct: str, emails: list[str] | None = None) -> Al
         new_price=Decimal("100.00") * (1 - Decimal(pct) / 100),
         discount_pct=Decimal(pct),
         emails=emails or [],
+        watch_tokens={e: f"tok-{e.split('@')[0]}" for e in (emails or [])},
     )
 
 
@@ -44,7 +47,7 @@ def test_build_digests_sections_and_recipients() -> None:
         alert("watch_hit", "C", "30.0", emails=["watcher@example.com", "owner@example.com"]),
         *[alert("retailer_flag", f"F{i:03}", "0.0") for i in range(RETAILER_FLAG_CAP + 5)],
     ]
-    digests = build_digests(result(alerts), ["owner@example.com"])
+    digests = build_digests(result(alerts), ["owner@example.com"], BASE)
     assert set(digests) == {"owner@example.com", "watcher@example.com"}
     owner = digests["owner@example.com"]
     assert [a.name for a in owner.new_deals] == ["A", "B"]  # sorted by discount desc
@@ -54,13 +57,20 @@ def test_build_digests_sections_and_recipients() -> None:
     assert owner.subject.startswith("PricePulse: 2 new deals, 1 price drops (ikea, ")
     watcher = digests["watcher@example.com"]
     assert watcher.new_deals == [] and [a.name for a in watcher.watch_hits] == ["C"]
+    assert watcher.watcher_only and not owner.watcher_only
+    assert watcher.recipient == "watcher@example.com" and watcher.base_url == BASE
+    text = render_text(watcher)
+    assert f"{BASE}/watches/unsubscribe/tok-watcher" in text
+    assert "You receive this because you confirmed a watch" in text
+    assert f"{BASE}/watches/unsubscribe/tok-watcher" in render_html(watcher)
+    assert "confirmed a watch" not in render_text(owner)
 
 
 def test_build_digests_drops_empty_and_skipped() -> None:
-    assert build_digests(result([], skipped=True), ["o@example.com"]) == {}
-    assert build_digests(result([]), ["o@example.com"]) == {}
+    assert build_digests(result([], skipped=True), ["o@example.com"], BASE) == {}
+    assert build_digests(result([]), ["o@example.com"], BASE) == {}
     only_watch = [alert("watch_hit", "C", "30.0", emails=["w@example.com"])]
-    digests = build_digests(result(only_watch), ["o@example.com"])
+    digests = build_digests(result(only_watch), ["o@example.com"], BASE)
     assert set(digests) == {"w@example.com"}  # owner has nothing -> dropped
 
 
@@ -68,6 +78,7 @@ def test_render_templates() -> None:
     digest = build_digests(
         result([alert("new_deal", "KALLAX", "40.0"), alert("price_drop", "BILLY", "30.0")]),
         ["o@example.com"],
+        BASE,
     )["o@example.com"]
     text = render_text(digest)
     assert "NEW DEALS (1)" in text and "KALLAX" in text and "-40.0%" in text
@@ -90,7 +101,7 @@ def test_send_digests_and_notify_handler() -> None:
         AWS_REGION="us-east-1",
     )
     get_settings.cache_clear()
-    digests = build_digests(result(alerts), ["o@example.com"])
+    digests = build_digests(result(alerts), ["o@example.com"], BASE)
     assert send_digests(digests, "sender@example.com") == 2
 
     event = {"responsePayload": result(alerts).to_dict()}
@@ -98,3 +109,21 @@ def test_send_digests_and_notify_handler() -> None:
     skipped = {"responsePayload": result([], skipped=True).to_dict()}
     assert notify.handler(skipped, _Ctx()) == {"sent": 0}
     get_settings.cache_clear()
+
+
+def test_render_confirm_has_both_links() -> None:
+    message = {
+        "kind": "watch_confirm",
+        "email": "w@example.com",
+        "product_id": 7,
+        "product_name": "KALLAX shelf",
+        "product_url": "https://ikea.example/kallax",
+        "min_discount_pct": "10.0",
+        "token": "tok-123",
+    }
+    subject, html, text, unsubscribe = render_confirm(message, BASE)
+    assert subject == "Confirm your PricePulse watch: KALLAX shelf"
+    assert unsubscribe == f"{BASE}/watches/unsubscribe/tok-123"
+    for body in (html, text):
+        assert f"{BASE}/watches/confirm/tok-123" in body and unsubscribe in body
+        assert "KALLAX shelf" in body and "10.0%" in body

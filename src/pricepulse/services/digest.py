@@ -14,6 +14,8 @@ RETAILER_FLAG_CAP = 50
 class Digest:
     source: str
     date: str
+    recipient: str
+    base_url: str
     new_deals: list[AlertOut] = field(default_factory=list)
     price_drops: list[AlertOut] = field(default_factory=list)
     retailer_flags: list[AlertOut] = field(default_factory=list)
@@ -23,6 +25,12 @@ class Digest:
     @property
     def is_empty(self) -> bool:
         return not (self.new_deals or self.price_drops or self.retailer_flags or self.watch_hits)
+
+    @property
+    def watcher_only(self) -> bool:
+        return bool(self.watch_hits) and not (
+            self.new_deals or self.price_drops or self.retailer_flags
+        )
 
     @property
     def subject(self) -> str:
@@ -36,7 +44,9 @@ def _sorted(alerts: list[AlertOut]) -> list[AlertOut]:
     return sorted(alerts, key=lambda a: (-a.discount_pct, a.name))
 
 
-def build_digests(result: ProcessResult, default_recipients: list[str]) -> dict[str, Digest]:
+def build_digests(
+    result: ProcessResult, default_recipients: list[str], base_url: str
+) -> dict[str, Digest]:
     if result.skipped or not result.alerts:
         return {}
     today = datetime.now(UTC).strftime("%Y-%m-%d")
@@ -48,7 +58,9 @@ def build_digests(result: ProcessResult, default_recipients: list[str]) -> dict[
     digests: dict[str, Digest] = {}
 
     def digest_for(email: str) -> Digest:
-        return digests.setdefault(email, Digest(source=result.source, date=today))
+        return digests.setdefault(
+            email, Digest(source=result.source, date=today, recipient=email, base_url=base_url)
+        )
 
     for email in default_recipients:
         d = digest_for(email)

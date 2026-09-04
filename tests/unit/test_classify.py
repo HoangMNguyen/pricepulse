@@ -57,8 +57,12 @@ def test_retailer_flag_transition() -> None:
 def test_watch_hit_uses_per_watch_threshold() -> None:
     prev = {1: PrevObservation(Decimal("100.00"), False)}
     watches = {
-        1: [WatchRow(1, "a@example.com", Decimal("5")), WatchRow(1, "b@example.com", Decimal("50"))]
+        1: [
+            WatchRow(1, "a@example.com", Decimal("5"), "tok-a"),
+            WatchRow(1, "b@example.com", Decimal("50"), "tok-b"),
+        ]
     }
     out = classify_alerts([(1, snap("90.00"))], prev, watches, T)
     assert kinds(out) == ["watch_hit"]
     assert out[0].emails == ["a@example.com"]
+    assert out[0].watch_tokens == {"a@example.com": "tok-a"}

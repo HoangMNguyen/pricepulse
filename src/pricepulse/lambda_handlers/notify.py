@@ -18,7 +18,7 @@ def handler(event: dict, _context: object) -> dict:
     if result.skipped or not result.alerts:
         logger.info("nothing to send", key=result.raw_object_key, skipped=result.skipped)
         return {"sent": 0}
-    digests = build_digests(result, settings.alert_recipients)
+    digests = build_digests(result, settings.alert_recipients, settings.public_base_url)
     if not settings.ses_sender:
         raise RuntimeError("SES_SENDER is not configured")
     sent = send_digests(digests, settings.ses_sender)

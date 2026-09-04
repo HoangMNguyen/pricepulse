@@ -265,22 +265,21 @@ def test_runs_and_stats(client: TestClient) -> None:
     assert stats["uniqlo"]["on_sale"] == 1
 
 
-def test_watch_flow_requires_api_key(client: TestClient) -> None:
+def test_watch_flow_public_post_keyed_admin(client: TestClient) -> None:
     pid = client.get("/v1/deals", params={"limit": 1}).json()["items"][0]["product_id"]
     body = {"product_id": pid, "email": "w@example.com", "min_discount_pct": 5}
-    assert client.post("/v1/watches", json=body).status_code == 401
-    assert client.post("/v1/watches", json=body, headers={"X-API-Key": "wrong"}).status_code == 401
-    created = client.post("/v1/watches", json=body, headers=HEADERS)
-    assert created.status_code == 201 and created.json()["email"] == "w@example.com"
-    assert client.post("/v1/watches", json=body, headers=HEADERS).status_code == 409
-    assert (
-        client.post("/v1/watches", json={**body, "product_id": 999999}, headers=HEADERS).status_code
-        == 404
-    )
+    created = client.post("/v1/watches", json=body)  # no key needed
+    assert created.status_code == 202
+    assert created.json() == {"email": "w@example.com", "product_id": pid, "min_discount_pct": "5"}
+    assert client.post("/v1/watches", json=body).status_code == 409
+    assert client.post("/v1/watches", json={**body, "product_id": 999999}).status_code == 404
+    assert client.get("/v1/watches", params={"email": "w@example.com"}).status_code == 401
     listed = client.get("/v1/watches", params={"email": "w@example.com"}, headers=HEADERS).json()
-    assert [w["id"] for w in listed] == [created.json()["id"]]
-    assert client.delete(f"/v1/watches/{created.json()['id']}", headers=HEADERS).status_code == 204
-    assert client.delete(f"/v1/watches/{created.json()['id']}", headers=HEADERS).status_code == 404
+    assert len(listed) == 1 and listed[0]["confirmed_at"] is None
+    wid = listed[0]["id"]
+    assert client.delete(f"/v1/watches/{wid}").status_code == 401
+    assert client.delete(f"/v1/watches/{wid}", headers=HEADERS).status_code == 204
+    assert client.delete(f"/v1/watches/{wid}", headers=HEADERS).status_code == 404
 
 
 def test_dashboard_renders(client: TestClient) -> None:
