@@ -31,6 +31,7 @@ flowchart LR
   `SECURITY DEFINER` helpers. ([ADR-0002](docs/adr/0002-aurora-serverless-v2-scale-to-zero.md), [ADR-0004](docs/adr/0004-partitioning-and-materialized-summary.md))
 - **Idempotent ETL.** Raw payloads are the source of truth (S3, gzip JSON). Processing is keyed
   on the object key: re-delivering an event is a no-op; a failed run can be retried.
+- **PostgreSQL on purpose.** DynamoDB would be cheaper and simpler for this access pattern; the comparison and why Postgres still wins for this project are in [ADR-0008](docs/adr/0008-postgresql-not-dynamodb.md).
 - **History-derived discounts.** UNIQLO never exposes the original price — only a `discount`
   flag — so `discount_pct` is computed against the 90-day mode of prior observations, uniformly for
   both retailers. ([ADR-0005](docs/adr/0005-history-derived-discount-and-single-db-role-for-api.md))
