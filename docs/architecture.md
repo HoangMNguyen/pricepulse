@@ -26,8 +26,8 @@
 
 | Function | Trigger | VPC | DB user | Memory / timeout | Notes |
 | --- | --- | --- | --- | --- | --- |
-| scrape | EventBridge Scheduler | no | — | 512 MB / 300 s | reserved concurrency 2 |
-| process | S3 ObjectCreated | yes | app_rw | 1024 MB / 600 s | reserved concurrency 1; destinations |
+| scrape | EventBridge Scheduler | no | — | 512 MB / 300 s | |
+| process | S3 ObjectCreated | yes | app_rw | 1024 MB / 600 s | destinations; serialized by schedule + `claim_run` |
 | notify | Lambda Destination | no | — | 256 MB / 60 s | SES sandbox: recipients must be verified |
 | api | API Gateway HTTP API | yes | app_rw | 1024 MB / 29 s | read routes are `READ ONLY` transactions |
 | migrate | manual / deploy.yml | yes | app_migrator | 512 MB / 300 s | `alembic upgrade head` |

@@ -42,19 +42,20 @@ data "aws_iam_policy_document" "scrape" {
 }
 
 module "scrape" {
-  source               = "../../modules/lambda_function"
-  name                 = "${local.name}-scrape"
-  handler              = "pricepulse.lambda_handlers.scrape.handler"
-  package_path         = var.app_package
-  layer_arns           = [aws_lambda_layer_version.deps.arn]
-  memory_mb            = 512
-  timeout_s            = 300
-  reserved_concurrency = 2
-  role_policy_json     = data.aws_iam_policy_document.scrape.json
-  environment          = merge(local.common_env, { RAW_BUCKET = aws_s3_bucket.raw.bucket })
+  source           = "../../modules/lambda_function"
+  name             = "${local.name}-scrape"
+  handler          = "pricepulse.lambda_handlers.scrape.handler"
+  package_path     = var.app_package
+  layer_arns       = [aws_lambda_layer_version.deps.arn]
+  memory_mb        = 512
+  timeout_s        = 300
+  role_policy_json = data.aws_iam_policy_document.scrape.json
+  environment      = merge(local.common_env, { RAW_BUCKET = aws_s3_bucket.raw.bucket })
 }
 
 # --- process: in VPC, S3 -> Postgres, returns alerts -------------------------------------------
+# No reserved concurrency: new accounts have a 10-execution quota, and reserving any of it is
+# rejected. Runs are serialized in practice by the staggered schedule and by `claim_run`.
 
 data "aws_iam_policy_document" "process" {
   statement {
@@ -76,18 +77,17 @@ data "aws_iam_policy_document" "process" {
 }
 
 module "process" {
-  source               = "../../modules/lambda_function"
-  name                 = "${local.name}-process"
-  handler              = "pricepulse.lambda_handlers.process.handler"
-  package_path         = var.app_package
-  layer_arns           = [aws_lambda_layer_version.deps.arn]
-  memory_mb            = 1024
-  timeout_s            = 600
-  reserved_concurrency = 1
-  in_vpc               = true
-  subnet_ids           = local.vpc.subnet_ids
-  security_group_ids   = local.vpc.security_group_ids
-  role_policy_json     = data.aws_iam_policy_document.process.json
+  source             = "../../modules/lambda_function"
+  name               = "${local.name}-process"
+  handler            = "pricepulse.lambda_handlers.process.handler"
+  package_path       = var.app_package
+  layer_arns         = [aws_lambda_layer_version.deps.arn]
+  memory_mb          = 1024
+  timeout_s          = 600
+  in_vpc             = true
+  subnet_ids         = local.vpc.subnet_ids
+  security_group_ids = local.vpc.security_group_ids
+  role_policy_json   = data.aws_iam_policy_document.process.json
   environment = merge(local.common_env, local.db_env, {
     RAW_BUCKET             = aws_s3_bucket.raw.bucket
     DB_USER                = "app_rw"

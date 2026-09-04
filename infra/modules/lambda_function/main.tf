@@ -90,5 +90,5 @@ resource "aws_lambda_function" "this" {
   # checkov:skip=CKV_AWS_173: env vars hold no secrets (API key excepted; rotated via terraform)
   # checkov:skip=CKV_AWS_272: code signing is out of scope for a single-developer project
   # checkov:skip=CKV_AWS_117: scrape/notify intentionally run outside the VPC (need internet)
-  # checkov:skip=CKV_AWS_115: reserved concurrency is set per function where it matters
+  # checkov:skip=CKV_AWS_115: reserved concurrency is unavailable under the 10-execution account quota
 }

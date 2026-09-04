@@ -27,6 +27,8 @@ for role in app_migrator app_rw app_ro; do
   run "DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '$role') THEN CREATE ROLE $role LOGIN; END IF; END \$\$"
   run "GRANT rds_iam TO $role"
 done
+# The master user is not a superuser: ALTER DEFAULT PRIVILEGES FOR ROLE requires membership.
+run "GRANT app_migrator TO pricepulse_admin"
 run "GRANT CONNECT ON DATABASE $DB TO app_migrator, app_rw, app_ro"
 run "GRANT ALL ON SCHEMA public TO app_migrator"
 run "GRANT USAGE ON SCHEMA public TO app_rw, app_ro"

@@ -20,9 +20,8 @@ uv pip install \
   --no-compile-bytecode \
   --quiet
 
-# Trim what Lambda never needs.
-find build/layer/python -type d \( -name '__pycache__' -o -name 'tests' -o -name '*.dist-info' \) \
-  -prune -exec rm -rf {} +
+# Trim what Lambda never needs. Keep *.dist-info: psycopg locates psycopg_binary via importlib.metadata.
+find build/layer/python -type d \( -name '__pycache__' -o -name 'tests' \) -prune -exec rm -rf {} +
 
 (cd build/layer && zip -qr ../layer.zip python)
 
