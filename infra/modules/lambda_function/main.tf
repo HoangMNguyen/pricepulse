@@ -37,7 +37,6 @@ resource "aws_iam_role_policy_attachment" "vpc" {
 }
 
 resource "aws_iam_role_policy" "extra" {
-  count  = var.role_policy_json == null ? 0 : 1
   name   = "${var.name}-inline"
   role   = aws_iam_role.this.id
   policy = var.role_policy_json

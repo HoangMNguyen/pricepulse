@@ -18,8 +18,7 @@ variable "layer_arns" {
 
 variable "role_policy_json" {
   type        = string
-  default     = null
-  description = "Optional inline IAM policy document granting this function's extra permissions."
+  description = "Inline IAM policy document granting this function's permissions beyond logging/VPC."
 }
 
 variable "environment" {
