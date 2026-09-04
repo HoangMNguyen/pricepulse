@@ -43,6 +43,15 @@ jobs:
       - run: uv sync --locked --no-dev
       - run: scripts/build_lambda.sh
 
+      - name: preflight Neon API key
+        # The neon provider only fails at apply time; an empty/invalid key must never reach a
+        # plan that also destroys resources.
+        run: |
+          set -euo pipefail
+          test -n "$NEON_API_KEY" || { echo "::error::NEON_API_KEY secret is not set"; exit 1; }
+          curl -fsS -H "Authorization: Bearer $NEON_API_KEY" https://console.neon.tech/api/v2/users/me -o /dev/null \
+            || { echo "::error::NEON_API_KEY was rejected by the Neon API"; exit 1; }
+
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.16.1"
