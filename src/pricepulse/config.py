@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     # Alerts.
     alert_recipients: Annotated[list[str], NoDecode] = Field(default_factory=list)
     alert_min_discount_pct: Decimal = Decimal("20")
+    retention_months: int = 13
     ses_sender: str | None = None
 
     # API.

@@ -108,6 +108,8 @@ product_price_summary = Table(
     Column("url", Text),
     Column("image_url", Text),
     Column("currency", String(3)),
+    Column("first_seen_at", DateTime(timezone=True)),
+    Column("last_seen_at", DateTime(timezone=True)),
     Column("current_price", Numeric(10, 2)),
     Column("current_observed_at", DateTime(timezone=True)),
     Column("retailer_sale_flag", Boolean),
@@ -120,5 +122,8 @@ product_price_summary = Table(
     Column("max_price_90d", Numeric(10, 2)),
     Column("observations_90d", BigInteger),
     Column("discount_pct", Numeric(5, 1)),
+    Column("previous_price", Numeric(10, 2)),
+    Column("previous_observed_at", DateTime(timezone=True)),
+    Column("savings", Numeric(10, 2)),
     info={"is_view": True},
 )

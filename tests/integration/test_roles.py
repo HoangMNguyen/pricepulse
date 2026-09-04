@@ -24,6 +24,7 @@ BOOTSTRAP_GRANTS = [
     "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_rw",
     "GRANT EXECUTE ON FUNCTION ensure_price_partition(TIMESTAMPTZ) TO app_rw",
     "GRANT EXECUTE ON FUNCTION refresh_price_summary() TO app_rw",
+    "GRANT EXECUTE ON FUNCTION prune_price_partitions(INT) TO app_rw",
     "GRANT SELECT ON product_price_summary TO app_rw",
 ]
 

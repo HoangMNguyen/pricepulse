@@ -188,3 +188,26 @@ def test_watch_hit_carries_watcher_email(conn: Engine, settings: Settings) -> No
     payload = result.to_dict()
     assert payload["alerts"][0]["new_price"] == "90.00"
     json.dumps(payload)  # Lambda return value must be JSON-serializable
+
+
+def test_prune_drops_only_old_partitions(conn: Engine) -> None:
+    with conn.begin() as c:
+        c.execute(text("SELECT ensure_price_partition(now() - INTERVAL '20 months')"))
+        c.execute(text("SELECT ensure_price_partition(now() - INTERVAL '12 months')"))
+        old_name = c.execute(
+            text(
+                "SELECT format('price_observation_%s', "
+                "to_char((now() - INTERVAL '20 months') AT TIME ZONE 'UTC', 'YYYY_MM'))"
+            )
+        ).scalar()
+        assert c.execute(text("SELECT to_regclass(:n) IS NOT NULL"), {"n": old_name}).scalar()
+        assert c.execute(text("SELECT prune_price_partitions(13)")).scalar() == 1
+        assert c.execute(text("SELECT to_regclass(:n) IS NULL"), {"n": old_name}).scalar()
+        current = c.execute(
+            text(
+                "SELECT format('price_observation_%s', "
+                "to_char(now() AT TIME ZONE 'UTC', 'YYYY_MM'))"
+            )
+        ).scalar()
+        assert c.execute(text("SELECT to_regclass(:n) IS NOT NULL"), {"n": current}).scalar()
+        assert c.execute(text("SELECT prune_price_partitions(13)")).scalar() == 0

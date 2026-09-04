@@ -186,12 +186,14 @@ def run_process(
 
     with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
         repo.refresh_summary(conn)
+        dropped = repo.prune_partitions(conn, settings.retention_months)
 
     log.info(
-        "processed %s: products=%d inserted=%d alerts=%d",
+        "processed %s: products=%d inserted=%d alerts=%d partitions_dropped=%d",
         key,
         len(snapshots),
         inserted,
         len(alerts),
+        dropped,
     )
     return ProcessResult(run_id, source_code, key, len(snapshots), inserted, alerts)

@@ -205,3 +205,8 @@ def fail_run(conn: Connection, run_id: int, error: str) -> None:
 def refresh_summary(conn: Connection) -> None:
     """Via the SECURITY DEFINER wrapper: the app role does not own the materialized view."""
     conn.execute(text("SELECT refresh_price_summary()"))
+
+
+def prune_partitions(conn: Connection, keep_months: int) -> int:
+    """Drop monthly partitions older than keep_months (SECURITY DEFINER helper). Returns count."""
+    return int(conn.execute(text("SELECT prune_price_partitions(:m)"), {"m": keep_months}).scalar())
