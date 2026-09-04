@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     # API.
     api_key: str = "dev-key"
     public_base_url: str = "http://localhost:8000"  # links in emails
+    cloudfront_distribution_id: str | None = None  # set on AWS: notify invalidates after each run
 
     @field_validator("alert_recipients", mode="before")
     @classmethod

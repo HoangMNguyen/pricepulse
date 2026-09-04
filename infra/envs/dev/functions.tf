@@ -110,6 +110,10 @@ data "aws_iam_policy_document" "notify" {
       [for i in aws_sesv2_email_identity.recipients : i.arn],
     )
   }
+  statement {
+    actions   = ["cloudfront:CreateInvalidation"]
+    resources = [aws_cloudfront_distribution.main.arn]
+  }
 }
 
 module "notify" {
@@ -122,8 +126,39 @@ module "notify" {
   timeout_s        = 60
   role_policy_json = data.aws_iam_policy_document.notify.json
   environment = merge(local.common_env, {
-    SES_SENDER       = var.ses_sender
-    ALERT_RECIPIENTS = join(",", var.alert_recipients)
+    SES_SENDER                 = var.ses_sender
+    ALERT_RECIPIENTS           = join(",", var.alert_recipients)
+    PUBLIC_BASE_URL            = local.site_url
+    CLOUDFRONT_DISTRIBUTION_ID = aws_cloudfront_distribution.main.id
+  })
+}
+
+# --- mailer: transactional mail (watch confirmations) from outbox/ objects -----------------------
+
+data "aws_iam_policy_document" "mailer" {
+  statement {
+    actions   = ["ses:SendEmail"]
+    resources = [aws_sesv2_email_identity.sender.arn]
+  }
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.raw.arn}/outbox/*"]
+  }
+}
+
+module "mailer" {
+  source           = "../../modules/lambda_function"
+  name             = "${local.name}-mailer"
+  handler          = "pricepulse.lambda_handlers.mailer.handler"
+  package_path     = var.app_package
+  layer_arns       = [aws_lambda_layer_version.deps.arn]
+  memory_mb        = 256
+  timeout_s        = 60
+  role_policy_json = data.aws_iam_policy_document.mailer.json
+  environment = merge(local.common_env, {
+    SES_SENDER      = var.ses_sender
+    RAW_BUCKET      = aws_s3_bucket.raw.bucket
+    PUBLIC_BASE_URL = local.site_url
   })
 }
 
@@ -137,6 +172,10 @@ data "aws_iam_policy_document" "api" {
   statement {
     actions   = ["kms:Decrypt"]
     resources = [data.aws_kms_alias.ssm.target_key_arn]
+  }
+  statement {
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.raw.arn}/outbox/*"]
   }
 }
 
@@ -153,6 +192,7 @@ module "api" {
     DATABASE_URL_SSM  = aws_ssm_parameter.database_url["app_rw"].name
     DB_CONNECT_WAIT_S = "20"
     API_KEY           = random_password.api_key.result
+    RAW_BUCKET        = aws_s3_bucket.raw.bucket
   })
 }
 

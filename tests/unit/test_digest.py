@@ -127,3 +127,31 @@ def test_render_confirm_has_both_links() -> None:
     for body in (html, text):
         assert f"{BASE}/watches/confirm/tok-123" in body and unsubscribe in body
         assert "KALLAX shelf" in body and "10.0%" in body
+
+
+@mock_aws
+def test_notify_invalidates_cdn_when_data_landed(monkeypatch) -> None:  # noqa: ANN001
+    calls: list[dict] = []
+
+    class _CF:
+        def create_invalidation(self, **kwargs: object) -> dict:
+            calls.append(kwargs)
+            return {"Invalidation": {"Id": "I1"}}
+
+    monkeypatch.setattr("boto3.client", lambda name, **_: _CF() if name == "cloudfront" else None)
+    os.environ.update(CLOUDFRONT_DISTRIBUTION_ID="E123", AWS_REGION="us-east-1")
+    get_settings.cache_clear()
+    try:
+        # data landed but nothing to send: still invalidates, sends nothing
+        assert notify.handler({"responsePayload": result([]).to_dict()}, _Ctx()) == {"sent": 0}
+        assert len(calls) == 1
+        assert calls[0]["DistributionId"] == "E123"
+        assert calls[0]["InvalidationBatch"]["Paths"]["Items"] == ["/*"]
+        assert calls[0]["InvalidationBatch"]["CallerReference"] == "raw/ikea/x.json.gz"
+        # re-delivered event (skipped) touches nothing
+        skipped = {"responsePayload": result([], skipped=True).to_dict()}
+        assert notify.handler(skipped, _Ctx()) == {"sent": 0}
+        assert len(calls) == 1
+    finally:
+        os.environ.pop("CLOUDFRONT_DISTRIBUTION_ID", None)
+        get_settings.cache_clear()

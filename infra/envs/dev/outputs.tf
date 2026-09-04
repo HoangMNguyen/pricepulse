@@ -47,3 +47,16 @@ output "function_names" {
     migrate = module.migrate.function_name
   }
 }
+
+output "site_url" {
+  value = local.site_url
+}
+
+output "cloudfront_distribution_id" {
+  value = aws_cloudfront_distribution.main.id
+}
+
+output "name_servers" {
+  description = "Delegate the domain to these at the registrar (only when Terraform created the zone)."
+  value       = try(aws_route53_zone.main[0].name_servers, null)
+}

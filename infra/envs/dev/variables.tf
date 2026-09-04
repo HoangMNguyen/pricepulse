@@ -42,3 +42,15 @@ variable "layer_package" {
   type    = string
   default = "../../../build/layer.zip"
 }
+
+variable "domain_name" {
+  type        = string
+  description = "Custom domain for the site (apex; www is added). null = *.cloudfront.net only."
+  default     = null
+}
+
+variable "hosted_zone_id" {
+  type        = string
+  description = "Existing Route 53 zone for domain_name (e.g. registered through Route 53). null = create one."
+  default     = null
+}

@@ -42,12 +42,33 @@ resource "aws_s3_bucket_lifecycle_configuration" "raw" {
       days_after_initiation = 7
     }
   }
+  rule {
+    id     = "expire-outbox"
+    status = "Enabled"
+    filter {
+      prefix = "outbox/"
+    }
+    expiration {
+      days = 7
+    }
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
 }
 
 resource "aws_lambda_permission" "s3_invoke_process" {
   statement_id  = "AllowS3Invoke"
   action        = "lambda:InvokeFunction"
   function_name = module.process.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.raw.arn
+}
+
+resource "aws_lambda_permission" "s3_invoke_mailer" {
+  statement_id  = "AllowS3Invoke"
+  action        = "lambda:InvokeFunction"
+  function_name = module.mailer.function_name
   principal     = "s3.amazonaws.com"
   source_arn    = aws_s3_bucket.raw.arn
 }
@@ -60,5 +81,11 @@ resource "aws_s3_bucket_notification" "raw" {
     filter_prefix       = "raw/"
     filter_suffix       = ".json.gz"
   }
-  depends_on = [aws_lambda_permission.s3_invoke_process]
+  lambda_function {
+    lambda_function_arn = module.mailer.function_arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "outbox/"
+    filter_suffix       = ".json"
+  }
+  depends_on = [aws_lambda_permission.s3_invoke_process, aws_lambda_permission.s3_invoke_mailer]
 }

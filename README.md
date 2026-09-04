@@ -2,8 +2,9 @@
 
 Tracks every IKEA US offer and the full UNIQLO US catalog once a day, stores the price history in
 PostgreSQL, detects sales two ways (what the retailer flags *and* what the history shows), and
-emails a digest. Built to demonstrate production-grade **FastAPI + PostgreSQL + AWS serverless**
-engineering at a ~$0/month running cost.
+emails a digest. Anyone can watch a product (email double opt-in) and browse, sort, filter, and
+share deal pages. Built to demonstrate production-grade **FastAPI + PostgreSQL + AWS serverless**
+engineering at a < $5/month running cost.
 
 ![deals dashboard](docs/img/deals.webp)
 
@@ -18,8 +19,11 @@ flowchart LR
   PROC -->|Lambda Destination<br/>on_success| NOTI[Lambda notify]
   NOTI --> SES[SES]
   PROC -->|on_failure| SNS[SNS alarms]
-  APIGW[API Gateway HTTP API] --> API[Lambda api<br/>FastAPI + Mangum]
+  CF[CloudFront<br/>custom domain, TLS, cache] --> APIGW[API Gateway HTTP API] --> API[Lambda api<br/>FastAPI + Mangum]
   API --> DB
+  API -->|outbox/*.json| S3
+  S3 -->|ObjectCreated| MAIL[Lambda mailer<br/>watch confirmations] --> SES
+  NOTI -->|invalidate /*| CF
   MIG[Lambda migrate<br/>alembic] --> DB
 ```
 
@@ -35,6 +39,12 @@ flowchart LR
 - **History-derived discounts.** UNIQLO never exposes the original price — only a `discount`
   flag — so `discount_pct` is computed against the 90-day mode of prior observations, uniformly for
   both retailers. ([ADR-0005](docs/adr/0005-history-derived-discount-and-single-db-role-for-api.md))
+- **Cache in front, not a bigger database.** Pages set `Cache-Control: s-maxage=86400`; CloudFront
+  serves them and `notify` invalidates `/*` after each run, so visitors almost never wake the
+  database. Watch/confirm routes bypass the cache. ([ADR-0010](docs/adr/0010-public-watches-and-cdn.md))
+- **Public watches, double opt-in.** `POST /v1/watches` needs no key: it writes an `outbox/` object,
+  the `mailer` Lambda sends a confirmation, and only confirmed watches produce alerts. Every alert
+  carries an unsubscribe link and a `List-Unsubscribe` header.
 
 More: [architecture.md](docs/architecture.md) · [ADRs](docs/adr) · [skills matrix](docs/skills-matrix.md) · [runbook](docs/RUNBOOK.md)
 
@@ -51,8 +61,10 @@ make serve                 # http://localhost:8000  (dashboard)  http://localhos
 ```bash
 curl -s 'localhost:8000/v1/deals?min_discount=30&limit=3' | jq .
 curl -s 'localhost:8000/v1/products/2/history?days=90' | jq .
-curl -s -X POST localhost:8000/v1/watches -H 'X-API-Key: dev-key' -H 'content-type: application/json' \
-     -d '{"product_id": 2, "email": "you@example.com", "min_discount_pct": 10}'
+curl -s 'localhost:8000/v1/deals?sort=savings&category=Storage%20%26%20organization&max_price=50' | jq .total
+curl -s -X POST localhost:8000/v1/watches -H 'content-type: application/json' \
+     -d '{"product_id": 2, "email": "you@example.com", "min_discount_pct": 10}'   # 202 -> data/raw/outbox/...
+uv run pricepulse mailer --key outbox/watch_confirm/<date>/<id>.json --dry-run     # the confirmation email
 uv run pricepulse notify --key-json result.json --dry-run   # render the email digest
 make lint test             # ruff + pytest (unit + Postgres integration)
 ```
@@ -73,10 +85,30 @@ terraform -chdir=infra/envs/dev apply          # edit infra/envs/dev/dev.auto.tf
 scripts/bootstrap_db.sh                        # least-privilege DB roles via psql (one time)
 aws lambda invoke --function-name pricepulse-dev-migrate --cli-binary-format raw-in-base64-out --payload '{}' /dev/stdout
 aws lambda invoke --function-name pricepulse-dev-scrape  --cli-binary-format raw-in-base64-out --payload '{"source":"ikea"}' /dev/stdout
+terraform -chdir=infra/envs/dev output site_url  # https://<distribution>.cloudfront.net
 ```
 
+Optional custom domain: set `domain_name = "example.com"` in `dev.auto.tfvars` (and
+`hosted_zone_id` if the zone already exists), `apply`, then point the registrar at
+`terraform output name_servers`; ACM validates through DNS and the certificate attaches on the
+next apply once the delegation resolves.
+
+Email beyond your own verified addresses needs SES production access (otherwise the sandbox
+rejects unverified recipients):
+
+```bash
+aws sesv2 put-account-details --production-access-enabled --mail-type TRANSACTIONAL \
+  --website-url "$(terraform -chdir=infra/envs/dev output -raw site_url)" \
+  --use-case-description "Personal price-tracking site; double opt-in watch confirmations and daily digests to confirmed subscribers; unsubscribe links in every email." \
+  --additional-contact-email-addresses you@example.com --contact-language EN
+```
+
+(If the CLI rejects a flag, submit the same text through the SES console → Account dashboard →
+Request production access. AWS answers within ~24 h.)
+
 After that, GitHub Actions deploys `main` via OIDC (`AWS_DEPLOY_ROLE_ARN`, `TF_STATE_BUCKET` and
-`NEON_API_KEY` repository secrets; the `dev` environment can require a reviewer).
+`NEON_API_KEY` repository secrets; the `dev` environment can require a reviewer). Dependabot keeps
+Python, Terraform, and Actions dependencies current weekly.
 
 ## Cost
 
@@ -84,6 +116,8 @@ After that, GitHub Actions deploys `main` via OIDC (`AWS_DEPLOY_ROLE_ARN`, `TF_S
 | --- | --- |
 | Neon Free (PostgreSQL 16, 0.25 CU, suspends when idle; ≈ 15–20 of 100 included CU-hours) | $0 |
 | Lambda, API Gateway, EventBridge Scheduler, S3, SES, SNS, SSM parameters | ≈ $0 (always-free allowances / sub-cent) |
+| CloudFront (1 TB / 10 M requests always free), ACM certificate | $0 |
+| Route 53 hosted zone (only with a custom domain) | $0.50 |
 | CloudWatch logs (14-day retention) + alarms | < $0.50 |
 | NAT gateway, always-on database | **$0 — avoided by design** (would be ~$32 and ~$44) |
 

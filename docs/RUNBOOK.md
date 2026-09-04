@@ -45,6 +45,25 @@ Created automatically per run; partitions older than `RETENTION_MONTHS` (13) are
 by `prune_price_partitions()`. By hand: `sql "SELECT ensure_price_partition('2027-01-01T00:00:00Z')"`,
 `sql "SELECT prune_price_partitions(13)"`.
 
+## Watches
+
+```bash
+sql "SELECT email, product_id, confirmed_at, confirmation_sent_at FROM watch ORDER BY created_at DESC LIMIT 20"
+sql "DELETE FROM watch WHERE confirmed_at IS NULL AND confirmation_sent_at < now() - INTERVAL '30 days'"   # stale sign-ups
+aws s3 ls s3://$(terraform -chdir=infra/envs/dev output -raw raw_bucket)/outbox/watch_confirm/ --recursive | tail   # queued confirmations (7-day expiry)
+aws logs tail /aws/lambda/pricepulse-dev-mailer --since 1h --format short
+```
+
+Admin routes (`GET /v1/watches?email=`, `DELETE /v1/watches/{id}`) take `X-API-Key`; the key is
+`terraform output -raw api_key`.
+
+## CDN
+
+Pages are cached up to 24 h at CloudFront and invalidated by `notify` after every run. Force it:
+`aws cloudfront create-invalidation --distribution-id $(terraform -chdir=infra/envs/dev output -raw cloudfront_distribution_id) --paths '/*'`.
+Custom domain: `terraform output name_servers` → registrar; certificate status
+`aws acm list-certificates --query 'CertificateSummaryList[].[DomainName,Status]'`.
+
 ## SES
 
 Sandbox: sender and every recipient must be verified. `aws sesv2 get-email-identity --email-identity you@example.com --query VerificationStatus`.
@@ -52,8 +71,10 @@ Re-send verification: `aws sesv2 create-email-identity --email-identity you@exam
 
 ## Alarms
 
-`pricepulse-dev-alarms` (SNS) receives Lambda error alarms, the ACU alarm, and `on_failure`
-invocation records from `process` (JSON with `requestContext.condition` and the error payload).
+`pricepulse-dev-alarms` (SNS) receives Lambda error alarms, `no-scrape-<source>` (no scrape in
+24 h — the schedule or the scraper is broken), `low-products-<source>` (a run parsed fewer than 100
+products — the adapter is probably broken), and `on_failure` invocation records from `process`
+(JSON with `requestContext.condition` and the error payload).
 
 ## Database
 
