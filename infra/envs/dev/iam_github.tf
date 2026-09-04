@@ -19,10 +19,15 @@ data "aws_iam_policy_document" "github_assume" {
       variable = "token.actions.githubusercontent.com:aud"
       values   = ["sts.amazonaws.com"]
     }
+    # Jobs that target a GitHub environment present `sub = repo:<repo>:environment:<name>`;
+    # plain jobs on main present the ref form. Allow both, nothing else.
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:refs/heads/main"]
+      values = [
+        "repo:${var.github_repo}:ref:refs/heads/main",
+        "repo:${var.github_repo}:environment:dev",
+      ]
     }
   }
 }
