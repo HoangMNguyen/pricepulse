@@ -324,3 +324,41 @@ def test_dashboard_load_more_uses_cursor(client: TestClient) -> None:
     names = re.findall(r'<a href="/products/\d+">([^<]+)</a>', partial.text)
     assert names and first["items"][-1]["name"] < names[0]
     assert "KALLAX shelf 1</a>" not in partial.text
+
+
+def test_cache_headers(client: TestClient) -> None:
+    assert client.get("/v1/deals").headers["cache-control"] == "public, max-age=300, s-maxage=86400"
+    assert client.get("/").headers["cache-control"] == "public, max-age=300, s-maxage=86400"
+    pid = client.get("/v1/deals", params={"limit": 1}).json()["items"][0]["product_id"]
+    assert client.get(f"/products/{pid}").headers["cache-control"].startswith("public")
+    assert client.get("/health").headers["cache-control"] == "no-store"
+    assert client.get("/v1/products/999999").headers["cache-control"] == "no-store"
+    assert client.post("/v1/watches", json={}).headers["cache-control"] == "no-store"
+
+
+def test_html_error_pages(client: TestClient) -> None:
+    html = {"Accept": "text/html,application/xhtml+xml"}
+    missing = client.get("/products/999999", headers=html)
+    assert missing.status_code == 404 and "<h2>404 · Not found</h2>" in missing.text
+    assert client.get("/v1/products/999999", headers=html).json() == {"detail": "product not found"}
+    assert client.get("/products/999999").json() == {"detail": "product not found"}
+
+
+def test_database_unavailable_is_503_with_retry_after(
+    conn: Engine, settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from sqlalchemy.exc import OperationalError
+
+    def broken() -> Engine:
+        raise OperationalError("connect", {}, ConnectionRefusedError("down"))
+
+    monkeypatch.setattr("pricepulse.api.deps.get_engine", broken)
+    monkeypatch.setattr("pricepulse.api.deps.get_settings", lambda: settings)
+    with TestClient(create_app()) as client:
+        health = client.get("/health")
+        assert health.status_code == 503 and health.headers["retry-after"] == "5"
+        assert health.json() == {"detail": "database unavailable, retry shortly"}
+        assert health.headers["cache-control"] == "no-store"
+        home = client.get("/", headers={"Accept": "text/html"})
+        assert home.status_code == 503 and "Database unavailable" in home.text
+        assert home.headers["retry-after"] == "5"
