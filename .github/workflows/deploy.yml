@@ -52,7 +52,7 @@ jobs:
           curl -fsS -H "Authorization: Bearer $NEON_API_KEY" https://console.neon.tech/api/v2/users/me -o /dev/null \
             || { echo "::error::NEON_API_KEY was rejected by the Neon API"; exit 1; }
 
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: "1.16.1"
           terraform_wrapper: false
