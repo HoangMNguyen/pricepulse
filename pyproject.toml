@@ -1,0 +1,69 @@
+[project]
+name = "pricepulse"
+version = "0.1.0"
+description = "IKEA + UNIQLO US price tracker: FastAPI, PostgreSQL, AWS serverless"
+authors = [
+    { name = "Hoang M Nguyen", email = "hoangmnguyen.work@gmail.com" }
+]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi",
+    "mangum",
+    "jinja2",
+    "pydantic-settings",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]",
+    "alembic",
+    "httpx",
+    "tenacity",
+    "typer",
+    "aws-lambda-powertools",
+    "boto3",
+    "pydantic[email]>=2.13.5",
+]
+
+[project.scripts]
+pricepulse = "pricepulse.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "moto[s3,ses]",
+    "ruff",
+    "pre-commit",
+    "uvicorn",
+    "checkov",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "pricepulse"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "S", "PL"]
+ignore = ["PLR0913", "PLR0917", "PLC0415"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Query", "fastapi.Header", "fastapi.Depends", "typer.Option"]
+
+[tool.ruff.lint.isort]
+known-third-party = ["alembic"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "PLR2004", "S105", "S106"]
+"scripts/*" = ["S603", "S607"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: needs Postgres"]

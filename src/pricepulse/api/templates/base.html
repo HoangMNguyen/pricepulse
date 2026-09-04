@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}PricePulse{% endblock %}</title>
+  <link rel="stylesheet" href="{{ cdn.pico[0] }}" integrity="{{ cdn.pico[1] }}" crossorigin="anonymous">
+  <script src="{{ cdn.htmx[0] }}" integrity="{{ cdn.htmx[1] }}" crossorigin="anonymous" defer></script>
+  <style>
+    .badge { font-size: .75rem; padding: .1rem .4rem; border-radius: .3rem; background: var(--pico-muted-border-color); }
+    .badge.ikea { background: #ffdb00; color: #0058a3; }
+    .badge.uniqlo { background: #ff0000; color: #fff; }
+    .pct { font-weight: 700; color: #1a7f37; }
+    td.num { text-align: right; white-space: nowrap; }
+    .htmx-request .htmx-indicator { display: inline; }
+    .htmx-indicator { display: none; }
+  </style>
+</head>
+<body>
+<main class="container">
+  <nav>
+    <ul><li><strong><a href="/">PricePulse</a></strong></li></ul>
+    <ul>
+      <li><a href="/docs">API docs</a></li>
+      <li><a href="https://github.com/HoangMNguyen/pricepulse">Source</a></li>
+    </ul>
+  </nav>
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: pricepulse
+          POSTGRES_PASSWORD: pricepulse
+          POSTGRES_DB: pricepulse
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pricepulse"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://pricepulse:pricepulse@localhost:5432/pricepulse_test
+      AWS_REGION: us-east-1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -q
+
+  infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.1"
+      - run: terraform -chdir=infra fmt -check -recursive
+      - run: terraform -chdir=infra/envs/dev init -backend=false -input=false
+      - run: terraform -chdir=infra/envs/dev validate
+      - run: terraform -chdir=infra/bootstrap init -backend=false -input=false
+      - run: terraform -chdir=infra/bootstrap validate
+      - uses: astral-sh/setup-uv@v6
+      - run: uvx checkov -d infra --quiet --compact --framework terraform

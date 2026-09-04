@@ -1,0 +1,64 @@
+name: deploy
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: dev # configure a required reviewer on this environment for a manual apply gate
+    env:
+      AWS_REGION: us-east-1
+      TF_IN_AUTOMATION: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked --no-dev
+      - run: scripts/build_lambda.sh
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.1"
+          terraform_wrapper: false
+
+      - name: terraform init
+        run: >
+          terraform -chdir=infra/envs/dev init -input=false
+          -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
+
+      - name: terraform plan
+        run: terraform -chdir=infra/envs/dev plan -input=false -out=tf.plan
+
+      - name: terraform apply
+        run: terraform -chdir=infra/envs/dev apply -input=false -auto-approve tf.plan
+
+      - name: run migrations
+        run: |
+          set -euo pipefail
+          fn=$(terraform -chdir=infra/envs/dev output -json function_names | jq -r .migrate)
+          aws lambda invoke --function-name "$fn" --cli-binary-format raw-in-base64-out \
+            --payload '{}' response.json >/dev/null
+          cat response.json
+          if grep -q '"errorMessage"' response.json; then
+            echo "::error::migration failed"; exit 1
+          fi

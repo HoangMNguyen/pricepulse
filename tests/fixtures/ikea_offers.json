@@ -1,0 +1,958 @@
+{
+ "usergroup": "[]",
+ "testActivationTriggers": {},
+ "searchResultPage": {
+  "products": {
+   "badge": 331,
+   "filters": [
+    {
+     "selected": false,
+     "values": [
+      {
+       "name": "Storage & organization",
+       "id": "st001",
+       "count": 263,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Home decor & accessories",
+       "id": "de001",
+       "count": 10,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Kitchenware & tableware",
+       "id": "kt001",
+       "count": 2,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Storage containers, organizers & baskets",
+       "id": "st007",
+       "count": 9,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Beds & mattresses",
+       "id": "bm001",
+       "count": 22,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Bathroom: furniture, supplies & more",
+       "id": "ba001",
+       "count": 34,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Kitchen, appliances & supplies",
+       "id": "ka001",
+       "count": 7,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Baby & kids",
+       "id": "bc001",
+       "count": 98,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Tables & chairs",
+       "id": "fu002",
+       "count": 3,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Sofas & armchairs",
+       "id": "700640",
+       "count": 2,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Desks & desk chairs",
+       "id": "fu004",
+       "count": 13,
+       "selected": false,
+       "enabled": true
+      }
+     ],
+     "id": "CATEGORIES",
+     "name": "Category",
+     "collapsed": false,
+     "type": "CLASS_FILTER",
+     "parameter": "f-subcategories",
+     "eventAction": "filter_by_category",
+     "enabled": true,
+     "actionTokens": []
+    },
+    {
+     "selected": true,
+     "values": [
+      {
+       "name": "IKEA Family price",
+       "id": "FAMILY_PRICE",
+       "count": 331,
+       "selected": true,
+       "enabled": true
+      }
+     ],
+     "id": "OFFERS",
+     "name": "Offers",
+     "collapsed": false,
+     "type": "CLASS_FILTER",
+     "parameter": "f-offers",
+     "eventAction": "filter_by_offers",
+     "enabled": true,
+     "actionTokens": []
+    }
+   ],
+   "sortOrders": {
+    "name": "Sort",
+    "values": [
+     {
+      "id": "RELEVANCE",
+      "name": "Best match",
+      "eventAction": "sort_by_relevance",
+      "selected": false
+     },
+     {
+      "id": "PRICE_LOW_TO_HIGH",
+      "name": "Price: low to high",
+      "eventAction": "sort_by_price_low",
+      "selected": true
+     },
+     {
+      "id": "PRICE_HIGH_TO_LOW",
+      "name": "Price: high to low",
+      "eventAction": "sort_by_price_high",
+      "selected": false
+     },
+     {
+      "id": "RATING",
+      "name": "Customer rating",
+      "eventAction": "sort_by_rating",
+      "selected": false
+     },
+     {
+      "id": "NAME_ASCENDING",
+      "name": "Name",
+      "eventAction": "sort_by_name",
+      "selected": false
+     },
+     {
+      "id": "MOST_POPULAR",
+      "name": "Most popular",
+      "eventAction": "sort_by_most_popular",
+      "selected": false
+     },
+     {
+      "id": "WIDTH",
+      "name": "Width",
+      "eventAction": "sort_by_width",
+      "selected": false
+     },
+     {
+      "id": "HEIGHT",
+      "name": "Height",
+      "eventAction": "sort_by_height",
+      "selected": false
+     },
+     {
+      "id": "DEPTH",
+      "name": "Depth",
+      "eventAction": "sort_by_depth",
+      "selected": false
+     },
+     {
+      "id": "LENGTH",
+      "name": "Length",
+      "eventAction": "sort_by_length",
+      "selected": false
+     }
+    ]
+   },
+   "main": {
+    "items": [
+     {
+      "metadata": "v1;68;PRODUCT;00473546;products_main;",
+      "product": {
+       "name": "ALEX",
+       "typeName": "Drawer unit",
+       "itemMeasureReferenceText": "14 1/8x27 1/2 \"",
+       "mainImageUrl": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-white__0977775_pe813763_s5.jpg",
+       "pipUrl": "https://www.ikea.com/us/en/p/alex-drawer-unit-white-00473546/",
+       "filterClass": "chest of drawers",
+       "allProductImage": [
+        {
+         "altText": "White ALEX 5-drawer chest. Minimalist design, smooth, square edges, black handles.",
+         "type": "MAIN_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-white__0977775_pe813763_s5.jpg"
+        },
+        {
+         "altText": "Home office area with white ALEX drawers, desk, and chair. Decorated with origami and art.",
+         "type": "CONTEXT_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-white__1426357_pe979761_s5.jpg"
+        },
+        {
+         "altText": "Open desk drawer with office supplies, including pens, stapler, and tape, showcasing organised storage.",
+         "type": "FUNCTIONAL_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-white__1395271_pe966923_s5.jpg"
+        },
+        {
+         "altText": "ALEX Drawer unit, white, 14 1/8x27 1/2 \"",
+         "type": "NON_STANDARDIZED_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-white__1435600_pe983893_s5.jpg"
+        },
+        {
+         "altText": "Open white desk drawer with black stapler, notebook, and pen. Finished back and sides.",
+         "type": "FUNCTIONAL_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-white__0995610_pe821781_s5.jpg"
+        },
+        {
+         "altText": "Modern, sleek, black-and-white drawer unit; smooth, clean lines; minimalist design; high-quality finish.",
+         "type": "QUALITY_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-white__0995620_pe821790_s5.jpg"
+        }
+       ],
+       "id": "00473546",
+       "itemNoGlobal": "00473546",
+       "onlineSellable": true,
+       "lastChance": false,
+       "gprDescription": {
+        "numberOfVariants": 2,
+        "variants": [
+         {
+          "id": "60473548",
+          "pipUrl": "https://www.ikea.com/us/en/p/alex-drawer-unit-black-brown-60473548/",
+          "imageUrl": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-black-brown__0977786_pe813770_s5.jpg",
+          "imageAlt": "ALEX Drawer unit, black-brown, 14 1/8x27 1/2 \"",
+          "quickFacts": [],
+          "availability": [],
+          "ratingValue": 4.5,
+          "ratingCount": 3650,
+          "name": "ALEX",
+          "typeName": "Drawer unit",
+          "itemMeasureReferenceText": "14 1/8x27 1/2 \"",
+          "mainImageUrl": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-black-brown__0977786_pe813770_s5.jpg",
+          "mainImageAlt": "An ALEX drawer unit in dark grey. It has five drawers with a sleek, modern design standing upright.",
+          "contextualImageUrl": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-black-brown__1426366_pe979764_s5.jpg",
+          "contextualImageAlt": "Cosy home office setup with dark wood ALEX desk, white chair, and shelves adorned with art supplies and decor.",
+          "itemNoGlobal": "60473548",
+          "onlineSellable": true,
+          "lastChance": false,
+          "badge": {
+           "type": "TOP_SELLER",
+           "text": "Best seller"
+          },
+          "itemNo": "60473548",
+          "itemType": "ART",
+          "salesPrice": {
+           "currencyCode": "USD",
+           "numeral": 89.99,
+           "current": {
+            "prefix": "$",
+            "wholeNumber": "89",
+            "separator": ".",
+            "decimals": "99",
+            "suffix": "",
+            "isRegularCurrency": false,
+            "style": "SUPER"
+           },
+           "previous": {
+            "prefix": "$",
+            "wholeNumber": "115",
+            "separator": ".",
+            "decimals": "00",
+            "suffix": "",
+            "isRegularCurrency": false,
+            "style": "SUPER"
+           },
+           "isBreathTaking": false,
+           "discount": "",
+           "discountAmount": {
+            "prefix": "$",
+            "wholeNumber": "25",
+            "separator": ".",
+            "decimals": "01",
+            "suffix": "",
+            "isRegularCurrency": false,
+            "style": "SUPER"
+           },
+           "discountPercentage": 21.0,
+           "prevPriceLabel": "Regular price",
+           "validFrom": "2026-08-03",
+           "validTo": "2026-09-07",
+           "availabilityDisclaimer": "Price valid Aug 3, 2026 - Sep 7, 2026 or while supply lasts",
+           "tag": "FAMILY_PRICE",
+           "tagText": "IKEA Family price",
+           "priceText": "Price",
+           "tags": [
+            "FAMILY_PRICE"
+           ],
+           "tagWithText": {
+            "tag": "FAMILY_PRICE",
+            "text": "IKEA Family price"
+           }
+          },
+          "optimizelyAttributes": {
+           "PRODUCT_TYPE": "standard"
+          },
+          "validDesignText": "black-brown",
+          "allProductImage": [
+           {
+            "altText": "An ALEX drawer unit in dark grey. It has five drawers with a sleek, modern design standing upright.",
+            "type": "MAIN_PRODUCT_IMAGE",
+            "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-black-brown__0977786_pe813770_s5.jpg"
+           },
+           {
+            "altText": "Cosy home office setup with dark wood ALEX desk, white chair, and shelves adorned with art supplies and decor.",
+            "type": "CONTEXT_PRODUCT_IMAGE",
+            "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-black-brown__1426366_pe979764_s5.jpg"
+           },
+           {
+            "altText": "ALEX Drawer unit, black-brown, 14 1/8x27 1/2 \"",
+            "type": "FUNCTIONAL_PRODUCT_IMAGE",
+            "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-black-brown__1287819_pe933972_s5.jpg"
+           },
+           {
+            "altText": "A desk drawer with a black binder, pen, and notebooks. The drawer slides are visible, showing how it opens smoothly.",
+            "type": "FUNCTIONAL_PRODUCT_IMAGE",
+            "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-black-brown__0995608_pe821779_s5.jpg"
+           },
+           {
+            "altText": "Close-up of modern, sleek black drawer unit; clean lines and quality finish.",
+            "type": "QUALITY_PRODUCT_IMAGE",
+            "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-black-brown__0476104_pe616052_s5.jpg"
+           }
+          ]
+         },
+         {
+          "id": "60588894",
+          "pipUrl": "https://www.ikea.com/us/en/p/alex-drawer-unit-dark-gray-60588894/",
+          "imageUrl": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-dark-gray__1411364_pe973103_s5.jpg",
+          "imageAlt": "ALEX Drawer unit, dark gray, 14 1/8x27 1/2 \"",
+          "quickFacts": [],
+          "availability": [],
+          "ratingValue": 4.5,
+          "ratingCount": 3650,
+          "name": "ALEX",
+          "typeName": "Drawer unit",
+          "itemMeasureReferenceText": "14 1/8x27 1/2 \"",
+          "mainImageUrl": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-dark-gray__1411364_pe973103_s5.jpg",
+          "mainImageAlt": "Grey ALEX 5-drawer unit, sleek modern design with particleboard and plastic edging.",
+          "contextualImageUrl": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-dark-gray__1415768_pe975389_s5.jpg",
+          "contextualImageAlt": "Industrial home office ALEX desk in dark grey, blending with drawers. Grey fabric chair, black wheels. Modern decor with wall art, clock.",
+          "itemNoGlobal": "60588894",
+          "onlineSellable": true,
+          "lastChance": false,
+          "itemNo": "60588894",
+          "itemType": "ART",
+          "salesPrice": {
+           "currencyCode": "USD",
+           "numeral": 89.99,
+           "current": {
+            "prefix": "$",
+            "wholeNumber": "89",
+            "separator": ".",
+            "decimals": "99",
+            "suffix": "",
+            "isRegularCurrency": false,
+            "style": "SUPER"
+           },
+           "previous": {
+            "prefix": "$",
+            "wholeNumber": "115",
+            "separator": ".",
+            "decimals": "00",
+            "suffix": "",
+            "isRegularCurrency": false,
+            "style": "SUPER"
+           },
+           "isBreathTaking": false,
+           "discount": "",
+           "discountAmount": {
+            "prefix": "$",
+            "wholeNumber": "25",
+            "separator": ".",
+            "decimals": "01",
+            "suffix": "",
+            "isRegularCurrency": false,
+            "style": "SUPER"
+           },
+           "discountPercentage": 21.0,
+           "prevPriceLabel": "Regular price",
+           "validFrom": "2026-08-03",
+           "validTo": "2026-09-07",
+           "availabilityDisclaimer": "Price valid Aug 3, 2026 - Sep 7, 2026 or while supply lasts",
+           "tag": "FAMILY_PRICE",
+           "tagText": "IKEA Family price",
+           "priceText": "Price",
+           "tags": [
+            "FAMILY_PRICE"
+           ],
+           "tagWithText": {
+            "tag": "FAMILY_PRICE",
+            "text": "IKEA Family price"
+           }
+          },
+          "optimizelyAttributes": {
+           "PRODUCT_TYPE": "standard"
+          },
+          "validDesignText": "dark gray",
+          "allProductImage": [
+           {
+            "altText": "Grey ALEX 5-drawer unit, sleek modern design with particleboard and plastic edging.",
+            "type": "MAIN_PRODUCT_IMAGE",
+            "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-dark-gray__1411364_pe973103_s5.jpg"
+           },
+           {
+            "altText": "Industrial home office ALEX desk in dark grey, blending with drawers. Grey fabric chair, black wheels. Modern decor with wall art, clock.",
+            "type": "CONTEXT_PRODUCT_IMAGE",
+            "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-dark-gray__1415768_pe975389_s5.jpg"
+           },
+           {
+            "altText": "ALEX Drawer unit, dark gray, 14 1/8x27 1/2 \"",
+            "type": "QUALITY_PRODUCT_IMAGE",
+            "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-dark-gray__1415240_pe975203_s5.jpg"
+           },
+           {
+            "altText": "Open desk drawer revealing notebook, pen, and stapler. Part of ALEX series, designed for organised storage with drawer stops.",
+            "type": "FUNCTIONAL_PRODUCT_IMAGE",
+            "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-dark-gray__1419395_pe976944_s5.jpg"
+           },
+           {
+            "altText": "A modern grey ALEX desk and storage units on blue platforms. The units feature multiple drawers and a clean, sleek design.",
+            "type": "NON_STANDARDIZED_PRODUCT_IMAGE",
+            "url": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-dark-gray__1419403_pe976950_s5.jpg"
+           }
+          ]
+         }
+        ],
+        "variations": [
+         {
+          "id": "colour",
+          "name": "Color",
+          "count": 3,
+          "values": [
+           {
+            "name": "black-brown",
+            "products": [
+             "60473548"
+            ]
+           },
+           {
+            "name": "dark gray",
+            "products": [
+             "60588894"
+            ]
+           },
+           {
+            "name": "white",
+            "products": [
+             "00473546"
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "colors": [
+        {
+         "name": "white",
+         "id": "10156",
+         "hex": "ffffff"
+        }
+       ],
+       "badge": {
+        "type": "TOP_SELLER",
+        "text": "Best seller"
+       },
+       "tag": "FAMILY_PRICE",
+       "tagText": "IKEA Family price",
+       "quickFacts": [],
+       "features": [],
+       "availability": [],
+       "ratingValue": 4.5,
+       "ratingCount": 3650,
+       "itemNo": "00473546",
+       "itemType": "ART",
+       "salesPrice": {
+        "currencyCode": "USD",
+        "numeral": 79.99,
+        "current": {
+         "prefix": "$",
+         "wholeNumber": "79",
+         "separator": ".",
+         "decimals": "99",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "previous": {
+         "prefix": "$",
+         "wholeNumber": "95",
+         "separator": ".",
+         "decimals": "00",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "isBreathTaking": false,
+        "discount": "",
+        "discountAmount": {
+         "prefix": "$",
+         "wholeNumber": "15",
+         "separator": ".",
+         "decimals": "01",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "discountPercentage": 15.0,
+        "prevPriceLabel": "Regular price",
+        "validFrom": "2026-08-03",
+        "validTo": "2026-09-07",
+        "availabilityDisclaimer": "Price valid Aug 3, 2026 - Sep 7, 2026 or while supply lasts",
+        "tag": "FAMILY_PRICE",
+        "tagText": "IKEA Family price",
+        "priceText": "Price",
+        "tags": [
+         "FAMILY_PRICE"
+        ],
+        "tagWithText": {
+         "tag": "FAMILY_PRICE",
+         "text": "IKEA Family price"
+        }
+       },
+       "contextualImageUrl": "https://www.ikea.com/us/en/images/products/alex-drawer-unit-white__1426357_pe979761_s5.jpg",
+       "contextualImageAlt": "Home office area with white ALEX drawers, desk, and chair. Decorated with origami and art.",
+       "mainImageAlt": "White ALEX 5-drawer chest. Minimalist design, smooth, square edges, black handles.",
+       "businessStructure": {
+        "homeFurnishingBusinessName": "Workspaces",
+        "homeFurnishingBusinessNo": "03",
+        "productAreaName": "Home desk storage",
+        "productAreaNo": "0343",
+        "productRangeAreaName": "Home workspace",
+        "productRangeAreaNo": "034"
+       },
+       "categoryPath": [
+        {
+         "name": "Storage & organization",
+         "key": "st001"
+        },
+        {
+         "name": "Filing cabinets",
+         "key": "10385"
+        },
+        {
+         "name": "Drawer units for home",
+         "key": "47081"
+        }
+       ],
+       "validDesignText": "white",
+       "heroBackoffData": {},
+       "optimizelyAttributes": {
+        "PRODUCT_TYPE": "standard"
+       }
+      },
+      "type": "PRODUCT",
+      "label": "Product",
+      "actionTokens": [],
+      "isBreakout": false
+     },
+     {
+      "metadata": "v1;1;PRODUCT;00582079;products_main;",
+      "product": {
+       "name": "TROFAST",
+       "typeName": "Lid",
+       "itemMeasureReferenceText": "15 \u00bex11 \"",
+       "mainImageUrl": "https://www.ikea.com/us/en/images/products/trofast-lid-white__1320543_pe941275_s5.jpg",
+       "pipUrl": "https://www.ikea.com/us/en/p/trofast-lid-white-00582079/",
+       "filterClass": "lids",
+       "allProductImage": [
+        {
+         "altText": "White TROFAST lid, square, plastic, fits 42x30 cm boxes, slight handle",
+         "type": "MAIN_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/trofast-lid-white__1320543_pe941275_s5.jpg"
+        }
+       ],
+       "id": "00582079",
+       "itemNoGlobal": "00582079",
+       "onlineSellable": true,
+       "lastChance": false,
+       "gprDescription": {
+        "numberOfVariants": 1,
+        "variants": [
+         {
+          "id": "30582068",
+          "pipUrl": "https://www.ikea.com/us/en/p/trofast-lid-white-30582068/",
+          "imageUrl": "https://www.ikea.com/us/en/images/products/trofast-lid-white__1320532_pe941264_s5.jpg",
+          "imageAlt": "TROFAST Lid, white, 7 \u00bex11 \"",
+          "quickFacts": [],
+          "availability": [],
+          "ratingValue": 4.6,
+          "ratingCount": 121,
+          "name": "TROFAST",
+          "typeName": "Lid",
+          "itemMeasureReferenceText": "7 \u00bex11 \"",
+          "mainImageUrl": "https://www.ikea.com/us/en/images/products/trofast-lid-white__1320532_pe941264_s5.jpg",
+          "mainImageAlt": "Is of a white, square TROFAST storage lid made from 50% recycled plastic. It a small vent and handle combination.",
+          "itemNoGlobal": "30582068",
+          "onlineSellable": true,
+          "lastChance": false,
+          "itemNo": "30582068",
+          "itemType": "ART",
+          "salesPrice": {
+           "currencyCode": "USD",
+           "numeral": 0.99,
+           "current": {
+            "prefix": "$",
+            "wholeNumber": "0",
+            "separator": ".",
+            "decimals": "99",
+            "suffix": "",
+            "isRegularCurrency": false,
+            "style": "SUPER"
+           },
+           "previous": {
+            "prefix": "$",
+            "wholeNumber": "1",
+            "separator": ".",
+            "decimals": "50",
+            "suffix": "",
+            "isRegularCurrency": false,
+            "style": "SUPER"
+           },
+           "isBreathTaking": false,
+           "discount": "",
+           "discountAmount": {
+            "prefix": "$",
+            "wholeNumber": "0",
+            "separator": ".",
+            "decimals": "51",
+            "suffix": "",
+            "isRegularCurrency": false,
+            "style": "SUPER"
+           },
+           "discountPercentage": 34.0,
+           "prevPriceLabel": "Regular price",
+           "validFrom": "2026-08-03",
+           "validTo": "2026-09-07",
+           "availabilityDisclaimer": "Price valid Aug 3, 2026 - Sep 7, 2026 or while supply lasts",
+           "tag": "FAMILY_PRICE",
+           "tagText": "IKEA Family price",
+           "priceText": "Price",
+           "tags": [
+            "FAMILY_PRICE"
+           ],
+           "tagWithText": {
+            "tag": "FAMILY_PRICE",
+            "text": "IKEA Family price"
+           }
+          },
+          "optimizelyAttributes": {
+           "PRODUCT_TYPE": "standard"
+          },
+          "validDesignText": "white",
+          "allProductImage": [
+           {
+            "altText": "Is of a white, square TROFAST storage lid made from 50% recycled plastic. It a small vent and handle combination.",
+            "type": "MAIN_PRODUCT_IMAGE",
+            "url": "https://www.ikea.com/us/en/images/products/trofast-lid-white__1320532_pe941264_s5.jpg"
+           }
+          ]
+         }
+        ],
+        "variations": [
+         {
+          "id": "size",
+          "name": "Size",
+          "count": 2,
+          "values": [
+           {
+            "name": "15 \u00bex11 \"",
+            "products": [
+             "00582079"
+            ]
+           },
+           {
+            "name": "7 \u00bex11 \"",
+            "products": [
+             "30582068"
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "colors": [
+        {
+         "name": "white",
+         "id": "10156",
+         "hex": "ffffff"
+        }
+       ],
+       "tag": "FAMILY_PRICE",
+       "tagText": "IKEA Family price",
+       "quickFacts": [],
+       "features": [],
+       "availability": [],
+       "ratingValue": 4.6,
+       "ratingCount": 121,
+       "itemNo": "00582079",
+       "itemType": "ART",
+       "salesPrice": {
+        "currencyCode": "USD",
+        "numeral": 0.99,
+        "current": {
+         "prefix": "$",
+         "wholeNumber": "0",
+         "separator": ".",
+         "decimals": "99",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "previous": {
+         "prefix": "$",
+         "wholeNumber": "2",
+         "separator": ".",
+         "decimals": "00",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "isBreathTaking": false,
+        "discount": "",
+        "discountAmount": {
+         "prefix": "$",
+         "wholeNumber": "1",
+         "separator": ".",
+         "decimals": "01",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "discountPercentage": 50.0,
+        "prevPriceLabel": "Regular price",
+        "validFrom": "2026-08-03",
+        "validTo": "2026-09-07",
+        "availabilityDisclaimer": "Price valid Aug 3, 2026 - Sep 7, 2026 or while supply lasts",
+        "tag": "FAMILY_PRICE",
+        "tagText": "IKEA Family price",
+        "priceText": "Price",
+        "tags": [
+         "FAMILY_PRICE"
+        ],
+        "tagWithText": {
+         "tag": "FAMILY_PRICE",
+         "text": "IKEA Family price"
+        }
+       },
+       "mainImageAlt": "White TROFAST lid, square, plastic, fits 42x30 cm boxes, slight handle",
+       "businessStructure": {
+        "homeFurnishingBusinessName": "Children's IKEA",
+        "homeFurnishingBusinessNo": "09",
+        "productAreaName": "Children's storage furniture",
+        "productAreaNo": "0921",
+        "productRangeAreaName": "Children's Storage",
+        "productRangeAreaNo": "092"
+       },
+       "categoryPath": [
+        {
+         "name": "Baby & kids",
+         "key": "bc001"
+        },
+        {
+         "name": "Baby",
+         "key": "bc002"
+        },
+        {
+         "name": "Nursery Furniture",
+         "key": "45780"
+        },
+        {
+         "name": "Toy storage",
+         "key": "20474"
+        },
+        {
+         "name": "TROFAST system",
+         "key": "700556"
+        },
+        {
+         "name": "TROFAST boxes & lids",
+         "key": "700558"
+        }
+       ],
+       "validDesignText": "white",
+       "heroBackoffData": {},
+       "optimizelyAttributes": {
+        "PRODUCT_TYPE": "standard"
+       }
+      },
+      "type": "PRODUCT",
+      "label": "Product",
+      "actionTokens": [],
+      "isBreakout": false
+     },
+     {
+      "metadata": "v1;2;PRODUCT;10582093;products_main;",
+      "product": {
+       "name": "TROFAST",
+       "typeName": "Storage box",
+       "itemMeasureReferenceText": "7 \u00bex11 \u00bex3 7/8 \"",
+       "mainImageUrl": "https://www.ikea.com/us/en/images/products/trofast-storage-box-white__1320530_pe941262_s5.jpg",
+       "pipUrl": "https://www.ikea.com/us/en/p/trofast-storage-box-white-10582093/",
+       "filterClass": "boxes or baskets",
+       "allProductImage": [
+        {
+         "altText": "A white TROFAST storage box made of recycled plastic. It is rectangular with smooth edges and no visible lid. Used for organising small items.",
+         "type": "MAIN_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/trofast-storage-box-white__1320530_pe941262_s5.jpg"
+        },
+        {
+         "altText": "Colourful markers in white TROFAST storage box beside pastel cups with paintbrushes and coloured paper on desk.",
+         "type": "FUNCTIONAL_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/trofast-storage-box-white__1371959_pe959269_s5.jpg"
+        }
+       ],
+       "id": "10582093",
+       "itemNoGlobal": "10582093",
+       "onlineSellable": true,
+       "lastChance": false,
+       "gprDescription": {
+        "numberOfVariants": 0,
+        "variants": []
+       },
+       "colors": [
+        {
+         "name": "white",
+         "id": "10156",
+         "hex": "ffffff"
+        }
+       ],
+       "tag": "FAMILY_PRICE",
+       "tagText": "IKEA Family price",
+       "quickFacts": [],
+       "features": [],
+       "availability": [],
+       "ratingValue": 4.6,
+       "ratingCount": 51,
+       "itemNo": "10582093",
+       "itemType": "ART",
+       "salesPrice": {
+        "currencyCode": "USD",
+        "numeral": 0.99,
+        "current": {
+         "prefix": "$",
+         "wholeNumber": "0",
+         "separator": ".",
+         "decimals": "99",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "previous": {
+         "prefix": "$",
+         "wholeNumber": "2",
+         "separator": ".",
+         "decimals": "00",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "isBreathTaking": false,
+        "discount": "",
+        "discountAmount": {
+         "prefix": "$",
+         "wholeNumber": "1",
+         "separator": ".",
+         "decimals": "01",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "discountPercentage": 50.0,
+        "prevPriceLabel": "Regular price",
+        "validFrom": "2026-08-03",
+        "validTo": "2026-09-07",
+        "availabilityDisclaimer": "Price valid Aug 3, 2026 - Sep 7, 2026 or while supply lasts",
+        "tag": "FAMILY_PRICE",
+        "tagText": "IKEA Family price",
+        "priceText": "Price",
+        "tags": [
+         "FAMILY_PRICE"
+        ],
+        "tagWithText": {
+         "tag": "FAMILY_PRICE",
+         "text": "IKEA Family price"
+        }
+       },
+       "contextualImageUrl": "https://www.ikea.com/us/en/images/products/trofast-storage-box-white__1371959_pe959269_s5.jpg",
+       "contextualImageAlt": "Colourful markers in white TROFAST storage box beside pastel cups with paintbrushes and coloured paper on desk.",
+       "mainImageAlt": "A white TROFAST storage box made of recycled plastic. It is rectangular with smooth edges and no visible lid. Used for organising small items.",
+       "businessStructure": {
+        "homeFurnishingBusinessName": "Children's IKEA",
+        "homeFurnishingBusinessNo": "09",
+        "productAreaName": "Children's storage furniture",
+        "productAreaNo": "0921",
+        "productRangeAreaName": "Children's Storage",
+        "productRangeAreaNo": "092"
+       },
+       "categoryPath": [
+        {
+         "name": "Baby & kids",
+         "key": "bc001"
+        },
+        {
+         "name": "Baby",
+         "key": "bc002"
+        },
+        {
+         "name": "Nursery Furniture",
+         "key": "45780"
+        },
+        {
+         "name": "Toy storage",
+         "key": "20474"
+        },
+        {
+         "name": "TROFAST system",
+         "key": "700556"
+        },
+        {
+         "name": "TROFAST boxes & lids",
+         "key": "700558"
+        }
+       ],
+       "validDesignText": "white",
+       "heroBackoffData": {},
+       "optimizelyAttributes": {
+        "PRODUCT_TYPE": "standard"
+       }
+      },
+      "type": "PRODUCT",
+      "label": "Product",
+      "actionTokens": [],
+      "isBreakout": false
+     }
+    ],
+    "start": 0,
+    "end": 3,
+    "max": 3
+   },
+   "shelves": [],
+   "pageMessages": []
+  }
+ }
+}

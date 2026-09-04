@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Deals · PricePulse{% endblock %}
+{% block content %}
+<header>
+  <h1>Current deals</h1>
+  <p>
+    {% for s in stats %}
+      <span class="badge {{ s.source }}">{{ s.source }}</span>
+      {{ s.products }} products, {{ s.on_sale }} on sale
+      {% if s.last_run_at %}· last run {{ s.last_run_at.strftime('%Y-%m-%d %H:%M UTC') }} ({{ s.last_run_status }}){% endif %}
+      {% if not loop.last %}&nbsp;&nbsp;{% endif %}
+    {% endfor %}
+  </p>
+</header>
+
+<form id="filters" class="grid"
+      hx-get="/partials/deals" hx-target="#deals" hx-swap="innerHTML"
+      hx-trigger="change, keyup changed delay:300ms from:#q">
+  <label>Source
+    <select name="source">
+      <option value="">All</option>
+      <option value="ikea">IKEA</option>
+      <option value="uniqlo">UNIQLO</option>
+    </select>
+  </label>
+  <label>Min discount %
+    <input type="number" name="min_discount" value="0" min="0" max="100" step="1">
+  </label>
+  <label>Search
+    <input type="search" id="q" name="q" placeholder="name contains…">
+  </label>
+  <label style="align-self:end">
+    <input type="checkbox" name="flagged_only" value="true"> Retailer-flagged only
+  </label>
+</form>
+
+<table>
+  <thead>
+    <tr><th>Product</th><th>Source</th><th class="num">Now</th><th class="num">Was</th><th class="num">Off</th><th>Tag</th><th>Until</th></tr>
+  </thead>
+  <tbody id="deals" hx-get="/partials/deals" hx-trigger="load" hx-swap="innerHTML"></tbody>
+</table>
+{% endblock %}

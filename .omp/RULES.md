@@ -1,0 +1,2 @@
+- Never run `terraform apply`/`terraform destroy` or `aws` commands that mutate infrastructure unless the user explicitly asks in the current message.
+- Never commit `.env`, `*.pem` private keys, or Terraform state.

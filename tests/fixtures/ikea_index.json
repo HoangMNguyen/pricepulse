@@ -1,0 +1,293 @@
+{
+ "usergroup": "[]",
+ "testActivationTriggers": {},
+ "searchResultPage": {
+  "products": {
+   "badge": 9208,
+   "filters": [
+    {
+     "selected": false,
+     "values": [
+      {
+       "name": "Storage & organization",
+       "id": "st001",
+       "count": 2000,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Home decor & accessories",
+       "id": "de001",
+       "count": 1247,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Kitchenware & tableware",
+       "id": "kt001",
+       "count": 1050,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Rugs & home textiles",
+       "id": "tl001",
+       "count": 980,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Storage containers, organizers & baskets",
+       "id": "st007",
+       "count": 962,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Beds & mattresses",
+       "id": "bm001",
+       "count": 880,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Bathroom: furniture, supplies & more",
+       "id": "ba001",
+       "count": 813,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Kitchen, appliances & supplies",
+       "id": "ka001",
+       "count": 811,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Baby & kids",
+       "id": "bc001",
+       "count": 714,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Outdoor",
+       "id": "od001",
+       "count": 668,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Tables & chairs",
+       "id": "fu002",
+       "count": 645,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Lighting",
+       "id": "li001",
+       "count": 574,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Sofas & armchairs",
+       "id": "700640",
+       "count": 510,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Winter holiday shop",
+       "id": "wt001",
+       "count": 374,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Plants & planters",
+       "id": "pp001",
+       "count": 369,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Desks & desk chairs",
+       "id": "fu004",
+       "count": 352,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Home electronics",
+       "id": "he001",
+       "count": 204,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Home improvement",
+       "id": "hi001",
+       "count": 199,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Window treatments & coverings",
+       "id": "tl002",
+       "count": 199,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Laundry & cleaning",
+       "id": "lc001",
+       "count": 156,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "IKEA Food & Swedish restaurant",
+       "id": "fb001",
+       "count": 115,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "LASTARE  all parts & accessories",
+       "id": "700781",
+       "count": 66,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Smart home",
+       "id": "hs001",
+       "count": 60,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Pet products",
+       "id": "pt001",
+       "count": 18,
+       "selected": false,
+       "enabled": true
+      },
+      {
+       "name": "Lighting for LASTARE",
+       "id": "700784",
+       "count": 8,
+       "selected": false,
+       "enabled": true
+      }
+     ],
+     "id": "CATEGORIES",
+     "name": "Category",
+     "collapsed": false,
+     "type": "CLASS_FILTER",
+     "parameter": "f-subcategories",
+     "eventAction": "filter_by_category",
+     "enabled": true,
+     "actionTokens": []
+    },
+    {
+     "selected": false,
+     "values": [
+      {
+       "name": "IKEA Family price",
+       "id": "FAMILY_PRICE",
+       "count": 331,
+       "selected": false,
+       "enabled": true
+      }
+     ],
+     "id": "OFFERS",
+     "name": "Offers",
+     "collapsed": false,
+     "type": "CLASS_FILTER",
+     "parameter": "f-offers",
+     "eventAction": "filter_by_offers",
+     "enabled": true,
+     "actionTokens": []
+    }
+   ],
+   "sortOrders": {
+    "name": "Sort",
+    "values": [
+     {
+      "id": "RELEVANCE",
+      "name": "Best match",
+      "eventAction": "sort_by_relevance",
+      "selected": true
+     },
+     {
+      "id": "PRICE_LOW_TO_HIGH",
+      "name": "Price: low to high",
+      "eventAction": "sort_by_price_low",
+      "selected": false
+     },
+     {
+      "id": "PRICE_HIGH_TO_LOW",
+      "name": "Price: high to low",
+      "eventAction": "sort_by_price_high",
+      "selected": false
+     },
+     {
+      "id": "RATING",
+      "name": "Customer rating",
+      "eventAction": "sort_by_rating",
+      "selected": false
+     },
+     {
+      "id": "NAME_ASCENDING",
+      "name": "Name",
+      "eventAction": "sort_by_name",
+      "selected": false
+     },
+     {
+      "id": "MOST_POPULAR",
+      "name": "Most popular",
+      "eventAction": "sort_by_most_popular",
+      "selected": false
+     },
+     {
+      "id": "WIDTH",
+      "name": "Width",
+      "eventAction": "sort_by_width",
+      "selected": false
+     },
+     {
+      "id": "HEIGHT",
+      "name": "Height",
+      "eventAction": "sort_by_height",
+      "selected": false
+     },
+     {
+      "id": "DEPTH",
+      "name": "Depth",
+      "eventAction": "sort_by_depth",
+      "selected": false
+     },
+     {
+      "id": "LENGTH",
+      "name": "Length",
+      "eventAction": "sort_by_length",
+      "selected": false
+     }
+    ]
+   },
+   "main": {
+    "items": [],
+    "start": 0,
+    "end": 0,
+    "max": 0,
+    "moreToken": "H4sIAAAAAAAA_6tWysksLlGyUgoI8ncJdQ4Jjvd19PRT0lFKzUtRsjKsBQBwMyhzIAAAAA"
+   },
+   "shelves": [],
+   "pageMessages": []
+  }
+ }
+}

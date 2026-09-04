@@ -1,0 +1,22 @@
+{% for d in items %}
+<tr>
+  <td><a href="/products/{{ d.product_id }}">{{ d.name }}</a>{% if d.category %} <small>· {{ d.category }}</small>{% endif %}</td>
+  <td><span class="badge {{ d.source }}">{{ d.source }}</span></td>
+  <td class="num">${{ '%.2f' % d.current_price }}</td>
+  <td class="num">{% if d.reference_price and d.reference_price > d.current_price %}<s>${{ '%.2f' % d.reference_price }}</s>{% else %}—{% endif %}</td>
+  <td class="num">{% if d.discount_pct > 0 %}<span class="pct">-{{ d.discount_pct }}%</span>{% else %}—{% endif %}</td>
+  <td>{% if d.retailer_tag %}<small>{{ d.retailer_tag }}</small>{% endif %}</td>
+  <td>{% if d.valid_to %}<small>{{ d.valid_to }}</small>{% endif %}</td>
+</tr>
+{% else %}
+{% if not append %}<tr><td colspan="7"><em>No products match.</em></td></tr>{% endif %}
+{% endfor %}
+{% if next_cursor %}
+<tr id="more">
+  <td colspan="7" style="text-align:center">
+    <button class="secondary outline"
+            hx-get="/partials/deals?cursor={{ next_cursor }}&source={{ params.source }}&min_discount={{ params.min_discount }}&q={{ params.q | urlencode }}{% if params.flagged_only %}&flagged_only=true{% endif %}"
+            hx-target="#more" hx-swap="outerHTML">Load more</button>
+  </td>
+</tr>
+{% endif %}

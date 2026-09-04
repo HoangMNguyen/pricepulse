@@ -1,0 +1,155 @@
+import json
+from datetime import date
+from decimal import Decimal
+from pathlib import Path
+
+import httpx
+
+from pricepulse.config import Settings
+from pricepulse.sources.http import make_client
+from pricepulse.sources.ikea import IkeaSource
+from pricepulse.sources.uniqlo import UniqloSource
+
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
+
+
+def _load(name: str) -> dict:
+    return json.loads((FIXTURES / name).read_text())
+
+
+def ikea_raw() -> dict:
+    return {
+        "source": "ikea",
+        "fetched_at": "2026-09-04T13:00:00+00:00",
+        "requests": [
+            {"url": "index", "status": 200, "body": _load("ikea_index.json")},
+            {"url": "offers", "status": 200, "body": _load("ikea_offers.json")},
+        ],
+    }
+
+
+def uniqlo_raw() -> dict:
+    return {
+        "source": "uniqlo",
+        "fetched_at": "2026-09-04T13:10:00+00:00",
+        "requests": [
+            {"url": "p0", "status": 200, "path": "22211", "body": _load("uniqlo_men_page0.json")}
+        ],
+    }
+
+
+def test_ikea_parse_maps_fields() -> None:
+    snaps = {s.external_id: s for s in IkeaSource().parse(ikea_raw())}
+    assert len(snaps) == 3
+    s = snaps["00473546"]
+    assert s.price == Decimal("79.99")
+    assert s.list_price == Decimal("95.00")
+    assert s.retailer_sale_flag is True
+    assert s.retailer_tag == "FAMILY_PRICE"
+    assert s.valid_to == date(2026, 9, 7)
+    assert s.currency == "USD"
+    assert s.url.startswith("https://www.ikea.com/us/en/p/")
+    assert s.name and s.category
+
+
+def test_ikea_parse_skips_not_online_sellable_and_dedupes() -> None:
+    raw = ikea_raw()
+    items = raw["requests"][1]["body"]["searchResultPage"]["products"]["main"]["items"]
+    items[1]["product"]["onlineSellable"] = False
+    raw["requests"].append(raw["requests"][1])  # duplicated page
+    snaps = IkeaSource().parse(raw)
+    assert len(snaps) == 2
+    assert items[1]["product"]["itemNo"] not in {s.external_id for s in snaps}
+
+
+def test_uniqlo_parse_flagged_item_has_no_list_price() -> None:
+    snaps = {s.external_id: s for s in UniqloSource().parse(uniqlo_raw())}
+    assert len(snaps) == 3
+    flagged = snaps["E484249-000"]
+    assert flagged.retailer_sale_flag is True
+    assert flagged.retailer_tag == "discount"
+    assert flagged.list_price is None
+    assert flagged.price == Decimal("49.9")
+    assert flagged.currency == "USD"
+    assert flagged.category == "MEN"
+    assert flagged.url == "https://www.uniqlo.com/us/en/products/E484249-000/01"
+    assert flagged.image_url and flagged.image_url.startswith("https://image.uniqlo.com/")
+    plain = snaps["E484610-000"]
+    assert plain.retailer_sale_flag is False and plain.retailer_tag is None
+
+
+def test_uniqlo_parse_dual_price_uses_promo() -> None:
+    raw = uniqlo_raw()
+    item = raw["requests"][0]["body"]["result"]["items"][0]
+    item["prices"]["promo"] = {"currency": {"code": "USD"}, "value": 29.9}
+    s = {x.external_id: x for x in UniqloSource().parse(raw)}[item["productId"]]
+    assert (s.price, s.list_price) == (Decimal("29.9"), Decimal("49.9"))
+
+
+def test_uniqlo_fetch_paginates_and_uses_only_allowed_params() -> None:
+    seen: list[dict] = []
+    page = _load("uniqlo_men_page0.json")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        params = dict(request.url.params)
+        seen.append(params)
+        body = json.loads(json.dumps(page))
+        offset = int(params["offset"])
+        body["result"]["pagination"] = {
+            "total": 5,
+            "offset": offset,
+            "count": 3 if offset == 0 else 2,
+        }
+        return httpx.Response(200, json=body)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    raw = UniqloSource().fetch(client)
+    assert {r["path"] for r in raw["requests"]} == {"22210", "22211", "22212", "22213"}
+    assert all(set(p) == {"path", "limit", "offset", "httpFailure"} for p in seen)
+    assert [p["offset"] for p in seen if p["path"] == "22211"] == ["0", "3"]
+
+
+def test_ikea_fetch_discovers_tags_and_splits_when_capped() -> None:
+    index = _load("ikea_index.json")
+    offers = _load("ikea_offers.json")
+    calls: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        params = dict(request.url.params)
+        calls.append(params)
+        if params.get("size") == "1":
+            return httpx.Response(200, json=index)
+        body = json.loads(json.dumps(offers))
+        if "f-subcategories" not in params:
+            body["searchResultPage"]["products"]["main"]["max"] = 999  # simulate capped page
+        return httpx.Response(200, json=body)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    raw = IkeaSource().fetch(client)
+    tags = [c["f-offers"] for c in calls if "f-offers" in c and "f-subcategories" not in c]
+    assert tags == ["FAMILY_PRICE"]
+    assert any("f-subcategories" in c for c in calls)
+    assert len(raw["requests"]) == len(calls)
+
+
+def test_client_sends_configured_user_agent() -> None:
+    client = make_client(Settings(user_agent="pricepulse/0.1", _env_file=None))
+    assert client.headers["User-Agent"] == "pricepulse/0.1"
+
+
+def test_ikea_money_handles_thousands_separator() -> None:
+    from pricepulse.sources.ikea import _money
+
+    assert _money({"wholeNumber": "1,049", "decimals": "99"}) == Decimal("1049.99")
+    assert _money({"wholeNumber": "95", "decimals": ""}) == Decimal("95.00")
+    assert _money(None) is None
+
+
+def test_uniqlo_parse_marks_multi_gender_products_unisex() -> None:
+    raw = uniqlo_raw()
+    women = json.loads(json.dumps(raw["requests"][0]))
+    women["path"] = "22210"
+    raw["requests"].insert(0, women)
+    snaps = UniqloSource().parse(raw)
+    assert len(snaps) == 3
+    assert {s.category for s in snaps} == {"UNISEX"}

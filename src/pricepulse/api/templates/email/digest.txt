@@ -1,0 +1,28 @@
+{{ d.subject }}
+
+{% macro line(a) %}- {{ a.name }} — ${{ '%.2f' % a.new_price }}{% if a.old_price %} (was ${{ '%.2f' % a.old_price }}, -{{ a.discount_pct }}%){% endif %}
+  {{ a.url }}
+{% endmacro %}
+{% if d.watch_hits %}
+WATCHED ITEMS DROPPED ({{ d.watch_hits | length }})
+{% for a in d.watch_hits %}{{ line(a) }}{% endfor %}
+
+{% endif %}
+{% if d.new_deals %}
+NEW DEALS ({{ d.new_deals | length }})
+{% for a in d.new_deals %}{{ line(a) }}{% endfor %}
+
+{% endif %}
+{% if d.price_drops %}
+PRICE DROPS ({{ d.price_drops | length }})
+{% for a in d.price_drops %}{{ line(a) }}{% endfor %}
+
+{% endif %}
+{% if d.retailer_flags %}
+NEWLY FLAGGED BY RETAILER ({{ d.retailer_flags | length }}{% if d.retailer_flags_overflow %} shown{% endif %})
+{% for a in d.retailer_flags %}{{ line(a) }}{% endfor %}
+{% if d.retailer_flags_overflow %}  +{{ d.retailer_flags_overflow }} more
+{% endif %}
+
+{% endif %}
+Sent by PricePulse — https://github.com/HoangMNguyen/pricepulse
