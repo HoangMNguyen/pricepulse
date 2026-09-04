@@ -45,12 +45,29 @@ variable "layer_package" {
 
 variable "domain_name" {
   type        = string
-  description = "Custom domain for the site (apex; www is added). null = *.cloudfront.net only."
+  description = "Hostname for the site, e.g. pricepulse.example.com or example.com. null = *.cloudfront.net only."
   default     = null
+}
+
+variable "www_alias" {
+  type        = bool
+  description = "Also serve www.<domain_name>. Sensible for an apex domain, noise for a delegated subdomain."
+  default     = false
 }
 
 variable "hosted_zone_id" {
   type        = string
   description = "Existing Route 53 zone for domain_name (e.g. registered through Route 53). null = create one."
   default     = null
+}
+
+variable "neon_org_id" {
+  type        = string
+  description = "Neon organization that owns the project (Neon console -> Organization settings)."
+}
+
+variable "domain_attached" {
+  type        = bool
+  description = "Set true once the NS delegation for domain_name resolves: validates the certificate and attaches the domain to CloudFront. Until then the site serves on *.cloudfront.net."
+  default     = false
 }

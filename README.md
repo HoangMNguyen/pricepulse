@@ -73,8 +73,9 @@ make lint test             # ruff + pytest (unit + Postgres integration)
 
 ## Deploy to AWS
 
-Prerequisites: an AWS account, `aws login`, a [Neon](https://neon.com) account with a personal API
-key exported as `NEON_API_KEY`, Terraform ≥ 1.10, `uv`, `psql`.
+Prerequisites: an AWS account, `aws login`, a [Neon](https://neon.com) account (Free plan) with a
+personal API key exported as `NEON_API_KEY` and its organization id in `dev.auto.tfvars`
+(`neon_org_id`, from Organization settings), Terraform ≥ 1.10, `uv`, `psql`.
 
 ```bash
 terraform -chdir=infra/bootstrap init && terraform -chdir=infra/bootstrap apply   # state bucket
@@ -88,10 +89,12 @@ aws lambda invoke --function-name pricepulse-dev-scrape  --cli-binary-format raw
 terraform -chdir=infra/envs/dev output site_url  # https://<distribution>.cloudfront.net
 ```
 
-Optional custom domain: set `domain_name = "example.com"` in `dev.auto.tfvars` (and
-`hosted_zone_id` if the zone already exists), `apply`, then point the registrar at
-`terraform output name_servers`; ACM validates through DNS and the certificate attaches on the
-next apply once the delegation resolves.
+Optional custom domain, in two applies: set `domain_name = "pricepulse.example.com"` in
+`dev.auto.tfvars` (a delegated subdomain works like an apex; add `hosted_zone_id` if the zone
+already exists), `apply`, and create NS records for that name at the parent's DNS host from
+`terraform output name_servers`. Once `dig NS pricepulse.example.com` answers, set
+`domain_attached = true` and `apply` again: ACM validates through the zone and CloudFront gets the
+alias. Until then `site_url` is the `*.cloudfront.net` hostname.
 
 Email beyond your own verified addresses needs SES production access (otherwise the sandbox
 rejects unverified recipients):

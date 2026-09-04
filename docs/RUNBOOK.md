@@ -57,6 +57,14 @@ aws logs tail /aws/lambda/pricepulse-dev-mailer --since 1h --format short
 Admin routes (`GET /v1/watches?email=`, `DELETE /v1/watches/{id}`) take `X-API-Key`; the key is
 `terraform output -raw api_key`.
 
+A confirmation that SES rejected (sandbox, unverified recipient) stays in the outbox; re-send it
+after fixing the cause:
+
+```bash
+aws lambda invoke --function-name pricepulse-dev-mailer --cli-binary-format raw-in-base64-out \
+  --payload '{"Records":[{"s3":{"object":{"key":"outbox/watch_confirm/<date>/<id>.json"}}}]}' /dev/stdout
+```
+
 ## CDN
 
 Pages are cached up to 24 h at CloudFront and invalidated by `notify` after every run. Force it:
@@ -74,7 +82,9 @@ Re-send verification: `aws sesv2 create-email-identity --email-identity you@exam
 `pricepulse-dev-alarms` (SNS) receives Lambda error alarms, `no-scrape-<source>` (no scrape in
 24 h — the schedule or the scraper is broken), `low-products-<source>` (a run parsed fewer than 100
 products — the adapter is probably broken), and `on_failure` invocation records from `process`
-(JSON with `requestContext.condition` and the error payload).
+(JSON with `requestContext.condition` and the error payload). Both metric alarms evaluate one
+24-hour period, so a bad datapoint keeps them in `ALARM` for up to a day; skipped (duplicate)
+runs emit no `ProductsSeen` datapoint on purpose.
 
 ## Database
 

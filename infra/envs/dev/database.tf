@@ -5,9 +5,10 @@
 
 resource "neon_project" "main" {
   name                      = local.name
+  org_id                    = var.neon_org_id
   region_id                 = "aws-us-east-1"
   pg_version                = 16
-  history_retention_seconds = 86400
+  history_retention_seconds = 21600 # Free plan maximum (6 h)
 
   branch {
     name          = "main"
@@ -18,7 +19,7 @@ resource "neon_project" "main" {
   default_endpoint_settings {
     autoscaling_limit_min_cu = 0.25
     autoscaling_limit_max_cu = 0.25
-    suspend_timeout_seconds  = 300
+    # suspend_timeout_seconds is not settable on the Free plan; its default is the 300 s we want.
   }
 }
 

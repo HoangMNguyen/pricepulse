@@ -30,6 +30,10 @@ the app relies on, and Lambda concurrency is capped at 10 by the account quota a
 Removed: the VPC and all networking, the Aurora cluster/instance/subnet group, the managed master
 secret, IAM DB tokens and the bundled RDS CA, the Data API, the ACU alarm.
 
+Free-plan limits met during the cutover: `suspend_timeout_seconds` cannot be set (the default is
+the 300 s we wanted) and `history_retention_seconds` is capped at 21600; projects are scoped to an
+organization (`org_id`). The Terraform config encodes all three.
+
 ## Consequences
 
 - Cost: $0 for the database (100 CU-hours/month included; the pipeline plus dashboard use ≈ 15–20),
