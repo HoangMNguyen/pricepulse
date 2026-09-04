@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import NoResultFound, OperationalError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 import pricepulse
 from pricepulse.api.routes import dashboard, products, system, watches
@@ -28,6 +29,31 @@ def cache_control_for(method: str, path: str, status_code: int) -> str:
     if path in CACHEABLE_EXACT or path.startswith(CACHEABLE_PREFIXES):
         return CACHEABLE
     return NO_STORE
+
+
+class HeadAsGet:
+    """FastAPI registers GET routes only; CDNs and `curl -I` send HEAD. Serve HEAD as GET
+    without a body (headers, including Content-Length and Cache-Control, are the GET ones)."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or scope["method"] != "HEAD":
+            await self.app(scope, receive, send)
+            return
+        body_sent = False
+
+        async def send_without_body(message: Message) -> None:
+            nonlocal body_sent
+            if message["type"] == "http.response.body":
+                if body_sent:
+                    return
+                body_sent = True
+                message = {"type": "http.response.body", "body": b"", "more_body": False}
+            await send(message)
+
+        await self.app({**scope, "method": "GET"}, receive, send_without_body)
 
 
 def wants_html(request: Request) -> bool:
@@ -98,4 +124,5 @@ def create_app() -> FastAPI:
     app.include_router(products.router)
     app.include_router(watches.router)
     app.include_router(dashboard.router)
+    app.add_middleware(HeadAsGet)
     return app

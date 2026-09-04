@@ -330,6 +330,9 @@ def test_cache_headers(client: TestClient) -> None:
     assert client.get("/").headers["cache-control"] == "public, max-age=300, s-maxage=86400"
     pid = client.get("/v1/deals", params={"limit": 1}).json()["items"][0]["product_id"]
     assert client.get(f"/products/{pid}").headers["cache-control"].startswith("public")
+    head = client.head("/v1/deals")
+    assert head.status_code == 200 and head.headers["cache-control"].startswith("public")
+    assert head.content == b""
     assert client.get("/health").headers["cache-control"] == "no-store"
     assert client.get("/v1/products/999999").headers["cache-control"] == "no-store"
     assert client.post("/v1/watches", json={}).headers["cache-control"] == "no-store"
