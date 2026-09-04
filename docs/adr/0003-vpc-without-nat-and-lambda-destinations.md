@@ -1,5 +1,7 @@
 # ADR-0003: Private-only VPC (no NAT) and Lambda Destinations for egress
 
+> **Superseded by [ADR-0009](0009-neon-instead-of-aurora.md)** — the database moved to Neon; the VPC and Aurora were removed. Kept for the record.
+
 ## Context
 
 Aurora must live in a VPC. A Lambda inside a VPC has no internet access unless the VPC has a NAT

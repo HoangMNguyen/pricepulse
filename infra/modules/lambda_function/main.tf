@@ -1,4 +1,4 @@
-# A Python 3.14 arm64 Lambda with its own least-privilege role, log group, and optional VPC config.
+# A Python 3.14 arm64 Lambda with its own least-privilege role and log group.
 
 terraform {
   required_version = ">= 1.10"
@@ -28,12 +28,6 @@ resource "aws_iam_role" "this" {
 resource "aws_iam_role_policy_attachment" "basic" {
   role       = aws_iam_role.this.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-}
-
-resource "aws_iam_role_policy_attachment" "vpc" {
-  count      = var.in_vpc ? 1 : 0
-  role       = aws_iam_role.this.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
 resource "aws_iam_role_policy" "extra" {
@@ -67,14 +61,6 @@ resource "aws_lambda_function" "this" {
     variables = var.environment
   }
 
-  dynamic "vpc_config" {
-    for_each = var.in_vpc ? [1] : []
-    content {
-      subnet_ids         = var.subnet_ids
-      security_group_ids = var.security_group_ids
-    }
-  }
-
   tracing_config {
     mode = "PassThrough"
   }
@@ -82,13 +68,12 @@ resource "aws_lambda_function" "this" {
   depends_on = [
     aws_cloudwatch_log_group.this,
     aws_iam_role_policy_attachment.basic,
-    aws_iam_role_policy_attachment.vpc,
   ]
 
   # checkov:skip=CKV_AWS_50: X-Ray tracing adds cost without value for a daily batch job
   # checkov:skip=CKV_AWS_116: DLQ is replaced by an on_failure Lambda Destination to SNS
   # checkov:skip=CKV_AWS_173: env vars hold no secrets (API key excepted; rotated via terraform)
   # checkov:skip=CKV_AWS_272: code signing is out of scope for a single-developer project
-  # checkov:skip=CKV_AWS_117: scrape/notify intentionally run outside the VPC (need internet)
+  # checkov:skip=CKV_AWS_117: no VPC by design; the database is an external managed service (ADR-0009)
   # checkov:skip=CKV_AWS_115: reserved concurrency is unavailable under the 10-execution account quota
 }

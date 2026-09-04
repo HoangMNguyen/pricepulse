@@ -15,20 +15,6 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   alarm_actions       = [aws_sns_topic.alarms.arn]
 }
 
-resource "aws_cloudwatch_metric_alarm" "aurora_capacity" {
-  alarm_name          = "${local.name}-aurora-acu-high"
-  namespace           = "AWS/RDS"
-  metric_name         = "ServerlessDatabaseCapacity"
-  dimensions          = { DBClusterIdentifier = aws_rds_cluster.main.cluster_identifier }
-  statistic           = "Maximum"
-  period              = 300
-  evaluation_periods  = 1
-  threshold           = 1.5
-  comparison_operator = "GreaterThanThreshold"
-  treat_missing_data  = "notBreaching"
-  alarm_actions       = [aws_sns_topic.alarms.arn]
-}
-
 resource "aws_budgets_budget" "monthly" {
   name         = "${local.name}-monthly"
   budget_type  = "COST"

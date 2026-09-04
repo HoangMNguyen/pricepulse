@@ -17,13 +17,11 @@ class Settings(BaseSettings):
     user_agent: str = "pricepulse/0.1"
     aws_region: str = Field(default="us-east-1", validation_alias="AWS_REGION")
 
-    # Database: either a full URL (local) or host/user + IAM auth (AWS).
+    # Database: a full SQLAlchemy URL (local), or the name of an SSM SecureString parameter
+    # holding one (AWS). Read once per cold start.
     database_url: str | None = None
-    db_host: str | None = None
-    db_port: int = 5432
-    db_name: str = "pricepulse"
-    db_user: str = "app_rw"
-    db_iam_auth: bool = False
+    database_url_ssm: str | None = None
+    db_connect_wait_s: int = 45
 
     # Raw payload storage: local directory or S3 bucket.
     raw_local_dir: str | None = None

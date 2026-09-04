@@ -28,12 +28,6 @@ variable "alert_min_discount_pct" {
   default = 20
 }
 
-variable "aurora_engine_version" {
-  type        = string
-  description = "Aurora PostgreSQL 16.x version (>= 16.3 required for 0-ACU auto-pause)."
-  default     = "16.14"
-}
-
 variable "user_agent" {
   type    = string
   default = "pricepulse/0.1"

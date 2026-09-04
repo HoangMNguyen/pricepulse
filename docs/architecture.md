@@ -24,13 +24,15 @@
 
 ## Functions
 
-| Function | Trigger | VPC | DB user | Memory / timeout | Notes |
-| --- | --- | --- | --- | --- | --- |
-| scrape | EventBridge Scheduler | no | — | 512 MB / 300 s | |
-| process | S3 ObjectCreated | yes | app_rw | 1024 MB / 600 s | destinations; serialized by schedule + `claim_run` |
-| notify | Lambda Destination | no | — | 256 MB / 60 s | SES sandbox: recipients must be verified |
-| api | API Gateway HTTP API | yes | app_rw | 1024 MB / 29 s | read routes are `READ ONLY` transactions |
-| migrate | manual / deploy.yml | yes | app_migrator | 512 MB / 300 s | `alembic upgrade head` |
+| Function | Trigger | DB user | Memory / timeout | Notes |
+| --- | --- | --- | --- | --- |
+| scrape | EventBridge Scheduler | — | 512 MB / 300 s | |
+| process | S3 ObjectCreated | app_rw | 1024 MB / 600 s | destinations; serialized by schedule + `claim_run` |
+| notify | Lambda Destination | — | 256 MB / 60 s | SES sandbox: recipients must be verified |
+| api | API Gateway HTTP API | app_rw | 1024 MB / 29 s | read routes are `READ ONLY` transactions |
+| migrate | manual / deploy.yml | app_migrator | 512 MB / 300 s | `alembic upgrade head` |
+
+No function is in a VPC: the database is Neon, reached over TLS; each function reads its role's connection URL from SSM at cold start.
 
 ## Schema
 
@@ -51,11 +53,11 @@
 | Retailer changes response shape | `parse()` raises → run `failed` with the error text; raw payload preserved for a fix + retry |
 | S3 delivers the same event twice | `ingestion_run` claim returns no row → `skipped=true`, no email |
 | `process` dies mid-run | row stays `running`; after 30 min the next attempt reclaims it; Lambda retries once, then `on_failure` → SNS |
-| Aurora paused | first connection retried for up to 45 s (`wait_for_db`) |
-| Cost creep | ACU > 1.5 alarm, $5 budget at 80 % actual / 100 % forecast, all logs 14-day retention |
+| Neon compute suspended | first connection retried for up to `DB_CONNECT_WAIT_S` (`wait_for_db`); resume ≈ 0.5 s |
+| Cost creep | $5 budget at 80 % actual / 100 % forecast, all logs 14-day retention; Neon Free hard-stops compute at 100 CU-h |
 
 ## Local vs AWS
 
-Same code, different settings: `DATABASE_URL` + `RAW_LOCAL_DIR` locally; `DB_HOST` +
-`DB_IAM_AUTH=true` + `RAW_BUCKET` on AWS. The CLI (`pricepulse scrape|process|run|notify`) calls
+Same code, different settings: `DATABASE_URL` + `RAW_LOCAL_DIR` locally; `DATABASE_URL_SSM` +
+`RAW_BUCKET` on AWS. The CLI (`pricepulse scrape|process|run|notify`) calls
 the same service functions the Lambda handlers call.

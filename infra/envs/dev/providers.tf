@@ -9,6 +9,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    neon = {
+      source  = "kislerdm/neon"
+      version = "~> 0.15"
+    }
   }
 }
 
@@ -19,11 +23,12 @@ provider "aws" {
   }
 }
 
+# Reads NEON_API_KEY from the environment.
+provider "neon" {}
+
 data "aws_caller_identity" "current" {}
-data "aws_region" "current" {}
 
 locals {
   name       = "pricepulse-dev"
   account_id = data.aws_caller_identity.current.account_id
-  region     = data.aws_region.current.region
 }

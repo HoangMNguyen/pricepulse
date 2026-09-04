@@ -6,20 +6,27 @@ output "raw_bucket" {
   value = aws_s3_bucket.raw.bucket
 }
 
-output "cluster_endpoint" {
-  value = aws_rds_cluster.main.endpoint
+output "neon_project_id" {
+  value = neon_project.main.id
 }
 
-output "cluster_arn" {
-  value = aws_rds_cluster.main.arn
+output "database_host" {
+  value = neon_project.main.database_host
 }
 
-output "cluster_resource_id" {
-  value = aws_rds_cluster.main.cluster_resource_id
+output "migrator_database_url" {
+  value     = replace(local.db_urls.app_migrator, "postgresql+psycopg://", "postgresql://")
+  sensitive = true
 }
 
-output "master_secret_arn" {
-  value = aws_rds_cluster.main.master_user_secret[0].secret_arn
+output "app_rw_password" {
+  value     = random_password.app_rw.result
+  sensitive = true
+}
+
+output "app_ro_password" {
+  value     = random_password.app_ro.result
+  sensitive = true
 }
 
 output "github_role_arn" {

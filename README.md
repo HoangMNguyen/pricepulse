@@ -11,24 +11,24 @@ engineering at a ~$0/month running cost.
 
 ```mermaid
 flowchart LR
-  EB[EventBridge Scheduler<br/>daily cron x2] --> SCR[Lambda scrape<br/>no VPC]
+  EB[EventBridge Scheduler<br/>daily cron x2] --> SCR[Lambda scrape]
   SCR -->|raw/source/date/run.json.gz| S3[(S3 raw bucket)]
-  S3 -->|ObjectCreated| PROC[Lambda process<br/>in VPC]
-  PROC -->|IAM auth token| DB[(Aurora PostgreSQL<br/>Serverless v2, 0-1 ACU)]
-  PROC -->|Lambda Destination<br/>on_success| NOTI[Lambda notify<br/>no VPC]
+  S3 -->|ObjectCreated| PROC[Lambda process]
+  PROC -->|TLS, URL from SSM| DB[(Neon PostgreSQL 16<br/>serverless, suspends when idle)]
+  PROC -->|Lambda Destination<br/>on_success| NOTI[Lambda notify]
   NOTI --> SES[SES]
   PROC -->|on_failure| SNS[SNS alarms]
-  APIGW[API Gateway HTTP API] --> API[Lambda api<br/>FastAPI + Mangum, in VPC]
+  APIGW[API Gateway HTTP API] --> API[Lambda api<br/>FastAPI + Mangum]
   API --> DB
-  MIG[Lambda migrate<br/>alembic, in VPC] --> DB
-  S3 -. gateway endpoint .- PROC
+  MIG[Lambda migrate<br/>alembic] --> DB
 ```
 
-- **No NAT, no public IPs.** Functions that need the internet run outside the VPC; functions that
-  need the database run inside. Results cross the boundary through Lambda Destinations. ([ADR-0003](docs/adr/0003-vpc-without-nat-and-lambda-destinations.md))
-- **No stored DB passwords.** Every connection signs a 15-minute IAM token; TLS is `verify-full`.
-  Three DB roles (`app_migrator` / `app_rw` / `app_ro`); DDL-ish needs of the app role go through
-  `SECURITY DEFINER` helpers. ([ADR-0002](docs/adr/0002-aurora-serverless-v2-scale-to-zero.md), [ADR-0004](docs/adr/0004-partitioning-and-materialized-summary.md))
+- **No VPC, no NAT, no always-on database.** The database is Neon (serverless PostgreSQL,
+  ≈ 0.5 s resume, $0); every function runs outside a VPC. Chosen after measuring Aurora
+  Serverless v2's 5–15 s resume on the first deployment. ([ADR-0009](docs/adr/0009-neon-instead-of-aurora.md))
+- **Least privilege, secrets out of code.** Three DB roles (`app_migrator` / `app_rw` / `app_ro`);
+  DDL-ish needs of the app role go through `SECURITY DEFINER` helpers; each Lambda reads only its
+  own connection URL from an SSM SecureString parameter. ([ADR-0004](docs/adr/0004-partitioning-and-materialized-summary.md))
 - **Idempotent ETL.** Raw payloads are the source of truth (S3, gzip JSON). Processing is keyed
   on the object key: re-delivering an event is a no-op; a failed run can be retried.
 - **PostgreSQL on purpose.** DynamoDB would be cheaper and simpler for this access pattern; the comparison and why Postgres still wins for this project are in [ADR-0008](docs/adr/0008-postgresql-not-dynamodb.md).
@@ -61,7 +61,8 @@ make lint test             # ruff + pytest (unit + Postgres integration)
 
 ## Deploy to AWS
 
-Prerequisites: an AWS account (Free Plan is enough), `aws login`, Terraform ≥ 1.10, `uv`.
+Prerequisites: an AWS account, `aws login`, a [Neon](https://neon.com) account with a personal API
+key exported as `NEON_API_KEY`, Terraform ≥ 1.10, `uv`, `psql`.
 
 ```bash
 terraform -chdir=infra/bootstrap init && terraform -chdir=infra/bootstrap apply   # state bucket
@@ -69,26 +70,27 @@ scripts/build_lambda.sh                                                         
 terraform -chdir=infra/envs/dev init -backend-config="bucket=$(terraform -chdir=infra/bootstrap output -raw state_bucket)"
 terraform -chdir=infra/envs/dev apply          # edit infra/envs/dev/dev.auto.tfvars first
 # click the SES verification email(s) and confirm the SNS subscription
-scripts/bootstrap_db.sh                        # DB roles via the Data API (one time)
+scripts/bootstrap_db.sh                        # least-privilege DB roles via psql (one time)
 aws lambda invoke --function-name pricepulse-dev-migrate --cli-binary-format raw-in-base64-out --payload '{}' /dev/stdout
 aws lambda invoke --function-name pricepulse-dev-scrape  --cli-binary-format raw-in-base64-out --payload '{"source":"ikea"}' /dev/stdout
 ```
 
-After that, GitHub Actions deploys `main` via OIDC (`AWS_DEPLOY_ROLE_ARN` and `TF_STATE_BUCKET`
-repository secrets; the `dev` environment can require a reviewer).
+After that, GitHub Actions deploys `main` via OIDC (`AWS_DEPLOY_ROLE_ARN`, `TF_STATE_BUCKET` and
+`NEON_API_KEY` repository secrets; the `dev` environment can require a reviewer).
 
 ## Cost
 
 | Item | Monthly |
 | --- | --- |
-| Aurora Serverless v2 (0–1 ACU, paused ~23.9 h/day) | $1–3 (more if the dashboard is demoed a lot) |
-| Aurora storage + backups (< 1 GiB) | < $0.10 |
-| Lambda, API Gateway, EventBridge Scheduler, S3, SES, SNS | ≈ $0 (free tier / sub-cent) |
+| Neon Free (PostgreSQL 16, 0.25 CU, suspends when idle; ≈ 15–20 of 100 included CU-hours) | $0 |
+| Lambda, API Gateway, EventBridge Scheduler, S3, SES, SNS, SSM parameters | ≈ $0 (always-free allowances / sub-cent) |
 | CloudWatch logs (14-day retention) + alarms | < $0.50 |
-| NAT gateway | **$0 — avoided by design** (would be ~$32) |
+| NAT gateway, always-on database | **$0 — avoided by design** (would be ~$32 and ~$44) |
 
-A $5 AWS Budget with 80 %/100 % notifications and an ACU alarm guard the account.
-`terraform destroy` removes everything.
+Measured before the move: Aurora Serverless v2 at 0–1 ACU cost ≈ $1–3/month and resumed in
+5–15 s; Neon resumes in ≈ 0.5 s ([ADR-0009](docs/adr/0009-neon-instead-of-aurora.md)).
+A $5 AWS Budget with 80 %/100 % notifications guards the account. `terraform destroy` removes
+everything, the Neon project included.
 
 ## Data & ethics
 

@@ -1,10 +1,10 @@
 # Runbook
 
-All commands assume `aws login` done, region `us-east-1`, and `cd infra/envs/dev` for outputs.
+All commands assume `aws login` done, region `us-east-1`, `NEON_API_KEY` exported, and
+`cd infra/envs/dev` for outputs.
 
 ```bash
-CLUSTER_ARN=$(terraform output -raw cluster_arn); SECRET_ARN=$(terraform output -raw master_secret_arn)
-sql() { aws rds-data execute-statement --resource-arn "$CLUSTER_ARN" --secret-arn "$SECRET_ARN" --database pricepulse --sql "$1" --format-records-as JSON --query formattedRecords --output text; }
+sql() { psql "$(terraform output -raw migrator_database_url)" -Atc "$1"; }
 ```
 
 ## Re-run a failed key
@@ -41,8 +41,9 @@ sql "SELECT name, current_price, reference_price, discount_pct FROM product_pric
 
 ## Partitions
 
-Created automatically per run. To add one by hand: `sql "SELECT ensure_price_partition('2027-01-01T00:00:00Z')"`.
-To drop old data: `sql "DROP TABLE price_observation_2025_01"`.
+Created automatically per run; partitions older than `RETENTION_MONTHS` (13) are dropped after each run
+by `prune_price_partitions()`. By hand: `sql "SELECT ensure_price_partition('2027-01-01T00:00:00Z')"`,
+`sql "SELECT prune_price_partitions(13)"`.
 
 ## SES
 
@@ -54,9 +55,15 @@ Re-send verification: `aws sesv2 create-email-identity --email-identity you@exam
 `pricepulse-dev-alarms` (SNS) receives Lambda error alarms, the ACU alarm, and `on_failure`
 invocation records from `process` (JSON with `requestContext.condition` and the error payload).
 
+## Database
+
+Neon console → project `pricepulse-dev` shows compute hours, storage and connections. Roles:
+`app_migrator` (owner, used by `migrate`), `app_rw` (process/api), `app_ro` (humans). Rotate an app
+password: `terraform taint random_password.app_rw && terraform apply && scripts/bootstrap_db.sh`.
+
 ## Tear down
 
 ```bash
-terraform -chdir=infra/envs/dev destroy
+terraform -chdir=infra/envs/dev destroy      # includes the Neon project
 terraform -chdir=infra/bootstrap destroy   # empties nothing: delete state bucket objects first
 ```

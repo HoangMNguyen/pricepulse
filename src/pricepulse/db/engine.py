@@ -1,78 +1,56 @@
 """SQLAlchemy engine factory.
 
-Locally: plain URL with a pooled engine. On AWS: no stored password — every connection
-signs a short-lived IAM auth token via boto3 in the `do_connect` hook, uses `verify-full`
-TLS against the bundled RDS CA, and `NullPool` (one connection per Lambda invocation).
+Locally: `DATABASE_URL` with a pooled engine. On AWS: the URL (with credentials) lives in an SSM
+SecureString parameter named by `DATABASE_URL_SSM`, fetched once per cold start; `NullPool`
+because a Lambda invocation holds at most one connection.
 """
 
 from __future__ import annotations
 
-from importlib.resources import files
-from typing import Any
-
-from sqlalchemy import Engine, create_engine, event
+from sqlalchemy import Engine, create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.pool import NullPool
-from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_exponential
+from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_exponential
 
 from pricepulse.config import Settings, get_settings
 
 _engine: Engine | None = None
 
 
-def rds_ca_bundle_path() -> str:
-    return str(files("pricepulse.certs").joinpath("global-bundle.pem"))
+def resolve_database_url(settings: Settings) -> str:
+    if settings.database_url:
+        return settings.database_url
+    if settings.database_url_ssm:
+        from aws_lambda_powertools.utilities import parameters
+
+        return parameters.get_parameter(settings.database_url_ssm, decrypt=True, max_age=300)
+    raise RuntimeError("DATABASE_URL or DATABASE_URL_SSM is required")
 
 
 def make_engine(settings: Settings) -> Engine:
-    if not settings.db_iam_auth:
-        if not settings.database_url:
-            raise RuntimeError("DATABASE_URL is required when DB_IAM_AUTH is false")
-        return create_engine(settings.database_url, pool_pre_ping=True)
-
-    if not settings.db_host:
-        raise RuntimeError("DB_HOST is required when DB_IAM_AUTH is true")
-    url = (
-        f"postgresql+psycopg://{settings.db_user}@{settings.db_host}:{settings.db_port}"
-        f"/{settings.db_name}"
-    )
-    engine = create_engine(
-        url,
-        poolclass=NullPool,
-        connect_args={"sslmode": "verify-full", "sslrootcert": rds_ca_bundle_path()},
-    )
-
-    @event.listens_for(engine, "do_connect")
-    def _inject_iam_token(dialect: Any, conn_rec: Any, cargs: Any, cparams: dict) -> None:
-        import boto3
-
-        client = boto3.client("rds", region_name=settings.aws_region)
-        cparams["password"] = client.generate_db_auth_token(
-            DBHostname=settings.db_host,
-            Port=settings.db_port,
-            DBUsername=settings.db_user,
-            Region=settings.aws_region,
-        )
-
-    return engine
+    url = resolve_database_url(settings)
+    if settings.pricepulse_env == "dev":
+        return create_engine(url, pool_pre_ping=True, poolclass=NullPool)
+    return create_engine(url, pool_pre_ping=True)
 
 
-@retry(
-    stop=stop_after_delay(45),
-    wait=wait_exponential(multiplier=1, max=8),
-    retry=retry_if_exception_type(OperationalError),
-    reraise=True,
-)
-def wait_for_db(engine: Engine) -> None:
-    """Open and close one connection, retrying while Aurora resumes from 0 ACU (~15 s)."""
-    with engine.connect():
-        pass
+def wait_for_db(engine: Engine, max_wait_s: int) -> None:
+    """Open and close one connection, retrying while a suspended database resumes."""
+    for attempt in Retrying(
+        stop=stop_after_delay(max_wait_s),
+        wait=wait_exponential(multiplier=0.5, max=4),
+        retry=retry_if_exception_type(OperationalError),
+        reraise=True,
+    ):
+        with attempt, engine.connect():
+            pass
 
 
 def get_engine() -> Engine:
     """Process-wide singleton so warm Lambda containers reuse the engine."""
     global _engine  # noqa: PLW0603
     if _engine is None:
-        _engine = make_engine(get_settings())
-        wait_for_db(_engine)
+        settings = get_settings()
+        _engine = make_engine(settings)
+        wait_for_db(_engine, settings.db_connect_wait_s)
     return _engine

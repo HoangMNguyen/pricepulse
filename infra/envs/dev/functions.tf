@@ -1,5 +1,5 @@
-# Five functions. VPC placement: only those that talk to the DB. Destinations carry the
-# processor's result to the notifier so no network path out of the VPC is needed.
+# Five functions, none in a VPC: the database is Neon (public TLS endpoint, ADR-0009).
+# Destinations carry the processor's result to the notifier.
 
 resource "aws_lambda_layer_version" "deps" {
   layer_name               = "${local.name}-deps"
@@ -20,15 +20,6 @@ locals {
     USER_AGENT              = var.user_agent
     POWERTOOLS_SERVICE_NAME = "pricepulse"
     POWERTOOLS_LOG_LEVEL    = "INFO"
-  }
-  db_env = {
-    DB_HOST     = aws_rds_cluster.main.endpoint
-    DB_NAME     = aws_rds_cluster.main.database_name
-    DB_IAM_AUTH = "true"
-  }
-  vpc = {
-    subnet_ids         = [for s in aws_subnet.private : s.id]
-    security_group_ids = [aws_security_group.lambda.id]
   }
 }
 
@@ -53,7 +44,7 @@ module "scrape" {
   environment      = merge(local.common_env, { RAW_BUCKET = aws_s3_bucket.raw.bucket })
 }
 
-# --- process: in VPC, S3 -> Postgres, returns alerts -------------------------------------------
+# --- process: S3 -> Postgres, returns alerts ---------------------------------------------------
 # No reserved concurrency: new accounts have a 10-execution quota, and reserving any of it is
 # rejected. Runs are serialized in practice by the staggered schedule and by `claim_run`.
 
@@ -63,8 +54,12 @@ data "aws_iam_policy_document" "process" {
     resources = ["${aws_s3_bucket.raw.arn}/raw/*"]
   }
   statement {
-    actions   = ["rds-db:connect"]
-    resources = ["${local.db_user_arn_prefix}/app_rw"]
+    actions   = ["ssm:GetParameter"]
+    resources = [aws_ssm_parameter.database_url["app_rw"].arn]
+  }
+  statement {
+    actions   = ["kms:Decrypt"]
+    resources = [data.aws_kms_alias.ssm.target_key_arn]
   }
   statement {
     actions   = ["lambda:InvokeFunction"]
@@ -77,20 +72,17 @@ data "aws_iam_policy_document" "process" {
 }
 
 module "process" {
-  source             = "../../modules/lambda_function"
-  name               = "${local.name}-process"
-  handler            = "pricepulse.lambda_handlers.process.handler"
-  package_path       = var.app_package
-  layer_arns         = [aws_lambda_layer_version.deps.arn]
-  memory_mb          = 1024
-  timeout_s          = 600
-  in_vpc             = true
-  subnet_ids         = local.vpc.subnet_ids
-  security_group_ids = local.vpc.security_group_ids
-  role_policy_json   = data.aws_iam_policy_document.process.json
-  environment = merge(local.common_env, local.db_env, {
+  source           = "../../modules/lambda_function"
+  name             = "${local.name}-process"
+  handler          = "pricepulse.lambda_handlers.process.handler"
+  package_path     = var.app_package
+  layer_arns       = [aws_lambda_layer_version.deps.arn]
+  memory_mb        = 1024
+  timeout_s        = 600
+  role_policy_json = data.aws_iam_policy_document.process.json
+  environment = merge(local.common_env, {
     RAW_BUCKET             = aws_s3_bucket.raw.bucket
-    DB_USER                = "app_rw"
+    DATABASE_URL_SSM       = aws_ssm_parameter.database_url["app_rw"].name
     ALERT_MIN_DISCOUNT_PCT = tostring(var.alert_min_discount_pct)
   })
 }
@@ -135,53 +127,58 @@ module "notify" {
   })
 }
 
-# --- api: in VPC, FastAPI via Mangum -----------------------------------------------------------
+# --- api: FastAPI via Mangum -------------------------------------------------------------------
 
 data "aws_iam_policy_document" "api" {
   statement {
-    actions   = ["rds-db:connect"]
-    resources = ["${local.db_user_arn_prefix}/app_rw"]
+    actions   = ["ssm:GetParameter"]
+    resources = [aws_ssm_parameter.database_url["app_rw"].arn]
+  }
+  statement {
+    actions   = ["kms:Decrypt"]
+    resources = [data.aws_kms_alias.ssm.target_key_arn]
   }
 }
 
 module "api" {
-  source             = "../../modules/lambda_function"
-  name               = "${local.name}-api"
-  handler            = "pricepulse.lambda_handlers.api.handler"
-  package_path       = var.app_package
-  layer_arns         = [aws_lambda_layer_version.deps.arn]
-  memory_mb          = 1024
-  timeout_s          = 29
-  in_vpc             = true
-  subnet_ids         = local.vpc.subnet_ids
-  security_group_ids = local.vpc.security_group_ids
-  role_policy_json   = data.aws_iam_policy_document.api.json
-  environment = merge(local.common_env, local.db_env, {
-    DB_USER = "app_rw"
-    API_KEY = random_password.api_key.result
+  source           = "../../modules/lambda_function"
+  name             = "${local.name}-api"
+  handler          = "pricepulse.lambda_handlers.api.handler"
+  package_path     = var.app_package
+  layer_arns       = [aws_lambda_layer_version.deps.arn]
+  memory_mb        = 1024
+  timeout_s        = 29
+  role_policy_json = data.aws_iam_policy_document.api.json
+  environment = merge(local.common_env, {
+    DATABASE_URL_SSM  = aws_ssm_parameter.database_url["app_rw"].name
+    DB_CONNECT_WAIT_S = "20"
+    API_KEY           = random_password.api_key.result
   })
 }
 
-# --- migrate: in VPC, alembic upgrade head as app_migrator ------------------------------------
+# --- migrate: alembic upgrade head as app_migrator ---------------------------------------------
 
 data "aws_iam_policy_document" "migrate" {
   statement {
-    actions   = ["rds-db:connect"]
-    resources = ["${local.db_user_arn_prefix}/app_migrator"]
+    actions   = ["ssm:GetParameter"]
+    resources = [aws_ssm_parameter.database_url["app_migrator"].arn]
+  }
+  statement {
+    actions   = ["kms:Decrypt"]
+    resources = [data.aws_kms_alias.ssm.target_key_arn]
   }
 }
 
 module "migrate" {
-  source             = "../../modules/lambda_function"
-  name               = "${local.name}-migrate"
-  handler            = "pricepulse.lambda_handlers.migrate.handler"
-  package_path       = var.app_package
-  layer_arns         = [aws_lambda_layer_version.deps.arn]
-  memory_mb          = 512
-  timeout_s          = 300
-  in_vpc             = true
-  subnet_ids         = local.vpc.subnet_ids
-  security_group_ids = local.vpc.security_group_ids
-  role_policy_json   = data.aws_iam_policy_document.migrate.json
-  environment        = merge(local.common_env, local.db_env, { DB_USER = "app_migrator" })
+  source           = "../../modules/lambda_function"
+  name             = "${local.name}-migrate"
+  handler          = "pricepulse.lambda_handlers.migrate.handler"
+  package_path     = var.app_package
+  layer_arns       = [aws_lambda_layer_version.deps.arn]
+  memory_mb        = 512
+  timeout_s        = 300
+  role_policy_json = data.aws_iam_policy_document.migrate.json
+  environment = merge(local.common_env, {
+    DATABASE_URL_SSM = aws_ssm_parameter.database_url["app_migrator"].name
+  })
 }

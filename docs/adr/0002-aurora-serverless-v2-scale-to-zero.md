@@ -1,5 +1,7 @@
 # ADR-0002: Aurora PostgreSQL Serverless v2 with scale-to-zero
 
+> **Superseded by [ADR-0009](0009-neon-instead-of-aurora.md)** — the database moved to Neon; the VPC and Aurora were removed. Kept for the record.
+
 ## Context
 
 PostgreSQL is a required skill to showcase. Options within a ~$0 budget: RDS db.t4g.micro

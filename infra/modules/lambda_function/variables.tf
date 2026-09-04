@@ -36,21 +36,6 @@ variable "timeout_s" {
   default = 60
 }
 
-variable "in_vpc" {
-  type    = bool
-  default = false
-}
-
-variable "subnet_ids" {
-  type    = list(string)
-  default = []
-}
-
-variable "security_group_ids" {
-  type    = list(string)
-  default = []
-}
-
 variable "reserved_concurrency" {
   type    = number
   default = -1
