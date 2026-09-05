@@ -252,22 +252,22 @@ def test_dashboard_tabs(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> 
         assert missing.status_code == 404 and "404 · Not found" in missing.text
         assert "<table" not in missing.text and "/static/app.css?v=" in missing.text
     # an adapter that exists but has never run has no stats row: also 404, never a KeyError
-    monkeypatch.setattr(
-        queries,
-        "stats",
-        lambda conn: [
-            {
-                "source": "ikea",
-                "products": 0,
-                "on_sale": 0,
-                "last_run_at": None,
-                "last_run_status": None,
-            }
-        ],
-    )
-    assert client.get("/", params={"source": "uniqlo"}).status_code == 404
-    assert client.get("/", params={"source": "ikea"}).status_code == 200
-    monkeypatch.undo()
+    with monkeypatch.context() as m:
+        m.setattr(
+            queries,
+            "stats",
+            lambda conn: [
+                {
+                    "source": "ikea",
+                    "products": 0,
+                    "on_sale": 0,
+                    "last_run_at": None,
+                    "last_run_status": None,
+                }
+            ],
+        )
+        assert client.get("/", params={"source": "uniqlo"}).status_code == 404
+        assert client.get("/", params={"source": "ikea"}).status_code == 200
     rows = client.get("/partials/deals", params={"source": "ikea", "sort": "name"})
     assert rows.status_code == 200 and "<tr" in rows.text and "<table" not in rows.text
     product = client.get("/v1/deals", params={"source": "uniqlo"}).json()["items"][0]
