@@ -959,25 +959,18 @@
      "docCount": 66
     },
     {
-     "code": "appmemberLimited",
-     "name": "Online + App-Only Offer",
-     "id": 34,
-     "rank": 3,
-     "docCount": 7
-    },
-    {
      "code": "limitedOffer",
      "name": "Limited-Time Offer",
      "id": 10,
      "rank": 5,
-     "docCount": 7
+     "docCount": 39
     },
     {
      "code": "discount",
      "name": "Sale",
      "id": 12,
      "rank": 7,
-     "docCount": 115
+     "docCount": 109
     },
     {
      "code": "salesStart",
@@ -1019,21 +1012,21 @@
      "name": "Select Colors/Sizes Only",
      "id": 69,
      "rank": 100,
-     "docCount": 20
+     "docCount": 17
     },
     {
      "code": "preOrder",
      "name": "Pre-order",
      "id": 72,
      "rank": 101,
-     "docCount": 3
+     "docCount": 4
     },
     {
      "code": "unisex",
      "name": "UNISEX",
      "id": 135,
      "rank": 103,
-     "docCount": 322
+     "docCount": 316
     }
    ],
    "plds": [
@@ -1047,13 +1040,13 @@
      "code": "INA034",
      "displayCode": "034",
      "name": "34inch",
-     "docCount": 2
+     "docCount": 3
     },
     {
      "code": "PTB000",
      "displayCode": "000",
      "name": "-",
-     "docCount": 605
+     "docCount": 597
     },
     {
      "code": "SLA020",
@@ -1416,25 +1409,25 @@
     {
      "from": 0,
      "to": 10,
-     "count": 97,
+     "count": 108,
      "key": "*-10.0"
     },
     {
      "from": 10,
      "to": 20,
-     "count": 87,
+     "count": 69,
      "key": "10.0-20.0"
     },
     {
      "from": 20,
      "to": 40,
-     "count": 250,
+     "count": 260,
      "key": "20.0-40.0"
     },
     {
      "from": 40,
      "to": 60,
-     "count": 170,
+     "count": 161,
      "key": "40.0-60.0"
     },
     {
@@ -1446,65 +1439,55 @@
     {
      "from": 80,
      "to": 0,
-     "count": 16,
+     "count": 15,
      "key": "80.0-*"
     }
    ],
    "ratings": [
     {
-     "rating": 0,
-     "accumulated": 442,
-     "count": 4
-    },
-    {
-     "rating": 0.5,
-     "accumulated": 438,
-     "count": 0
-    },
-    {
      "rating": 1,
-     "accumulated": 438,
+     "accumulated": 436,
      "count": 2
     },
     {
      "rating": 1.5,
-     "accumulated": 436,
+     "accumulated": 434,
      "count": 0
     },
     {
      "rating": 2,
-     "accumulated": 436,
+     "accumulated": 434,
      "count": 0
     },
     {
      "rating": 2.5,
-     "accumulated": 436,
+     "accumulated": 434,
      "count": 2
     },
     {
      "rating": 3,
-     "accumulated": 434,
+     "accumulated": 432,
      "count": 5
     },
     {
      "rating": 3.5,
-     "accumulated": 429,
-     "count": 6
+     "accumulated": 427,
+     "count": 5
     },
     {
      "rating": 4,
-     "accumulated": 423,
-     "count": 58
+     "accumulated": 422,
+     "count": 57
     },
     {
      "rating": 4.5,
      "accumulated": 365,
-     "count": 229
+     "count": 228
     },
     {
      "rating": 5,
-     "accumulated": 136,
-     "count": 136
+     "accumulated": 137,
+     "count": 137
     }
    ],
    "tree": {
@@ -1832,10 +1815,6 @@
     ],
     "subcategories": [
      {
-      "id": 70851,
-      "name": "Parkas"
-     },
-     {
       "id": 95728,
       "name": "Washable"
      },
@@ -1844,16 +1823,32 @@
       "name": "Bottoms"
      },
      {
-      "id": 68698,
-      "name": "AIRism Seamless"
+      "id": 70851,
+      "name": "Parkas"
+     },
+     {
+      "id": 70943,
+      "name": "Tops"
+     },
+     {
+      "id": 95739,
+      "name": "Flannel"
+     },
+     {
+      "id": 68735,
+      "name": "Pants"
+     },
+     {
+      "id": 150142,
+      "name": "Cotton"
      },
      {
       "id": 68207,
       "name": "Basic"
      },
      {
-      "id": 150144,
-      "name": "Denim"
+      "id": 68744,
+      "name": "Backpacks"
      },
      {
       "id": 149622,
@@ -1864,80 +1859,80 @@
       "name": "Crew Neck"
      },
      {
-      "id": 95739,
-      "name": "Flannel"
+      "id": 68698,
+      "name": "AIRism Seamless"
      },
      {
       "id": 81269,
       "name": "Pants"
      },
      {
-      "id": 68735,
-      "name": "Pants"
-     },
-     {
-      "id": 68744,
-      "name": "Backpacks"
-     },
-     {
-      "id": 70943,
-      "name": "Tops"
-     },
-     {
       "id": 68638,
       "name": "Jackets"
-     },
-     {
-      "id": 68699,
-      "name": "AIRism Regular"
-     },
-     {
-      "id": 68743,
-      "name": "Shoulder Bags"
-     },
-     {
-      "id": 36093,
-      "name": "Shorts"
-     },
-     {
-      "id": 95735,
-      "name": "Oxford"
-     },
-     {
-      "id": 127286,
-      "name": "Milano Ribbed"
-     },
-     {
-      "id": 70873,
-      "name": "V-Neck"
-     },
-     {
-      "id": 72251,
-      "name": "Cotton"
      },
      {
       "id": 68640,
       "name": "Parkas"
      },
      {
-      "id": 150142,
+      "id": 103980,
+      "name": "Sweat"
+     },
+     {
+      "id": 70873,
+      "name": "V-Neck"
+     },
+     {
+      "id": 150144,
+      "name": "Denim"
+     },
+     {
+      "id": 68743,
+      "name": "Shoulder Bags"
+     },
+     {
+      "id": 95735,
+      "name": "Oxford"
+     },
+     {
+      "id": 36093,
+      "name": "Shorts"
+     },
+     {
+      "id": 68699,
+      "name": "AIRism Regular"
+     },
+     {
+      "id": 72251,
       "name": "Cotton"
      },
      {
-      "id": 103980,
-      "name": "Sweat"
+      "id": 127286,
+      "name": "Milano Ribbed"
+     },
+     {
+      "id": 68745,
+      "name": "Tote Bags"
      },
      {
       "id": 68707,
       "name": "Ultra Stretch"
      },
      {
+      "id": 95443,
+      "name": "SUPIMA\u00ae Cotton"
+     },
+     {
       "id": 72258,
       "name": "Blazers"
      },
      {
-      "id": 95443,
-      "name": "SUPIMA\u00ae Cotton"
+      "id": 112541,
+      "name": "Sweat"
+     },
+     {
+      "id": 134513,
+      "name": "Polo"
      },
      {
       "id": 95734,
@@ -1948,40 +1943,28 @@
       "name": "Souffle Yarn"
      },
      {
-      "id": 134513,
-      "name": "Polo"
-     },
-     {
-      "id": 112541,
-      "name": "Sweat"
-     },
-     {
-      "id": 68745,
-      "name": "Tote Bags"
-     },
-     {
-      "id": 70875,
-      "name": "Short-Sleeve"
-     },
-     {
-      "id": 95738,
-      "name": "Cotton"
-     },
-     {
-      "id": 94903,
-      "name": "Vest"
-     },
-     {
-      "id": 74690,
-      "name": "Uniqlo U"
-     },
-     {
       "id": 150278,
       "name": "Regular Lengths"
      },
      {
       "id": 134510,
       "name": "Denim"
+     },
+     {
+      "id": 74690,
+      "name": "Uniqlo U"
+     },
+     {
+      "id": 95738,
+      "name": "Cotton"
+     },
+     {
+      "id": 70875,
+      "name": "Short-Sleeve"
+     },
+     {
+      "id": 94903,
+      "name": "Vest"
      },
      {
       "id": 113943,
@@ -1996,40 +1979,44 @@
       "name": "Cashmere"
      },
      {
-      "id": 68747,
-      "name": "Reusable Shopping Bags"
-     },
-     {
-      "id": 152084,
-      "name": "Easy Care"
-     },
-     {
-      "id": 150136,
-      "name": "Long Length"
+      "id": 68199,
+      "name": "AIRism Cotton"
      },
      {
       "id": 24493,
       "name": "Regular Rise"
      },
      {
-      "id": 68199,
-      "name": "AIRism Cotton"
+      "id": 68747,
+      "name": "Reusable Shopping Bags"
+     },
+     {
+      "id": 150136,
+      "name": "Long Length"
+     },
+     {
+      "id": 152084,
+      "name": "Easy Care"
+     },
+     {
+      "id": 40530,
+      "name": "Others"
      },
      {
       "id": 74699,
       "name": "Uniqlo U"
      },
      {
+      "id": 106690,
+      "name": "Outerwear"
+     },
+     {
+      "id": 95725,
+      "name": "Lambswool"
+     },
+     {
       "id": 150678,
       "name": "Unisex"
-     },
-     {
-      "id": 70877,
-      "name": "AIRism"
-     },
-     {
-      "id": 69442,
-      "name": "Fleece"
      },
      {
       "id": 27664,
@@ -2040,60 +2027,48 @@
       "name": "Low-Rise"
      },
      {
-      "id": 95725,
-      "name": "Lambswool"
+      "id": 69442,
+      "name": "Fleece"
      },
      {
-      "id": 106690,
-      "name": "Outerwear"
-     },
-     {
-      "id": 40530,
-      "name": "Others"
-     },
-     {
-      "id": 149819,
-      "name": "Cut and Sewn"
-     },
-     {
-      "id": 153095,
-      "name": "Ultra Strech"
-     },
-     {
-      "id": 95729,
-      "name": "Merino"
-     },
-     {
-      "id": 32051,
-      "name": "Others"
-     },
-     {
-      "id": 24496,
-      "name": "Trunks"
-     },
-     {
-      "id": 24234,
-      "name": "Long Sleeve"
+      "id": 70877,
+      "name": "AIRism"
      },
      {
       "id": 152079,
       "name": "Denim & Work"
      },
      {
-      "id": 153174,
-      "name": "Jogger Pants"
+      "id": 153095,
+      "name": "Ultra Strech"
+     },
+     {
+      "id": 24234,
+      "name": "Long Sleeve"
+     },
+     {
+      "id": 149819,
+      "name": "Cut and Sewn"
+     },
+     {
+      "id": 24496,
+      "name": "Trunks"
+     },
+     {
+      "id": 32051,
+      "name": "Others"
+     },
+     {
+      "id": 95729,
+      "name": "Merino"
      },
      {
       "id": 95444,
       "name": "Waffle"
      },
      {
-      "id": 24172,
-      "name": "Down & Padded"
-     },
-     {
-      "id": 150078,
-      "name": "Shirts"
+      "id": 24497,
+      "name": "Others"
      },
      {
       "id": 152155,
@@ -2104,32 +2079,56 @@
       "name": "Long Sleeve"
      },
      {
-      "id": 24497,
-      "name": "Others"
+      "id": 150078,
+      "name": "Shirts"
      },
      {
-      "id": 95727,
-      "name": "Cable"
+      "id": 153174,
+      "name": "Jogger Pants"
+     },
+     {
+      "id": 24172,
+      "name": "Down & Padded"
+     },
+     {
+      "id": 106691,
+      "name": "Short Sleeve Shirts"
      },
      {
       "id": 95740,
       "name": "Short Sleeve"
      },
      {
-      "id": 152352,
-      "name": "Cotton"
-     },
-     {
       "id": 123783,
       "name": "UNIQLO : C"
+     },
+     {
+      "id": 152352,
+      "name": "Cotton"
      },
      {
       "id": 68202,
       "name": "DRY-EX"
      },
      {
-      "id": 106691,
-      "name": "Short Sleeve Shirts"
+      "id": 95727,
+      "name": "Cable"
+     },
+     {
+      "id": 95749,
+      "name": "Others"
+     },
+     {
+      "id": 95720,
+      "name": "Crew Neck"
+     },
+     {
+      "id": 106692,
+      "name": "Long Sleeve Shirts"
+     },
+     {
+      "id": 72250,
+      "name": "DRY"
      },
      {
       "id": 152507,
@@ -2140,20 +2139,8 @@
       "name": "Uniqlo U"
      },
      {
-      "id": 95749,
-      "name": "Others"
-     },
-     {
-      "id": 72250,
-      "name": "DRY"
-     },
-     {
-      "id": 106692,
-      "name": "Long Sleeve Shirts"
-     },
-     {
-      "id": 95720,
-      "name": "Crew Neck"
+      "id": 95742,
+      "name": "Oversized"
      },
      {
       "id": 95721,
@@ -2164,52 +2151,48 @@
       "name": "airism boxer"
      },
      {
-      "id": 95742,
-      "name": "Oversized"
+      "id": 101611,
+      "name": "Half Zip"
      },
      {
       "id": 95744,
       "name": "Stand Collar"
      },
      {
-      "id": 101611,
-      "name": "Half Zip"
+      "id": 102173,
+      "name": "HEATTECH"
      },
      {
       "id": 70059,
       "name": "Others"
      },
      {
-      "id": 102173,
-      "name": "HEATTECH"
-     },
-     {
-      "id": 152972,
-      "name": "BLOCKTECH"
+      "id": 81214,
+      "name": "Fleece"
      },
      {
       "id": 95723,
       "name": "Cardigans"
      },
      {
-      "id": 81214,
-      "name": "Fleece"
+      "id": 152972,
+      "name": "BLOCKTECH"
      },
      {
       "id": 95743,
       "name": "Open Collar"
      },
      {
-      "id": 153149,
-      "name": "Long Sleeve"
+      "id": 68205,
+      "name": "Crew Neck"
      },
      {
       "id": 95745,
       "name": "Printed"
      },
      {
-      "id": 68205,
-      "name": "Crew Neck"
+      "id": 153149,
+      "name": "Long Sleeve"
      },
      {
       "id": 68206,
@@ -2228,27 +2211,57 @@
       "name": "Turtleneck and High Neck"
      },
      {
-      "id": 134502,
-      "name": "Regular Fit"
+      "id": 95747,
+      "name": "Checked"
      }
     ]
    }
   },
   "pagination": {
-   "total": 3,
+   "total": 8,
    "offset": 0,
-   "count": 3
+   "count": 8
   },
   "relaxedQueries": [],
   "items": [
    {
+    "colors": [
+     {
+      "code": "COL09",
+      "displayCode": "09",
+      "name": "BLACK",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BLACK"
+     },
+     {
+      "code": "COL69",
+      "displayCode": "69",
+      "name": "NAVY",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BLUE"
+     }
+    ],
     "genderName": "MEN",
     "genderCategory": "MEN",
     "sizeGender": "MEN",
     "images": {
      "main": {
-      "32": {
-       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/484249/item/usgoods_32_484249_3x4.jpg",
+      "69": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/450544/item/usgoods_69_450544_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "09": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/450544/item/usgoods_09_450544_3x4.jpg",
        "model": [
         {
          "modelGender": "Men"
@@ -2257,58 +2270,82 @@
       }
      },
      "chip": {
-      "12": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/484249/chip/goods_12_484249_chip.jpg",
-      "32": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/484249/chip/goods_32_484249_chip.jpg",
-      "57": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/484249/chip/goods_57_484249_chip.jpg",
-      "67": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/484249/chip/goods_67_484249_chip.jpg"
+      "14": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_14_450544_chip.jpg",
+      "17": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_17_450544_chip.jpg",
+      "18": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_18_450544_chip.jpg",
+      "30": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_30_450544_chip.jpg",
+      "31": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_31_450544_chip.jpg",
+      "33": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_33_450544_chip.jpg",
+      "38": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_38_450544_chip.jpg",
+      "55": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_55_450544_chip.jpg",
+      "56": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_56_450544_chip.jpg",
+      "67": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_67_450544_chip.jpg",
+      "68": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_68_450544_chip.jpg",
+      "69": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_69_450544_chip.jpg",
+      "01": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_01_450544_chip.jpg",
+      "03": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_03_450544_chip.jpg",
+      "07": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_07_450544_chip.jpg",
+      "08": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_08_450544_chip.jpg",
+      "09": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_09_450544_chip.jpg"
      },
      "sub": [
       {
-       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/484249/sub/goods_484249_sub11_3x4.jpg",
+       "video": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/450544/subvideo/usgoods_450544_sub13_video_3x4.mp4",
        "model": []
       },
       {
-       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/484249/sub/goods_484249_sub14_3x4.jpg",
+       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/sub/goods_450544_sub17_3x4.jpg",
        "model": []
       }
      ]
     },
-    "l1Id": "484249",
-    "name": "Zip-Up Blouson",
+    "l1Id": "450544",
+    "name": "Cashmere Turtleneck Sweater",
     "prices": {
      "base": {
       "currency": {
        "code": "USD",
        "symbol": "$"
       },
-      "value": 49.9
+      "value": 29.9
      },
      "promo": {
       "currency": {
        "code": "USD",
        "symbol": "$"
       },
-      "value": 49.9
+      "value": 29.9
      },
      "isDualPrice": false
     },
-    "productId": "E484249-000",
+    "productId": "E450544-000",
     "priceGroup": "01",
+    "plds": [
+     {
+      "code": "PTB000",
+      "displayCode": "000",
+      "name": "-",
+      "display": {
+       "showFlag": false,
+       "chipType": 0
+      }
+     }
+    ],
     "rating": {
-     "average": 4.8,
-     "count": 75
+     "average": 4.6,
+     "count": 31
     },
-    "representativeColorDisplayCode": "12",
+    "representativeColorDisplayCode": "38",
     "representative": {
      "color": {
-      "code": "COL12",
-      "displayCode": "12",
-      "name": "PINK",
+      "code": "COL38",
+      "displayCode": "38",
+      "name": "DARK BROWN",
       "display": {
        "showFlag": true,
        "chipType": 0
       },
-      "filterCode": "PINK"
+      "filterCode": "BROWN"
      },
      "flags": {
       "priceFlags": [
@@ -2320,7 +2357,7 @@
         "type": "price_flag",
         "isRepresentativeL2Flag": true,
         "effectiveTime": {
-         "start": 1787659200,
+         "start": 1773748800,
          "end": 0
         },
         "flagColor": "discount"
@@ -2341,7 +2378,7 @@
       ],
       "productFlags": []
      },
-     "l2Id": "09089242",
+     "l2Id": "08694168",
      "pld": {
       "code": "PTB000",
       "displayCode": "000",
@@ -2353,27 +2390,95 @@
      },
      "sales": true,
      "size": {
-      "code": "SMA001",
-      "displayCode": "001",
-      "name": "XXS",
+      "code": "SMA003",
+      "displayCode": "003",
+      "name": "S",
       "display": {
        "showFlag": true,
        "chipType": 0
       }
      },
-     "communicationCode": "484249-12-001-000"
+     "communicationCode": "450544-38-003-000"
     },
+    "sizes": [
+     {
+      "code": "SMA003",
+      "displayCode": "003",
+      "name": "S",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA004",
+      "displayCode": "004",
+      "name": "M",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA005",
+      "displayCode": "005",
+      "name": "L",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA006",
+      "displayCode": "006",
+      "name": "XL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     }
+    ],
     "promotionText": "",
     "storeStockOnly": false
    },
    {
+    "colors": [
+     {
+      "code": "COL09",
+      "displayCode": "09",
+      "name": "BLACK",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BLACK"
+     },
+     {
+      "code": "COL69",
+      "displayCode": "69",
+      "name": "NAVY",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BLUE"
+     }
+    ],
     "genderName": "MEN",
     "genderCategory": "MEN",
     "sizeGender": "MEN",
     "images": {
      "main": {
-      "05": {
-       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/468671/item/usgoods_05_468671_3x4.jpg",
+      "69": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/450544/item/usgoods_69_450544_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "09": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/450544/item/usgoods_09_450544_3x4.jpg",
        "model": [
         {
          "modelGender": "Men"
@@ -2382,58 +2487,76 @@
       }
      },
      "chip": {
-      "05": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/468671/chip/goods_05_468671_chip.jpg"
+      "14": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_14_450544_chip.jpg",
+      "17": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_17_450544_chip.jpg",
+      "18": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_18_450544_chip.jpg",
+      "30": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_30_450544_chip.jpg",
+      "31": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_31_450544_chip.jpg",
+      "33": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_33_450544_chip.jpg",
+      "38": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_38_450544_chip.jpg",
+      "55": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_55_450544_chip.jpg",
+      "56": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_56_450544_chip.jpg",
+      "67": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_67_450544_chip.jpg",
+      "68": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_68_450544_chip.jpg",
+      "69": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_69_450544_chip.jpg",
+      "01": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_01_450544_chip.jpg",
+      "03": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_03_450544_chip.jpg",
+      "07": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_07_450544_chip.jpg",
+      "08": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_08_450544_chip.jpg",
+      "09": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_09_450544_chip.jpg"
      },
      "sub": [
       {
-       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/468671/sub/usgoods_468671_sub3_3x4.jpg",
-       "model": [
-        {
-         "modelGender": "Men"
-        }
-       ],
-       "colorCode": "05"
-      },
-      {
-       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/468671/sub/goods_468671_sub13_3x4.jpg",
+       "video": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/450544/subvideo/usgoods_450544_sub13_video_3x4.mp4",
        "model": []
       },
       {
-       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/468671/sub/goods_468671_sub14_3x4.jpg",
+       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/sub/goods_450544_sub17_3x4.jpg",
        "model": []
       }
      ]
     },
-    "l1Id": "468671",
-    "name": "AirSense Houndstooth Blazer | Wool-Like",
+    "l1Id": "450544",
+    "name": "Cashmere Turtleneck Sweater",
     "prices": {
      "base": {
       "currency": {
        "code": "USD",
        "symbol": "$"
       },
-      "value": 59.9
+      "value": 5.9
      },
      "promo": {
       "currency": {
        "code": "USD",
        "symbol": "$"
       },
-      "value": 59.9
+      "value": 5.9
      },
      "isDualPrice": false
     },
-    "productId": "E468671-000",
-    "priceGroup": "00",
+    "productId": "E450544-000",
+    "priceGroup": "02",
+    "plds": [
+     {
+      "code": "PTB000",
+      "displayCode": "000",
+      "name": "-",
+      "display": {
+       "showFlag": false,
+       "chipType": 0
+      }
+     }
+    ],
     "rating": {
-     "average": 4.4,
-     "count": 29
+     "average": 4.6,
+     "count": 31
     },
-    "representativeColorDisplayCode": "05",
+    "representativeColorDisplayCode": "07",
     "representative": {
      "color": {
-      "code": "COL05",
-      "displayCode": "05",
+      "code": "COL07",
+      "displayCode": "07",
       "name": "GRAY",
       "display": {
        "showFlag": true,
@@ -2451,7 +2574,20 @@
         "type": "price_flag",
         "isRepresentativeL2Flag": true,
         "effectiveTime": {
-         "start": 1784635200,
+         "start": 1767099600,
+         "end": 0
+        },
+        "flagColor": "discount"
+       },
+       {
+        "code": "colorSizeLimitedPrice",
+        "name": "Select Colors/Sizes Only",
+        "id": 69,
+        "rank": 100,
+        "type": "price_flag",
+        "isRepresentativeL2Flag": true,
+        "effectiveTime": {
+         "start": 0,
          "end": 0
         },
         "flagColor": "discount"
@@ -2459,7 +2595,580 @@
       ],
       "productFlags": []
      },
-     "l2Id": "07908576",
+     "l2Id": "07646674",
+     "pld": {
+      "code": "PTB000",
+      "displayCode": "000",
+      "name": "-",
+      "display": {
+       "showFlag": false,
+       "chipType": 0
+      }
+     },
+     "sales": true,
+     "size": {
+      "code": "SMA002",
+      "displayCode": "002",
+      "name": "XS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     "communicationCode": "450544-07-002-000"
+    },
+    "sizes": [
+     {
+      "code": "SMA002",
+      "displayCode": "002",
+      "name": "XS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA003",
+      "displayCode": "003",
+      "name": "S",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA004",
+      "displayCode": "004",
+      "name": "M",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA005",
+      "displayCode": "005",
+      "name": "L",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA006",
+      "displayCode": "006",
+      "name": "XL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA007",
+      "displayCode": "007",
+      "name": "XXL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA008",
+      "displayCode": "008",
+      "name": "3XL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     }
+    ],
+    "promotionText": "",
+    "storeStockOnly": false
+   },
+   {
+    "colors": [
+     {
+      "code": "COL03",
+      "displayCode": "03",
+      "name": "GRAY",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "GRAY"
+     },
+     {
+      "code": "COL09",
+      "displayCode": "09",
+      "name": "BLACK",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BLACK"
+     },
+     {
+      "code": "COL14",
+      "displayCode": "14",
+      "name": "RED",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "RED"
+     },
+     {
+      "code": "COL68",
+      "displayCode": "68",
+      "name": "BLUE",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BLUE"
+     },
+     {
+      "code": "COL69",
+      "displayCode": "69",
+      "name": "NAVY",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BLUE"
+     }
+    ],
+    "genderName": "MEN",
+    "genderCategory": "MEN",
+    "sizeGender": "MEN",
+    "images": {
+     "main": {
+      "14": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/450544/item/usgoods_14_450544_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "68": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/450544/item/usgoods_68_450544_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "69": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/450544/item/usgoods_69_450544_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "03": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/450544/item/usgoods_03_450544_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "09": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/450544/item/usgoods_09_450544_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      }
+     },
+     "chip": {
+      "14": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_14_450544_chip.jpg",
+      "17": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_17_450544_chip.jpg",
+      "18": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_18_450544_chip.jpg",
+      "30": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_30_450544_chip.jpg",
+      "31": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_31_450544_chip.jpg",
+      "33": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_33_450544_chip.jpg",
+      "38": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_38_450544_chip.jpg",
+      "55": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_55_450544_chip.jpg",
+      "56": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_56_450544_chip.jpg",
+      "67": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_67_450544_chip.jpg",
+      "68": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_68_450544_chip.jpg",
+      "69": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_69_450544_chip.jpg",
+      "01": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_01_450544_chip.jpg",
+      "03": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_03_450544_chip.jpg",
+      "07": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_07_450544_chip.jpg",
+      "08": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_08_450544_chip.jpg",
+      "09": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/chip/goods_09_450544_chip.jpg"
+     },
+     "sub": [
+      {
+       "video": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/450544/subvideo/usgoods_450544_sub13_video_3x4.mp4",
+       "model": []
+      },
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/450544/sub/goods_450544_sub17_3x4.jpg",
+       "model": []
+      }
+     ]
+    },
+    "l1Id": "450544",
+    "name": "Cashmere Turtleneck Sweater",
+    "prices": {
+     "base": {
+      "currency": {
+       "code": "USD",
+       "symbol": "$"
+      },
+      "value": 99.9
+     },
+     "promo": null,
+     "isDualPrice": false
+    },
+    "productId": "E450544-000",
+    "priceGroup": "00",
+    "plds": [
+     {
+      "code": "PTB000",
+      "displayCode": "000",
+      "name": "-",
+      "display": {
+       "showFlag": false,
+       "chipType": 0
+      }
+     }
+    ],
+    "rating": {
+     "average": 4.6,
+     "count": 31
+    },
+    "representativeColorDisplayCode": "03",
+    "representative": {
+     "color": {
+      "code": "COL03",
+      "displayCode": "03",
+      "name": "GRAY",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "GRAY"
+     },
+     "flags": {
+      "priceFlags": [],
+      "productFlags": [
+       {
+        "code": "comingSoon",
+        "name": "Arriving early Sep",
+        "id": 13,
+        "rank": 11,
+        "type": "product_flag",
+        "isRepresentativeL2Flag": true,
+        "effectiveTime": {
+         "start": 1788782400,
+         "end": 1788782400
+        },
+        "flagColor": "normal",
+        "nameWording": {
+         "flagWithTime": "text_csoon_early",
+         "substitutions": {
+          "month": "Sep"
+         }
+        }
+       }
+      ]
+     },
+     "l2Id": "09495428",
+     "pld": {
+      "code": "PTB000",
+      "displayCode": "000",
+      "name": "-",
+      "display": {
+       "showFlag": false,
+       "chipType": 0
+      }
+     },
+     "sales": false,
+     "size": {
+      "code": "SMA002",
+      "displayCode": "002",
+      "name": "XS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     "communicationCode": "450544-03-002-000"
+    },
+    "sizes": [
+     {
+      "code": "SMA002",
+      "displayCode": "002",
+      "name": "XS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA003",
+      "displayCode": "003",
+      "name": "S",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA004",
+      "displayCode": "004",
+      "name": "M",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA005",
+      "displayCode": "005",
+      "name": "L",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA006",
+      "displayCode": "006",
+      "name": "XL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA007",
+      "displayCode": "007",
+      "name": "XXL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA008",
+      "displayCode": "008",
+      "name": "3XL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     }
+    ],
+    "promotionText": "",
+    "storeStockOnly": false
+   },
+   {
+    "colors": [
+     {
+      "code": "COL57",
+      "displayCode": "57",
+      "name": "OLIVE",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "GREEN"
+     },
+     {
+      "code": "COL34",
+      "displayCode": "34",
+      "name": "BROWN",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BROWN"
+     },
+     {
+      "code": "COL39",
+      "displayCode": "39",
+      "name": "DARK BROWN",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BROWN"
+     },
+     {
+      "code": "COL67",
+      "displayCode": "67",
+      "name": "BLUE",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BLUE"
+     }
+    ],
+    "genderName": "UNISEX",
+    "genderCategory": "UNISEX",
+    "sizeGender": "MEN",
+    "images": {
+     "main": {
+      "34": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/491096/item/usgoods_34_491096_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "39": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/491096/item/usgoods_39_491096_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "57": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/491096/item/usgoods_57_491096_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "67": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/491096/item/usgoods_67_491096_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      }
+     },
+     "chip": {
+      "34": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/491096/chip/goods_34_491096_chip.jpg",
+      "39": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/491096/chip/goods_39_491096_chip.jpg",
+      "57": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/491096/chip/goods_57_491096_chip.jpg",
+      "67": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/491096/chip/goods_67_491096_chip.jpg"
+     },
+     "sub": [
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/491096/sub/usgoods_491096_sub3_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ],
+       "colorCode": "39"
+      },
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/491096/sub/goods_491096_sub11_3x4.jpg",
+       "model": []
+      },
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/491096/sub/goods_491096_sub12_3x4.jpg",
+       "model": []
+      },
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/491096/sub/goods_491096_sub14_3x4.jpg",
+       "model": []
+      }
+     ]
+    },
+    "l1Id": "491096",
+    "name": "Zip-Up Blouson",
+    "prices": {
+     "base": {
+      "currency": {
+       "code": "USD",
+       "symbol": "$"
+      },
+      "value": 49.9
+     },
+     "promo": {
+      "currency": {
+       "code": "USD",
+       "symbol": "$"
+      },
+      "value": 49.9
+     },
+     "isDualPrice": false
+    },
+    "productId": "E491096-000",
+    "priceGroup": "00",
+    "plds": [
+     {
+      "code": "PTB000",
+      "displayCode": "000",
+      "name": "-",
+      "display": {
+       "showFlag": false,
+       "chipType": 0
+      }
+     }
+    ],
+    "rating": {
+     "average": 4.7,
+     "count": 4
+    },
+    "representativeColorDisplayCode": "57",
+    "representative": {
+     "color": {
+      "code": "COL57",
+      "displayCode": "57",
+      "name": "OLIVE",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "GREEN"
+     },
+     "flags": {
+      "priceFlags": [
+       {
+        "code": "limitedOffer",
+        "name": "Limited-Time Offer until 9/10",
+        "id": 10,
+        "rank": 5,
+        "type": "price_flag",
+        "isRepresentativeL2Flag": true,
+        "effectiveTime": {
+         "start": 1788523200,
+         "end": 1789128000
+        },
+        "flagColor": "discount",
+        "nameWording": {
+         "flagWithTime": "text_limited_offer_until_date",
+         "substitutions": {
+          "flagName": "Limited-Time Offer",
+          "date": "9/10"
+         }
+        }
+       }
+      ],
+      "productFlags": [
+       {
+        "code": "unisex",
+        "name": "UNISEX",
+        "id": 135,
+        "rank": 103,
+        "type": "product_flag",
+        "isRepresentativeL2Flag": true,
+        "effectiveTime": {
+         "start": 0,
+         "end": 0
+        },
+        "flagColor": "normal"
+       }
+      ]
+     },
+     "l2Id": "09622114",
      "pld": {
       "code": "PTB000",
       "displayCode": "000",
@@ -2479,12 +3188,138 @@
        "chipType": 0
       }
      },
-     "communicationCode": "468671-05-001-000"
+     "communicationCode": "491096-57-001-000"
     },
+    "sizes": [
+     {
+      "code": "SMA001",
+      "displayCode": "001",
+      "name": "XXS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA002",
+      "displayCode": "002",
+      "name": "XS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA003",
+      "displayCode": "003",
+      "name": "S",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA004",
+      "displayCode": "004",
+      "name": "M",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA005",
+      "displayCode": "005",
+      "name": "L",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA006",
+      "displayCode": "006",
+      "name": "XL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA007",
+      "displayCode": "007",
+      "name": "XXL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA008",
+      "displayCode": "008",
+      "name": "3XL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     }
+    ],
     "promotionText": "",
     "storeStockOnly": false
    },
    {
+    "colors": [
+     {
+      "code": "COL38",
+      "displayCode": "38",
+      "name": "DARK BROWN",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BROWN"
+     },
+     {
+      "code": "COL09",
+      "displayCode": "09",
+      "name": "BLACK",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BLACK"
+     },
+     {
+      "code": "COL32",
+      "displayCode": "32",
+      "name": "BEIGE",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BEIGE"
+     },
+     {
+      "code": "COL57",
+      "displayCode": "57",
+      "name": "OLIVE",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "GREEN"
+     },
+     {
+      "code": "COL69",
+      "displayCode": "69",
+      "name": "NAVY",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BLUE"
+     }
+    ],
     "genderName": "UNISEX",
     "genderCategory": "UNISEX",
     "sizeGender": "MEN",
@@ -2595,6 +3430,17 @@
     },
     "productId": "E484610-000",
     "priceGroup": "00",
+    "plds": [
+     {
+      "code": "PTB000",
+      "displayCode": "000",
+      "name": "-",
+      "display": {
+       "showFlag": false,
+       "chipType": 0
+      }
+     }
+    ],
     "rating": {
      "average": 4.7,
      "count": 90
@@ -2664,6 +3510,813 @@
      },
      "communicationCode": "484610-38-001-000"
     },
+    "sizes": [
+     {
+      "code": "SMA001",
+      "displayCode": "001",
+      "name": "XXS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA002",
+      "displayCode": "002",
+      "name": "XS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA003",
+      "displayCode": "003",
+      "name": "S",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA004",
+      "displayCode": "004",
+      "name": "M",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA005",
+      "displayCode": "005",
+      "name": "L",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA006",
+      "displayCode": "006",
+      "name": "XL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA007",
+      "displayCode": "007",
+      "name": "XXL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA008",
+      "displayCode": "008",
+      "name": "3XL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     }
+    ],
+    "promotionText": "",
+    "storeStockOnly": false
+   },
+   {
+    "colors": [
+     {
+      "code": "COL32",
+      "displayCode": "32",
+      "name": "BEIGE",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BEIGE"
+     }
+    ],
+    "genderName": "MEN",
+    "genderCategory": "MEN",
+    "sizeGender": "MEN",
+    "images": {
+     "main": {
+      "32": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/484249/item/usgoods_32_484249_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      }
+     },
+     "chip": {
+      "12": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/484249/chip/goods_12_484249_chip.jpg",
+      "32": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/484249/chip/goods_32_484249_chip.jpg",
+      "57": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/484249/chip/goods_57_484249_chip.jpg",
+      "67": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/484249/chip/goods_67_484249_chip.jpg"
+     },
+     "sub": [
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/484249/sub/goods_484249_sub11_3x4.jpg",
+       "model": []
+      },
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/484249/sub/goods_484249_sub14_3x4.jpg",
+       "model": []
+      }
+     ]
+    },
+    "l1Id": "484249",
+    "name": "Zip-Up Blouson",
+    "prices": {
+     "base": {
+      "currency": {
+       "code": "USD",
+       "symbol": "$"
+      },
+      "value": 49.9
+     },
+     "promo": {
+      "currency": {
+       "code": "USD",
+       "symbol": "$"
+      },
+      "value": 49.9
+     },
+     "isDualPrice": false
+    },
+    "productId": "E484249-000",
+    "priceGroup": "01",
+    "plds": [
+     {
+      "code": "PTB000",
+      "displayCode": "000",
+      "name": "-",
+      "display": {
+       "showFlag": false,
+       "chipType": 0
+      }
+     }
+    ],
+    "rating": {
+     "average": 4.8,
+     "count": 75
+    },
+    "representativeColorDisplayCode": "12",
+    "representative": {
+     "color": {
+      "code": "COL12",
+      "displayCode": "12",
+      "name": "PINK",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "PINK"
+     },
+     "flags": {
+      "priceFlags": [
+       {
+        "code": "discount",
+        "name": "Sale",
+        "id": 12,
+        "rank": 7,
+        "type": "price_flag",
+        "isRepresentativeL2Flag": true,
+        "effectiveTime": {
+         "start": 1787659200,
+         "end": 0
+        },
+        "flagColor": "discount"
+       },
+       {
+        "code": "colorSizeLimitedPrice",
+        "name": "Select Colors/Sizes Only",
+        "id": 69,
+        "rank": 100,
+        "type": "price_flag",
+        "isRepresentativeL2Flag": true,
+        "effectiveTime": {
+         "start": 0,
+         "end": 0
+        },
+        "flagColor": "discount"
+       }
+      ],
+      "productFlags": []
+     },
+     "l2Id": "09089242",
+     "pld": {
+      "code": "PTB000",
+      "displayCode": "000",
+      "name": "-",
+      "display": {
+       "showFlag": false,
+       "chipType": 0
+      }
+     },
+     "sales": true,
+     "size": {
+      "code": "SMA001",
+      "displayCode": "001",
+      "name": "XXS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     "communicationCode": "484249-12-001-000"
+    },
+    "sizes": [
+     {
+      "code": "SMA001",
+      "displayCode": "001",
+      "name": "XXS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA002",
+      "displayCode": "002",
+      "name": "XS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA005",
+      "displayCode": "005",
+      "name": "L",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA006",
+      "displayCode": "006",
+      "name": "XL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA007",
+      "displayCode": "007",
+      "name": "XXL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA008",
+      "displayCode": "008",
+      "name": "3XL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     }
+    ],
+    "promotionText": "",
+    "storeStockOnly": false
+   },
+   {
+    "colors": [
+     {
+      "code": "COL08",
+      "displayCode": "08",
+      "name": "DARK GRAY",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "GRAY"
+     },
+     {
+      "code": "COL30",
+      "displayCode": "30",
+      "name": "NATURAL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BEIGE"
+     },
+     {
+      "code": "COL31",
+      "displayCode": "31",
+      "name": "BEIGE",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BEIGE"
+     },
+     {
+      "code": "COL34",
+      "displayCode": "34",
+      "name": "BROWN",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BROWN"
+     },
+     {
+      "code": "COL57",
+      "displayCode": "57",
+      "name": "OLIVE",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "GREEN"
+     },
+     {
+      "code": "COL67",
+      "displayCode": "67",
+      "name": "BLUE",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BLUE"
+     },
+     {
+      "code": "COL69",
+      "displayCode": "69",
+      "name": "NAVY",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "BLUE"
+     },
+     {
+      "code": "COL76",
+      "displayCode": "76",
+      "name": "PURPLE",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "PURPLE"
+     }
+    ],
+    "genderName": "UNISEX",
+    "genderCategory": "UNISEX",
+    "sizeGender": "MEN",
+    "images": {
+     "main": {
+      "30": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/469956/item/usgoods_30_469956_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "31": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/469956/item/usgoods_31_469956_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "34": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/469956/item/usgoods_34_469956_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "57": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/469956/item/usgoods_57_469956_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "67": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/469956/item/usgoods_67_469956_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "69": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/469956/item/usgoods_69_469956_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "76": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/469956/item/usgoods_76_469956_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      },
+      "08": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/469956/item/usgoods_08_469956_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      }
+     },
+     "chip": {
+      "18": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/chip/goods_18_469956_chip.jpg",
+      "30": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/chip/goods_30_469956_chip.jpg",
+      "31": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/chip/goods_31_469956_chip.jpg",
+      "34": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/chip/goods_34_469956_chip.jpg",
+      "57": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/chip/goods_57_469956_chip.jpg",
+      "66": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/chip/goods_66_469956_chip.jpg",
+      "67": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/chip/goods_67_469956_chip.jpg",
+      "69": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/chip/goods_69_469956_chip.jpg",
+      "76": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/chip/goods_76_469956_chip.jpg",
+      "05": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/chip/goods_05_469956_chip.jpg",
+      "07": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/chip/goods_07_469956_chip.jpg",
+      "08": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/chip/goods_08_469956_chip.jpg"
+     },
+     "sub": [
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/469956/sub/usgoods_469956_sub3_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ],
+       "colorCode": "57"
+      },
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/469956/sub/usgoods_469956_sub6_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Women"
+        }
+       ],
+       "colorCode": "30"
+      },
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/469956/sub/usgoods_469956_sub7_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Women"
+        }
+       ],
+       "colorCode": "30"
+      },
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/sub/goods_469956_sub11_3x4.jpg",
+       "model": []
+      },
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/469956/sub/goods_469956_sub17_3x4.jpg",
+       "model": []
+      }
+     ]
+    },
+    "l1Id": "469956",
+    "name": "Fleece Full-Zip Jacket | Color Block",
+    "prices": {
+     "base": {
+      "currency": {
+       "code": "USD",
+       "symbol": "$"
+      },
+      "value": 49.9
+     },
+     "promo": null,
+     "isDualPrice": false
+    },
+    "productId": "E469956-000",
+    "priceGroup": "00",
+    "plds": [
+     {
+      "code": "PTB000",
+      "displayCode": "000",
+      "name": "-",
+      "display": {
+       "showFlag": false,
+       "chipType": 0
+      }
+     }
+    ],
+    "rating": {
+     "average": 4.8,
+     "count": 184
+    },
+    "representativeColorDisplayCode": "08",
+    "representative": {
+     "color": {
+      "code": "COL08",
+      "displayCode": "08",
+      "name": "DARK GRAY",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "GRAY"
+     },
+     "flags": {
+      "priceFlags": [],
+      "productFlags": [
+       {
+        "code": "unisex",
+        "name": "UNISEX",
+        "id": 135,
+        "rank": 103,
+        "type": "product_flag",
+        "isRepresentativeL2Flag": true,
+        "effectiveTime": {
+         "start": 0,
+         "end": 0
+        },
+        "flagColor": "normal"
+       },
+       {
+        "code": "extraLargeStoreOnly",
+        "name": "Made with recycled materials",
+        "id": 1,
+        "rank": 15,
+        "type": "product_flag",
+        "isRepresentativeL2Flag": true,
+        "effectiveTime": {
+         "start": 0,
+         "end": 0
+        },
+        "flagColor": "normal"
+       }
+      ]
+     },
+     "l2Id": "08795025",
+     "pld": {
+      "code": "PTB000",
+      "displayCode": "000",
+      "name": "-",
+      "display": {
+       "showFlag": false,
+       "chipType": 0
+      }
+     },
+     "sales": true,
+     "size": {
+      "code": "SMA001",
+      "displayCode": "001",
+      "name": "XXS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     "communicationCode": "469956-08-001-000"
+    },
+    "sizes": [
+     {
+      "code": "SMA001",
+      "displayCode": "001",
+      "name": "XXS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA002",
+      "displayCode": "002",
+      "name": "XS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA003",
+      "displayCode": "003",
+      "name": "S",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA004",
+      "displayCode": "004",
+      "name": "M",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA005",
+      "displayCode": "005",
+      "name": "L",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA006",
+      "displayCode": "006",
+      "name": "XL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA007",
+      "displayCode": "007",
+      "name": "XXL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     {
+      "code": "SMA008",
+      "displayCode": "008",
+      "name": "3XL",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     }
+    ],
+    "promotionText": "",
+    "storeStockOnly": false
+   },
+   {
+    "colors": [
+     {
+      "code": "COL05",
+      "displayCode": "05",
+      "name": "GRAY",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "GRAY"
+     }
+    ],
+    "genderName": "MEN",
+    "genderCategory": "MEN",
+    "sizeGender": "MEN",
+    "images": {
+     "main": {
+      "05": {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/468671/item/usgoods_05_468671_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ]
+      }
+     },
+     "chip": {
+      "05": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/468671/chip/goods_05_468671_chip.jpg"
+     },
+     "sub": [
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/468671/sub/usgoods_468671_sub3_3x4.jpg",
+       "model": [
+        {
+         "modelGender": "Men"
+        }
+       ],
+       "colorCode": "05"
+      },
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/468671/sub/goods_468671_sub13_3x4.jpg",
+       "model": []
+      },
+      {
+       "image": "https://image.uniqlo.com/UQ/ST3/WesternCommon/imagesgoods/468671/sub/goods_468671_sub14_3x4.jpg",
+       "model": []
+      }
+     ]
+    },
+    "l1Id": "468671",
+    "name": "AirSense Houndstooth Blazer | Wool-Like",
+    "prices": {
+     "base": {
+      "currency": {
+       "code": "USD",
+       "symbol": "$"
+      },
+      "value": 59.9
+     },
+     "promo": {
+      "currency": {
+       "code": "USD",
+       "symbol": "$"
+      },
+      "value": 59.9
+     },
+     "isDualPrice": false
+    },
+    "productId": "E468671-000",
+    "priceGroup": "00",
+    "plds": [
+     {
+      "code": "PTB000",
+      "displayCode": "000",
+      "name": "-",
+      "display": {
+       "showFlag": false,
+       "chipType": 0
+      }
+     }
+    ],
+    "rating": {
+     "average": 4.4,
+     "count": 29
+    },
+    "representativeColorDisplayCode": "05",
+    "representative": {
+     "color": {
+      "code": "COL05",
+      "displayCode": "05",
+      "name": "GRAY",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      },
+      "filterCode": "GRAY"
+     },
+     "flags": {
+      "priceFlags": [
+       {
+        "code": "discount",
+        "name": "Sale",
+        "id": 12,
+        "rank": 7,
+        "type": "price_flag",
+        "isRepresentativeL2Flag": true,
+        "effectiveTime": {
+         "start": 1784635200,
+         "end": 0
+        },
+        "flagColor": "discount"
+       }
+      ],
+      "productFlags": []
+     },
+     "l2Id": "07908576",
+     "pld": {
+      "code": "PTB000",
+      "displayCode": "000",
+      "name": "-",
+      "display": {
+       "showFlag": false,
+       "chipType": 0
+      }
+     },
+     "sales": true,
+     "size": {
+      "code": "SMA001",
+      "displayCode": "001",
+      "name": "XXS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     },
+     "communicationCode": "468671-05-001-000"
+    },
+    "sizes": [
+     {
+      "code": "SMA001",
+      "displayCode": "001",
+      "name": "XXS",
+      "display": {
+       "showFlag": true,
+       "chipType": 0
+      }
+     }
+    ],
     "promotionText": "",
     "storeStockOnly": false
    }

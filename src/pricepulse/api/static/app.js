@@ -21,12 +21,30 @@ document.addEventListener('click', e => {
   applyThumbs(b.dataset.thumbs);
 });
 
-// Column headers are plain links that swap #deals-wrap; mirror the resulting sort into the toolbar.
-document.addEventListener('htmx:afterSwap', e => {
+function syncToolbar(name) {
   const form = document.getElementById('filters');
-  const section = e.detail.target.querySelector?.('[data-sort]');
-  if (form && section && form.sort.value !== section.dataset.sort) form.sort.value = section.dataset.sort;
-});
+  if (!form) return;
+
+  const params = new URLSearchParams(location.search);
+  const controls = name ? [form.elements.namedItem(name)] : form.elements;
+  for (const control of controls) {
+    if (!control?.name) continue;
+    const value = params.get(control.name);
+    if (control.type === 'checkbox') {
+      control.checked = value === 'true';
+    } else {
+      control.value = value ?? (control.name === 'sort' ? 'discount' :
+        control.name === 'min_discount' ? '0' : '');
+    }
+  }
+}
+
+// The toolbar is outside #deals-wrap, so history snapshots can restore stale form attributes.
+document.addEventListener('htmx:historyRestore', () => syncToolbar());
+window.addEventListener('popstate', () => syncToolbar());
+
+// Column headers are plain links that swap #deals-wrap; mirror the pushed sort into the toolbar.
+document.addEventListener('htmx:afterSwap', () => syncToolbar('sort'));
 
 // Keep pushed URLs shareable: blank inputs and the 0 % default are "unset", not "".
 document.addEventListener('htmx:configRequest', e => { const p = e.detail.parameters; for (const [k, v] of [...p.entries()]) if (v === '' || (k === 'min_discount' && v === '0')) p.delete(k); });

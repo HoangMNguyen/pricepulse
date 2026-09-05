@@ -6,9 +6,11 @@
    `sources` Terraform variable (today 13:00 UTC `{"source":"ikea"}`, 13:10 UTC
    `{"source":"uniqlo"}`).
 2. **Scrape.** `Source.fetch()` walks the retailer's JSON endpoint (IKEA: one discovery request
-   plus one request per offer tag, ~1 page; UNIQLO: 4 gender paths × ≤ 100 items/page, ~18 pages).
+   plus one request per offer tag, ~1 page, plus up to four sort orders of the last-chance set;
+   UNIQLO: 4 gender paths × ≤ 100 items/page, ~18 pages).
    Every response is stored verbatim as `raw/<source>/<YYYY-MM-DD>/<HHMMSS>-<id>.json.gz` in the
-   raw bucket. IKEA's discovery request is tagged `role: index` and skipped by `parse()`.
+   raw bucket. IKEA's discovery request is tagged `role: index` and skipped by `parse()`; its
+   last-chance pages are tagged `role: last_chance` and parsed like offer pages.
 3. **Process.** The S3 `ObjectCreated` event invokes `process`, which:
    - upserts the adapter's `source` row (`ensure_source`: code, name, base URL) and claims the key
      in `ingestion_run` (`ON CONFLICT ... WHERE status='failed' OR stale`) — a duplicate delivery
@@ -67,6 +69,13 @@ TLS; each function reads its role's connection URL from SSM at cold start.
 - `source` — one row per retailer adapter, created on the adapter's first run (`id` is an
   identity column since 0005; ids 1–2 were seeded).
 - `product` — one row per retailer SKU, `UNIQUE (source_id, external_id)`, trigram index on name.
+  `variants JSONB` (since 0006) is the retailer's current colour/size listing —
+  `{"colours": [{code, name, image, chip}], "sizes": [...], "lengths"?: [...], "colour_total"}` —
+  NULL when the retailer exposes none (IKEA); `labels JSONB` is the list of availability markers
+  (`last_chance`, `in_store_only`, `xl_store_only`, `online_only`, `select_variants`,
+  `coming_soon`; vocabulary in `domain/models.py`). Both are current-state columns overwritten by
+  every upsert, like `name` and `image_url`, and are read through a PK join from the summary —
+  they are not part of the materialized view or of `price_observation`.
 - `ingestion_run` — one row per raw object key (`UNIQUE`), status machine `running → succeeded | failed`.
 - `price_observation` — `PARTITION BY RANGE (observed_at)`, monthly, PK `(product_id, observed_at)`.
 - `watch` — email + per-product threshold + `token` (unique) + `confirmed_at`; partial index on
@@ -77,14 +86,38 @@ TLS; each function reads its role's connection URL from SSM at cold start.
   indexes are partial on `WHERE is_current`, plus the unique `product_id` index that
   `REFRESH … CONCURRENTLY` needs.
   - `is_current` means "the product's latest observation came from its source's latest
-    *succeeded* run". IKEA's feed is offers-only, so an item that leaves the feed must leave the
-    deals list instead of lingering with its last sale price. Consequence: if an adapter ever runs
-    more than once a day, products missing from the newer run become non-current until the next
-    run that lists them — accepted.
+    *succeeded* run". IKEA's feed is offers and last-chance items only, so an item that leaves
+    the feed must leave the deals list instead of lingering with its last sale price.
+    Consequence: if an adapter ever runs more than once a day, products missing from the newer
+    run become non-current until the next run that lists them — accepted.
 - Helpers: `ensure_price_partition(timestamptz)`, `refresh_price_summary()`,
   `prune_price_partitions(int)` — `SECURITY DEFINER`, fixed `search_path`, EXECUTE granted to
   `app_rw` only; `prune_price_partitions` raises for `keep_months < 1`. Partitions older than
   13 months are dropped after each run.
+
+## Retailer notes
+
+- **UNIQLO price groups.** Prices are per `(productId, priceGroup)`: when some colours of a style
+  are marked down, the retailer lists the style twice — group `00` at the regular price and group
+  `01`/`02` with the clearance colours. Each group is its own product (`external_id`
+  `E424873-000` for group 00, `E424873-000/01` otherwise; the URL already carries the group), so a
+  style can be two rows in the deals list. Group 00's base price becomes the sibling groups'
+  `list_price` — the only way UNIQLO exposes an original price; the 90-day baseline remains the
+  fallback for everything else. `colors[]`/`sizes[]` on the list feed are stock-filtered by the
+  retailer (a listed colour has at least one buyable SKU), which is what `variants` stores;
+  `colour_total` counts the chip images, i.e. every colour the style has had. No per-SKU stock
+  is fetched: that would be one request per row and does not fit the 300 s scrape budget.
+- **IKEA last chance and in-store offers.** The offers filter only lists Family prices;
+  discontinued "while supply lasts" items come from `f-last-chance=true`. That endpoint has no
+  offset parameter and its `max` under-reports, so the set is fetched as the union of up to four
+  sort orders at the maximum page size (`size=1000`, ~1,900 items measured) and de-duplicated per
+  `itemNo`. `badge.type == IN_STORE_OFFER_ONLY` is the only location-bound signal in the public
+  API (no store id) and maps to the `in_store_only` label.
+- **IKEA As-is (bargain corner) is out of scope.** The only listing is store-scoped and login-gated
+  (`/circular/second-hand/`, app path `*/asisonline/*`), every unit is a one-off reserved for 48 h,
+  and both the listing path and its backing API are robots-disallowed (`*/asisonline/*`,
+  `*?storeId=*`, `web-api.ikea.com`). Nothing under ADR-0007 can observe it; the public
+  last-chance/in-store signals above are used instead.
 
 ## Failure modes
 

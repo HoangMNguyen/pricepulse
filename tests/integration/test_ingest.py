@@ -58,14 +58,63 @@ def test_process_is_idempotent_per_key(conn: Engine, settings: Settings) -> None
     key = store(settings).put("raw/ikea/2026-09-04/a.json.gz", ikea_raw())
     first = run_process(key, settings, conn)
     assert first.skipped is False
-    assert first.products_seen == 3
-    assert first.observations_inserted == 3
+    assert first.products_seen == 5
+    assert first.observations_inserted == 5
     second = run_process(key, settings, conn)
     assert second.skipped is True and second.alerts == []
     with conn.connect() as c:
-        assert c.execute(text("SELECT count(*) FROM price_observation")).scalar() == 3
+        assert c.execute(text("SELECT count(*) FROM price_observation")).scalar() == 5
         assert c.execute(text("SELECT count(*) FROM ingestion_run")).scalar() == 1
         assert c.execute(text("SELECT status FROM ingestion_run")).scalar() == "succeeded"
+
+
+def test_variants_and_labels_are_stored_and_overwritten(conn: Engine, settings: Settings) -> None:
+    s = store(settings)
+    uniqlo = {
+        "source": "uniqlo",
+        "fetched_at": "2026-09-04T13:10:00+00:00",
+        "requests": [
+            {
+                "url": "p0",
+                "status": 200,
+                "path": "22211",
+                "body": json.loads((FIXTURES / "uniqlo_men_page0.json").read_text()),
+            }
+        ],
+    }
+    run_process(s.put("raw/uniqlo/2026-09-04/u.json.gz", uniqlo), settings, conn)
+    run_process(s.put("raw/ikea/2026-09-04/i.json.gz", ikea_raw()), settings, conn)
+    with conn.connect() as c:
+        row = c.execute(
+            text("SELECT variants, labels FROM product WHERE external_id = 'E450544-000'")
+        ).one()
+        assert len(row.variants["colours"]) == 5 and row.variants["colour_total"] == 17
+        assert row.labels == ["coming_soon"]
+        assert (
+            c.execute(
+                text("SELECT count(*) FROM product WHERE external_id LIKE 'E450544-000/%'")
+            ).scalar()
+            == 2
+        )
+        ikea = c.execute(
+            text("SELECT variants, labels FROM product WHERE external_id = '00434277'")
+        ).one()
+        assert ikea.variants is None and ikea.labels == ["last_chance", "in_store_only"]
+    # next run: one colour left, flags gone -> the current-state columns are overwritten
+    item = next(
+        i
+        for i in uniqlo["requests"][0]["body"]["result"]["items"]
+        if (i["productId"], i["priceGroup"]) == ("E450544-000", "00")
+    )
+    item["colors"] = item["colors"][:1]
+    item["representative"]["flags"]["productFlags"] = []
+    uniqlo["fetched_at"] = "2026-09-05T13:10:00+00:00"
+    run_process(s.put("raw/uniqlo/2026-09-05/u.json.gz", uniqlo), settings, conn)
+    with conn.connect() as c:
+        row = c.execute(
+            text("SELECT variants, labels FROM product WHERE external_id = 'E450544-000'")
+        ).one()
+        assert len(row.variants["colours"]) == 1 and row.labels == []
 
 
 def test_failed_run_can_be_retried(conn: Engine, settings: Settings) -> None:
@@ -79,7 +128,7 @@ def test_failed_run_can_be_retried(conn: Engine, settings: Settings) -> None:
             {"k": key},
         )
     result = run_process(key, settings, conn)
-    assert result.skipped is False and result.products_seen == 3
+    assert result.skipped is False and result.products_seen == 5
     with conn.connect() as c:
         row = c.execute(text("SELECT status, error FROM ingestion_run")).one()
         assert (row.status, row.error) == ("succeeded", None)

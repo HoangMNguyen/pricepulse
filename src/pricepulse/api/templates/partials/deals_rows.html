@@ -4,9 +4,11 @@
   <td class="name">
     <a href="/products/{{ d.product_id }}">{{ d.name }}</a>
     {% if d.category %}<small class="cat">{{ d.category }}</small>{% endif %}
+    {% if d.variants %}{% set v = d.variants %}<small class="variants">{{ v.colours|length }}{% if v.colour_total > v.colours|length %} of {{ v.colour_total }}{% endif %} colour{{ 's' if v.colour_total != 1 }} · {{ v.sizes|length }} size{{ 's' if v.sizes|length != 1 }}</small>{% endif %}
     {% if d.is_new %}<span class="badge new">new</span>{% endif %}
     {% if d.drop_vs_previous_pct > 0 %}<span class="badge drop">↓ {{ d.drop_vs_previous_pct }}% since last check</span>{% endif %}
     {% if d.days_left is not none and d.days_left <= 7 %}<span class="badge ends">ends in {{ d.days_left }}d</span>{% endif %}
+    {% for l in d.labels %}<span class="badge label {{ l }}">{{ label_names[l] }}</span>{% endfor %}
   </td>
   <td class="num">${{ '%.2f' % d.current_price }}</td>
   {% if layout == 'list_price' %}

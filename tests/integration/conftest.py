@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -12,6 +13,16 @@ from sqlalchemy import Engine, text
 
 from pricepulse.api.app import create_app
 from pricepulse.config import Settings
+
+SEED_VARIANTS = {
+    "colours": [
+        {"code": "09", "name": "BLACK", "image": "https://img.example/09.jpg", "chip": None},
+        {"code": "64", "name": "BLUE", "image": None, "chip": "https://img.example/64_chip.jpg"},
+    ],
+    "sizes": ["S", "M", "L"],
+    "colour_total": 5,
+}
+SEED_LABELS = ["last_chance", "select_variants"]
 
 
 def seed(engine: Engine, n: int = 12) -> None:
@@ -86,9 +97,11 @@ def seed(engine: Engine, n: int = 12) -> None:
         )
         pid = c.execute(
             text(
-                "INSERT INTO product (source_id, external_id, name, category, url) VALUES "
-                "(2, 'E1-000', 'AIRism tee', 'MEN', 'https://uniqlo.example/E1') RETURNING id"
-            )
+                "INSERT INTO product (source_id, external_id, name, category, url, variants, "
+                "labels) VALUES (2, 'E1-000', 'AIRism tee', 'MEN', 'https://uniqlo.example/E1', "
+                "CAST(:variants AS jsonb), CAST(:labels AS jsonb)) RETURNING id"
+            ),
+            {"variants": json.dumps(SEED_VARIANTS), "labels": json.dumps(SEED_LABELS)},
         ).scalar()
         c.execute(
             text(
@@ -104,6 +117,11 @@ def seed(engine: Engine, n: int = 12) -> None:
 @pytest.fixture
 def api_headers() -> dict[str, str]:
     return {"X-API-Key": "test-key"}
+
+
+@pytest.fixture
+def seeded_variants() -> dict:
+    return {"variants": SEED_VARIANTS, "labels": SEED_LABELS}
 
 
 @pytest.fixture

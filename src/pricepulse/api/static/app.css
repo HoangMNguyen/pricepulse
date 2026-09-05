@@ -206,6 +206,7 @@ td.name { min-width: 16rem; }
 td.name a { font-weight: 600; color: var(--tn-fg-bright); text-decoration: none; }
 td.name a:hover { color: var(--tn-accent); text-decoration: underline; }
 td.name .cat { display: block; margin-top: .1rem; font-size: .75rem; color: var(--tn-fg-dark); }
+td.name .variants { display: block; margin-top: .1rem; font-size: .72rem; color: var(--pico-muted-color); }
 td.num, th.num { text-align: right; white-space: nowrap; }
 td.num { font-family: var(--mono); font-size: .88rem; color: var(--tn-fg-bright); }
 td.num s { color: var(--tn-fg-dark); }
@@ -226,6 +227,8 @@ button.more { margin: .25rem 0; padding: .35rem 1.25rem; font-size: .85rem; }
 .badge.new { background: color-mix(in srgb, var(--tn-green) 22%, transparent); color: var(--tn-green); }
 .badge.drop { background: color-mix(in srgb, var(--tn-cyan) 25%, transparent); color: var(--tn-cyan-bright); }
 .badge.ends { background: color-mix(in srgb, var(--tn-orange) 22%, transparent); color: var(--tn-orange); }
+.badge.label { background: color-mix(in srgb, var(--pico-muted-color) 22%, transparent); color: var(--pico-muted-color); }
+.badge.label.last_chance { background: color-mix(in srgb, var(--tn-orange) 22%, transparent); color: var(--tn-orange); }
 .chip-brand { display: inline-flex; align-items: center; padding: .1rem .55rem .1rem .45rem; border: 1px solid var(--tn-muted); border-radius: 999px; font-size: .72rem; font-weight: 700; letter-spacing: .04em; color: var(--tn-fg-light); }
 
 /* ---- product page ---- */
@@ -248,6 +251,13 @@ article > header h2 { margin: 0; font-size: 1.2rem; }
 .kv dt { color: var(--tn-fg-dark); }
 .kv dd { margin: 0; color: var(--tn-fg-light); }
 .kv dd.num { text-align: left; font-family: var(--mono); }
+.kv.variants { margin-top: -.25rem; }
+.kv.variants dd { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
+.swatch { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 1px; border: 1px solid var(--tn-muted); border-radius: .3rem; background: var(--tn-fg-light); font-size: .7rem; line-height: 1; overflow: hidden; text-decoration: none; color: var(--tn-bg); }
+.swatch:hover { border-color: var(--tn-accent); }
+.swatch img { display: block; width: 28px; height: 28px; object-fit: cover; border-radius: .2rem; }
+.swatches small { margin-left: .3rem; color: var(--pico-muted-color); font-size: .75rem; }
+.size { display: inline-block; min-width: 2rem; padding: .1rem .45rem; border: 1px solid var(--tn-muted); border-radius: .3rem; text-align: center; font-family: var(--mono); font-size: .78rem; color: var(--tn-fg); }
 .chart-wrap { position: relative; height: 240px; margin-top: 1.25rem; }
 .watch-card .toolbar { margin: 0 0 .6rem; padding: 0; border: 0; background: transparent; }
 .watch-result { margin: 0 0 .4rem; font-size: .9rem; min-height: 1.2em; }

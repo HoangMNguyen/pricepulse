@@ -4,6 +4,7 @@ upserts, DISTINCT ON, array unnest) are visible in one place. Reads for the API 
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -81,15 +82,19 @@ def upsert_products(
     ids: dict[str, int] = {}
     stmt = text(
         """
-        INSERT INTO product (source_id, external_id, name, category, url, image_url, currency)
-        SELECT :source_id, u.external_id, u.name, u.category, u.url, u.image_url, u.currency
+        INSERT INTO product (source_id, external_id, name, category, url, image_url, currency,
+                             variants, labels)
+        SELECT :source_id, u.external_id, u.name, u.category, u.url, u.image_url, u.currency,
+               CAST(u.variants AS jsonb), CAST(u.labels AS jsonb)
         FROM unnest(CAST(:external_ids AS text[]), CAST(:names AS text[]),
                     CAST(:categories AS text[]), CAST(:urls AS text[]),
-                    CAST(:image_urls AS text[]), CAST(:currencies AS text[]))
-             AS u(external_id, name, category, url, image_url, currency)
+                    CAST(:image_urls AS text[]), CAST(:currencies AS text[]),
+                    CAST(:variants AS text[]), CAST(:labels AS text[]))
+             AS u(external_id, name, category, url, image_url, currency, variants, labels)
         ON CONFLICT (source_id, external_id) DO UPDATE
           SET name = EXCLUDED.name, category = EXCLUDED.category, url = EXCLUDED.url,
-              image_url = EXCLUDED.image_url, last_seen_at = now()
+              image_url = EXCLUDED.image_url, variants = EXCLUDED.variants,
+              labels = EXCLUDED.labels, last_seen_at = now()
         RETURNING id, external_id
         """
     )
@@ -105,6 +110,8 @@ def upsert_products(
                 "urls": [s.url for s in chunk],
                 "image_urls": [s.image_url for s in chunk],
                 "currencies": [s.currency for s in chunk],
+                "variants": [None if s.variants is None else json.dumps(s.variants) for s in chunk],
+                "labels": [json.dumps(list(s.labels)) for s in chunk],
             },
         )
         for row in rows:

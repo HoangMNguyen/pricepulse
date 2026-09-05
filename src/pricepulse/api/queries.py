@@ -13,6 +13,7 @@ from typing import Any
 from fastapi import HTTPException
 from sqlalchemy import Connection, text
 
+from pricepulse.domain.models import LABELS
 from pricepulse.domain.pricing import discount_pct
 
 MAX_LIMIT = 200
@@ -37,6 +38,15 @@ SORT_LABELS = {
     "newest": "Newest",
     "ending_soon": "Ending soon",
 }
+# Display text per label, in LABELS order (the toolbar select and the row pills).
+LABEL_NAMES = {
+    "last_chance": "last chance",
+    "in_store_only": "in-store only",
+    "xl_store_only": "XL stores only",
+    "online_only": "online only",
+    "select_variants": "select colours/sizes",
+    "coming_soon": "coming soon",
+}
 
 _SUMMARY_COLUMNS = """
     s.product_id, s.source, s.name, s.category, s.url, s.image_url, s.currency,
@@ -44,9 +54,11 @@ _SUMMARY_COLUMNS = """
     s.current_price, s.current_observed_at, s.retailer_sale_flag, s.retailer_tag, s.valid_to,
     s.list_price, s.reference_price, s.mode_price_90d, s.min_price_90d, s.max_price_90d,
     s.observations_90d, s.discount_pct, s.previous_price, s.previous_observed_at, s.savings,
-    s.is_current
+    s.is_current, p.variants, p.labels
 """
-_SUMMARY_SELECT = f"SELECT {_SUMMARY_COLUMNS} FROM product_price_summary s"  # noqa: S608 - constant
+# PK join: variants/labels are current-state columns kept out of the materialized view.
+_SUMMARY_FROM = "FROM product_price_summary s JOIN product p ON p.id = s.product_id"
+_SUMMARY_SELECT = f"SELECT {_SUMMARY_COLUMNS} {_SUMMARY_FROM}"  # noqa: S608 - constant
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +71,7 @@ class DealFilters:
     min_price: Decimal | None = None
     max_price: Decimal | None = None
     q: str | None = None
+    label: str | None = None
     sort: str = DEFAULT_SORT
     limit: int = 50
     cursor: str | None = None
@@ -128,6 +141,11 @@ def _where(f: DealFilters, with_cursor: bool) -> tuple[list[str], dict[str, Any]
     if f.q:
         where.append("s.name ILIKE '%' || :q || '%'")
         params["q"] = f.q
+    if f.label:
+        if f.label not in LABELS:
+            raise HTTPException(422, f"unknown label; expected one of {', '.join(LABELS)}")
+        where.append("p.labels @> CAST(:label AS jsonb)")
+        params["label"] = json.dumps([f.label])
     if f.sort == "ending_soon":
         where.append("s.valid_to IS NOT NULL")
     if with_cursor and f.cursor:
@@ -150,7 +168,7 @@ def list_deals(
     total = None
     if with_total:
         count_where, count_params = _where(f, with_cursor=False)
-        count_sql = "SELECT count(*) FROM product_price_summary s WHERE "
+        count_sql = f"SELECT count(*) {_SUMMARY_FROM} WHERE "  # noqa: S608 - constant
         count_sql += " AND ".join(count_where)
         total = int(conn.execute(text(count_sql), count_params).scalar_one())
     sql = (

@@ -945,11 +945,290 @@
       "label": "Product",
       "actionTokens": [],
       "isBreakout": false
+     },
+     {
+      "metadata": "v1;42;PRODUCT;40599596;products_main;",
+      "product": {
+       "name": "KUSTFYR",
+       "typeName": "Paper bag",
+       "itemMeasureReferenceText": "4 \u00bex9 \u00bd \"",
+       "mainImageUrl": "https://www.ikea.com/us/en/images/products/kustfyr-paper-bag-mixed-patterns-white-black__1406591_pe971037_s5.jpg",
+       "pipUrl": "https://www.ikea.com/us/en/p/kustfyr-paper-bag-mixed-patterns-white-black-40599596/",
+       "filterClass": "food containers",
+       "allProductImage": [
+        {
+         "altText": "Two black and white halloween-themed paper bags, one with ghosts, one with grid pattern, and their flat counterparts displayed, all made of paper.",
+         "type": "MAIN_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/kustfyr-paper-bag-mixed-patterns-white-black__1406591_pe971037_s5.jpg"
+        },
+        {
+         "altText": "Halloween table setup with KUSTFYR bags, candy, pillow, chair.",
+         "type": "CONTEXT_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/kustfyr-paper-bag-mixed-patterns-white-black__1472464_ph205862_s5.jpg"
+        }
+       ],
+       "id": "40599596",
+       "itemNoGlobal": "40599596",
+       "onlineSellable": true,
+       "lastChance": true,
+       "gprDescription": {
+        "numberOfVariants": 0,
+        "variants": []
+       },
+       "colors": [],
+       "tag": "DISCONTINUED_PRODUCT",
+       "quickFacts": [],
+       "features": [],
+       "availability": [],
+       "ratingValue": 4.8,
+       "ratingCount": 9,
+       "itemNo": "40599596",
+       "itemType": "ART",
+       "salesPrice": {
+        "currencyCode": "USD",
+        "numeral": 0.99,
+        "current": {
+         "prefix": "$",
+         "wholeNumber": "0",
+         "separator": ".",
+         "decimals": "99",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "previous": {
+         "prefix": "$",
+         "wholeNumber": "1",
+         "separator": ".",
+         "decimals": "99",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "isBreathTaking": false,
+        "priceUnit": "12 pack",
+        "unitText": "pack",
+        "discount": "",
+        "discountAmount": {
+         "prefix": "$",
+         "wholeNumber": "1",
+         "separator": ".",
+         "decimals": "00",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "discountPercentage": 50.0,
+        "prevPriceLabel": "Previous price",
+        "validFrom": "2025-10-10",
+        "validTo": "2027-08-31",
+        "availabilityDisclaimer": "Price valid from Oct 10, 2025 and while supply lasts",
+        "tag": "DISCONTINUED_PRODUCT",
+        "priceText": "Price",
+        "tags": [
+         "DISCONTINUED_PRODUCT"
+        ],
+        "tagWithText": {
+         "tag": "DISCONTINUED_PRODUCT"
+        }
+       },
+       "contextualImageUrl": "https://www.ikea.com/us/en/images/products/kustfyr-paper-bag-mixed-patterns-white-black__1472464_ph205862_s5.jpg",
+       "contextualImageAlt": "Halloween table setup with KUSTFYR bags, candy, pillow, chair.",
+       "mainImageAlt": "Two black and white halloween-themed paper bags, one with ghosts, one with grid pattern, and their flat counterparts displayed, all made of paper.",
+       "businessStructure": {
+        "homeFurnishingBusinessName": "Decoration",
+        "homeFurnishingBusinessNo": "16",
+        "productAreaName": "Gift wrap",
+        "productAreaNo": "1636",
+        "productRangeAreaName": "Home decoration",
+        "productRangeAreaNo": "163"
+       },
+       "categoryPath": [
+        {
+         "name": "Home decor & accessories",
+         "key": "de001"
+        },
+        {
+         "name": "Wrapping paper and bags",
+         "key": "25227"
+        }
+       ],
+       "validDesignText": "mixed patterns white/black",
+       "heroBackoffData": {},
+       "optimizelyAttributes": {
+        "PRODUCT_TYPE": "standard"
+       },
+       "lastChanceText": "Last chance"
+      },
+      "type": "PRODUCT",
+      "label": "Product",
+      "actionTokens": [],
+      "isBreakout": false
+     },
+     {
+      "metadata": "v1;478;PRODUCT;00434277;products_main;",
+      "product": {
+       "name": "M\u00d6JLIGHET",
+       "typeName": "Headset and tablet stand",
+       "itemMeasureReferenceText": "",
+       "mainImageUrl": "https://www.ikea.com/us/en/images/products/moejlighet-headset-and-tablet-stand-black__0634709_pe696689_s5.jpg",
+       "pipUrl": "https://www.ikea.com/us/en/p/moejlighet-headset-and-tablet-stand-black-00434277/",
+       "filterClass": "desk accessories",
+       "allProductImage": [
+        {
+         "altText": "Black M\u00d6JLIGHET stand: steel headphone organiser with rounded edges.",
+         "type": "MAIN_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/moejlighet-headset-and-tablet-stand-black__0634709_pe696689_s5.jpg"
+        },
+        {
+         "altText": "M\u00d6JLIGHET stand holds tablet & headphones, fits desks, sturdy.",
+         "type": "CONTEXT_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/moejlighet-headset-and-tablet-stand-black__0877242_pe696691_s5.jpg"
+        },
+        {
+         "altText": "Desk with tablet stand holding phone and headphones, lamp, papers, and storage containers.",
+         "type": "FUNCTIONAL_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/moejlighet-headset-and-tablet-stand-black__0877235_pe696688_s5.jpg"
+        },
+        {
+         "altText": "Black metal stand with smooth, rounded edges; holds tablets or phones, sits on white desk.",
+         "type": "QUALITY_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/moejlighet-headset-and-tablet-stand-black__0877259_pe709152_s5.jpg"
+        },
+        {
+         "altText": "Modern tablet stand in black holding a tablet upright on a white desk.",
+         "type": "QUALITY_PRODUCT_IMAGE",
+         "url": "https://www.ikea.com/us/en/images/products/moejlighet-headset-and-tablet-stand-black__0877238_pe696690_s5.jpg"
+        }
+       ],
+       "id": "00434277",
+       "itemNoGlobal": "00434277",
+       "onlineSellable": true,
+       "lastChance": true,
+       "gprDescription": {
+        "numberOfVariants": 0,
+        "variants": []
+       },
+       "colors": [
+        {
+         "name": "black",
+         "id": "10139",
+         "hex": "000000"
+        }
+       ],
+       "badge": {
+        "type": "IN_STORE_OFFER_ONLY",
+        "text": "In-store offer"
+       },
+       "tag": "DISCONTINUED_PRODUCT",
+       "quickFacts": [],
+       "features": [],
+       "availability": [],
+       "ratingValue": 4.5,
+       "ratingCount": 554,
+       "itemNo": "00434277",
+       "itemType": "ART",
+       "salesPrice": {
+        "currencyCode": "USD",
+        "numeral": 3.99,
+        "current": {
+         "prefix": "$",
+         "wholeNumber": "3",
+         "separator": ".",
+         "decimals": "99",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "previous": {
+         "prefix": "$",
+         "wholeNumber": "4",
+         "separator": ".",
+         "decimals": "99",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "isBreathTaking": false,
+        "discount": "",
+        "discountAmount": {
+         "prefix": "$",
+         "wholeNumber": "1",
+         "separator": ".",
+         "decimals": "00",
+         "suffix": "",
+         "isRegularCurrency": false,
+         "style": "SUPER"
+        },
+        "discountPercentage": 20.0,
+        "prevPriceLabel": "Previous price",
+        "validFrom": "2026-04-21",
+        "validTo": "2027-08-31",
+        "availabilityDisclaimer": "Price valid from Apr 21, 2026 and while supply lasts",
+        "tag": "DISCONTINUED_PRODUCT",
+        "priceText": "Price",
+        "advertisement": {
+         "text": "Save 20%, in store only",
+         "validityDisclaimer": "Offer valid from Sep 4, 2026 until Sep 7, 2026",
+         "validForCustomers": [
+          "IKEAFamily"
+         ],
+         "exclusiveToIkeaMemberText": "Exclusive IKEA family offer",
+         "validFrom": "2026-09-04",
+         "validTo": "2026-09-07"
+        },
+        "tags": [
+         "DISCONTINUED_PRODUCT"
+        ],
+        "tagWithText": {
+         "tag": "DISCONTINUED_PRODUCT"
+        }
+       },
+       "contextualImageUrl": "https://www.ikea.com/us/en/images/products/moejlighet-headset-and-tablet-stand-black__0877242_pe696691_s5.jpg",
+       "contextualImageAlt": "M\u00d6JLIGHET stand holds tablet & headphones, fits desks, sturdy.",
+       "mainImageAlt": "Black M\u00d6JLIGHET stand: steel headphone organiser with rounded edges.",
+       "businessStructure": {
+        "homeFurnishingBusinessName": "Children's IKEA",
+        "homeFurnishingBusinessNo": "09",
+        "productAreaName": "Children's study furniture & accessories",
+        "productAreaNo": "0982",
+        "productRangeAreaName": "Children's Small furniture, Eat & Study",
+        "productRangeAreaNo": "098"
+       },
+       "categoryPath": [
+        {
+         "name": "Baby & kids",
+         "key": "bc001"
+        },
+        {
+         "name": "Kids",
+         "key": "bc003"
+        },
+        {
+         "name": "Kids study furniture & accessories",
+         "key": "700414"
+        },
+        {
+         "name": "Kids bedroom accessories & decorations",
+         "key": "24711"
+        }
+       ],
+       "validDesignText": "black",
+       "heroBackoffData": {},
+       "optimizelyAttributes": {
+        "PRODUCT_TYPE": "standard"
+       },
+       "lastChanceText": "Last chance"
+      },
+      "type": "PRODUCT",
+      "label": "Product",
+      "actionTokens": [],
+      "isBreakout": false
      }
     ],
     "start": 0,
-    "end": 3,
-    "max": 3
+    "end": 5,
+    "max": 5
    },
    "shelves": [],
    "pageMessages": []

@@ -74,9 +74,9 @@ def test_full_ingestion_as_app_rw(app_rw_engine: Engine, settings: Settings) -> 
     }
     key = LocalRawStore(settings.raw_local_dir).put("raw/ikea/2027-03-15/r.json.gz", raw)
     result = run_process(key, settings, app_rw_engine)
-    assert result.products_seen == 3 and result.observations_inserted == 3
+    assert result.products_seen == 5 and result.observations_inserted == 5
     with app_rw_engine.connect() as c:
-        assert c.execute(text("SELECT count(*) FROM product_price_summary")).scalar() == 3
+        assert c.execute(text("SELECT count(*) FROM product_price_summary")).scalar() == 5
         assert c.execute(
             text("SELECT to_regclass('price_observation_2027_03') IS NOT NULL")
         ).scalar()

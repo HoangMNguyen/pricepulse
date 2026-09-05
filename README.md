@@ -9,10 +9,15 @@ Daily price tracking for IKEA US offers and the UNIQLO US catalog: real discount
 
 ## What it does
 
-- Checks every IKEA US offer and the full UNIQLO US catalog once a day and keeps the price history.
+- Checks every IKEA US offer and every last-chance item, and the full UNIQLO US catalog, once a
+  day and keeps the price history.
 - Measures discounts against each product's own 90-day history, not only against what the retailer
-  claims. UNIQLO never publishes a list price — only a "sale" flag — so its percentage off can only
-  come from history, and it shows `0 %` until a product has been seen more than once.
+  claims. UNIQLO publishes no list price — only a "sale" flag, and the regular price only when a
+  style's clearance colours are split into their own price group — so its percentage off usually
+  comes from history, and shows `0 %` until a product has been seen more than once.
+- Shows what is actually left to buy: colours and sizes still in stock for UNIQLO (swatches on the
+  product page), and availability labels for both retailers — last chance, in-store only, XL
+  stores only, online only, select colours/sizes, coming soon — filterable with `?label=`.
 - Pick a retailer on the landing page, then a page with columns that fit it: IKEA shows list
   price, tag and offer end date; UNIQLO shows the usual price, the 90-day low and the sale flag.
   Sort, filter, search and share any view by URL; every product has a page with its price chart.

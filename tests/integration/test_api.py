@@ -274,6 +274,41 @@ def test_dashboard_tabs(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> 
     assert "min_price_90d" in client.get(f"/v1/products/{product['product_id']}").json()
 
 
+def test_variants_and_labels_on_api_and_pages(client: TestClient, seeded_variants: dict) -> None:
+    variants, labels = seeded_variants["variants"], seeded_variants["labels"]
+    items = client.get("/v1/deals", params={"limit": 200}).json()["items"]
+    tee = next(i for i in items if i["name"] == "AIRism tee")
+    assert tee["variants"] == variants
+    assert tee["labels"] == labels
+    shelf = next(i for i in items if i["name"] == "KALLAX shelf 1")
+    assert shelf["variants"] is None and shelf["labels"] == []
+    detail = client.get(f"/v1/products/{tee['product_id']}").json()
+    assert detail["variants"] == variants and detail["labels"] == labels
+    # ?label= filters on membership; unknown labels are rejected
+    page = client.get("/v1/deals", params={"label": "last_chance"}).json()
+    assert page["total"] == 1 and [i["name"] for i in page["items"]] == ["AIRism tee"]
+    assert client.get("/v1/deals", params={"label": "in_store_only"}).json()["total"] == 0
+    assert client.get("/v1/deals", params={"label": "bogus"}).status_code == 422
+    assert client.get("/", params={"source": "uniqlo", "label": "bogus"}).status_code == 422
+    # dashboard rows: counts line, label pills, and the toolbar select keeps the state
+    rows = client.get("/", params={"source": "uniqlo", "label": "last_chance"}).text
+    assert '<small class="variants">2 of 5 colours · 3 sizes</small>' in rows
+    assert '<span class="badge label last_chance">last chance</span>' in rows
+    assert '<span class="badge label select_variants">select colours/sizes</span>' in rows
+    assert '<option value="last_chance" selected>last chance</option>' in rows
+    none = client.get("/", params={"source": "uniqlo", "label": "coming_soon"}).text
+    assert "AIRism tee" not in none
+    # product page: swatches link to the retailer's colour, sizes as chips, hero from image_url
+    page_html = client.get(f"/products/{tee['product_id']}").text
+    assert 'href="https://uniqlo.example/E1?colorDisplayCode=64"' in page_html
+    chip = '<img src="https://img.example/64_chip.jpg" alt="BLUE" title="BLUE" width="28"'
+    assert chip in page_html
+    assert 'class="swatch" title="BLACK">BLACK</a>' in page_html  # no chip: name fallback
+    assert "<small>2 of 5 available</small>" in page_html
+    assert page_html.count('<span class="size">') == 3
+    assert 'class="badge label last_chance">last chance</span>' in page_html
+
+
 def test_dashboard_sort_and_filters_are_url_state(client: TestClient) -> None:
     page = client.get("/", params={"sort": "price_asc", "source": "ikea"})
     assert page.status_code == 200

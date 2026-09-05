@@ -38,6 +38,8 @@ class DealOut(BaseModel):
     max_price_90d: Decimal | None
     observations_90d: int
     is_current: bool
+    variants: dict | None
+    labels: list[str]
 
 
 class DealsPage(BaseModel):

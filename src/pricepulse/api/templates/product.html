@@ -16,10 +16,12 @@
       <span class="chip-brand"><i class="dot {{ product.source }}" aria-hidden="true"></i>{{ product.source|upper }}</span>
       {% if product.category %}<span class="cat">{{ product.category }}</span>{% endif %}
       {% if not product.is_current %}<span class="badge ends">no longer listed · last seen {{ product.current_observed_at.strftime('%Y-%m-%d') }}</span>{% endif %}
+      {% for l in product.labels %}<span class="badge label {{ l }}">{{ label_names[l] }}</span>{% endfor %}
     </p>
     <h1 class="product-name">{{ product.name }}</h1>
   </header>
   <div class="product-body">
+    {% set v = product.variants %}
     {% if product.image_url %}<figure class="hero-wrap"><img src="{{ product.image_url }}" alt="{{ product.name }}" class="hero"></figure>{% endif %}
     <div class="facts">
       <p class="price-line"><strong class="price-now">${{ '%.2f' % product.current_price }}</strong>
@@ -33,6 +35,16 @@
         <dt>Observations</dt><dd>{{ product.observations_90d }} in 90 days</dd>
         <dt>Last seen</dt><dd>{{ product.current_observed_at.strftime('%Y-%m-%d %H:%M UTC') }}</dd>
       </dl>
+      {% if v %}
+      <dl class="kv variants">
+        {% if v.colours %}<dt>Colours</dt><dd class="swatches">
+          {% for c in v.colours %}<a href="{{ product.url }}?colorDisplayCode={{ c.code }}" rel="noopener" target="_blank" class="swatch" title="{{ c.name }}">{% if c.chip %}<img src="{{ c.chip }}" alt="{{ c.name }}" title="{{ c.name }}" width="28" height="28" loading="lazy">{% else %}{{ c.name }}{% endif %}</a>{% endfor %}
+          {% if v.colour_total > v.colours|length %}<small>{{ v.colours|length }} of {{ v.colour_total }} available</small>{% endif %}
+        </dd>{% endif %}
+        {% if v.sizes %}<dt>Sizes</dt><dd class="sizes">{% for s in v.sizes %}<span class="size">{{ s }}</span>{% endfor %}</dd>{% endif %}
+        {% if v.lengths %}<dt>Lengths</dt><dd class="sizes">{% for s in v.lengths %}<span class="size">{{ s }}</span>{% endfor %}</dd>{% endif %}
+      </dl>
+      {% endif %}
       <p><a href="{{ product.url }}" rel="noopener" target="_blank">View at retailer ↗</a></p>
     </div>
   </div>
