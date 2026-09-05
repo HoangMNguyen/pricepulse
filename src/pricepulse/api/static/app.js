@@ -77,6 +77,43 @@ if (page) {
     });
   });
 
+  // Colour swatches: the server renders every colour (data-image, data-sizes = in-stock size
+  // names when per-SKU stock was fetched) and every size; selecting a colour swaps the hero and
+  // re-marks the size chips, all in-page.
+  const swatches = [...document.querySelectorAll('#swatches .swatch')];
+  if (swatches.length) {
+    const hero = document.getElementById('hero');
+    const name = document.getElementById('colour-name');
+    const buy = document.getElementById('buy-colour');
+    const chips = [...document.querySelectorAll('#sizes .chip')];
+    const anyColour = chips.map(c => !c.classList.contains('out'));  // server-rendered `in_stock`
+    const stockAt = document.querySelector('#sizes-note time');
+    if (stockAt) stockAt.textContent = new Date(stockAt.dateTime).toLocaleDateString();
+    const sizesOf = b => 'sizes' in b.dataset ? JSON.parse(b.dataset.sizes) : null;
+    const buyUrl = new URL(buy.href);
+
+    function select(b) {
+      for (const s of swatches) s.setAttribute('aria-pressed', String(s === b));
+      if (hero && b.dataset.image) hero.src = b.dataset.image;
+      buyUrl.searchParams.set('colorDisplayCode', b.dataset.colour);
+      buy.href = buyUrl.href;
+      const sizes = sizesOf(b);  // null: no per-colour stock, fall back to the product-wide list
+      let n = 0;
+      chips.forEach((c, i) => {
+        const inStock = sizes ? sizes.includes(c.dataset.size) : anyColour[i];
+        c.classList.toggle('out', !inStock);
+        if (inStock) { n++; c.removeAttribute('aria-disabled'); c.removeAttribute('title'); }
+        else { c.setAttribute('aria-disabled', 'true'); c.title = 'Sold out'; }
+      });
+      name.textContent = chips.length ? `${b.title} · ${n} of ${chips.length} sizes` : b.title;
+    }
+    document.getElementById('swatches').addEventListener('click', e => {
+      const b = e.target.closest('.swatch');
+      if (b) select(b);
+    });
+    select(swatches.find(b => (sizesOf(b) || []).length) || swatches[0]);
+  }
+
   async function createWatch(ev) {
     ev.preventDefault();
     const f = new FormData(ev.target);

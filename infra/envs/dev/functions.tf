@@ -43,7 +43,7 @@ module "scrape" {
   package_path     = var.app_package
   layer_arns       = [aws_lambda_layer_version.deps.arn]
   memory_mb        = 512
-  timeout_s        = 300
+  timeout_s        = 900 # UNIQLO: ~1,300 per-SKU stock calls over 3 workers ≈ 6 min
   role_policy_json = data.aws_iam_policy_document.scrape.json
   environment      = merge(local.common_env, { RAW_BUCKET = aws_s3_bucket.raw.bucket })
 }

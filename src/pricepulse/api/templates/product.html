@@ -22,7 +22,7 @@
   </header>
   <div class="product-body">
     {% set v = product.variants %}
-    {% if product.image_url %}<figure class="hero-wrap"><img src="{{ product.image_url }}" alt="{{ product.name }}" class="hero"></figure>{% endif %}
+    {% if product.image_url %}<figure class="hero-wrap"><img id="hero" src="{{ product.image_url }}" alt="{{ product.name }}" class="hero"></figure>{% endif %}
     <div class="facts">
       <p class="price-line"><strong class="price-now">${{ '%.2f' % product.current_price }}</strong>
         {% if product.discount_pct > 0 %}<span class="pct">-{{ product.discount_pct }}%</span>
@@ -37,15 +37,23 @@
       </dl>
       {% if v %}
       <dl class="kv variants">
-        {% if v.colours %}<dt>Colours</dt><dd class="swatches">
-          {% for c in v.colours %}<a href="{{ product.url }}?colorDisplayCode={{ c.code }}" rel="noopener" target="_blank" class="swatch" title="{{ c.name }}">{% if c.chip %}<img src="{{ c.chip }}" alt="{{ c.name }}" title="{{ c.name }}" width="28" height="28" loading="lazy">{% else %}{{ c.name }}{% endif %}</a>{% endfor %}
-          {% if v.colour_total > v.colours|length %}<small>{{ v.colours|length }} of {{ v.colour_total }} available</small>{% endif %}
+        {% if v.colours %}<dt>Colours</dt><dd>
+          <div id="swatches" class="swatches" role="group" aria-label="Colours">
+            {% for c in v.colours %}<button type="button" class="swatch" data-colour="{{ c.code }}" data-image="{{ c.image or '' }}"{% if c.sizes is defined %} data-sizes='{{ c.sizes|tojson }}'{% endif %} aria-pressed="false" title="{{ c.name }}">{% if c.chip %}<img src="{{ c.chip }}" alt="{{ c.name }}" width="28" height="28" loading="lazy">{% else %}{{ c.name }}{% endif %}</button>{% endfor %}
+            {% if v.colour_total > v.colours|length %}<small>{{ v.colours|length }} of {{ v.colour_total }} available</small>{% endif %}
+          </div>
+          <p id="colour-name" class="colour-name" aria-live="polite"></p>
         </dd>{% endif %}
-        {% if v.sizes %}<dt>Sizes</dt><dd class="sizes">{% for s in v.sizes %}<span class="size">{{ s }}</span>{% endfor %}</dd>{% endif %}
-        {% if v.lengths %}<dt>Lengths</dt><dd class="sizes">{% for s in v.lengths %}<span class="size">{{ s }}</span>{% endfor %}</dd>{% endif %}
+        {% if v.sizes %}<dt>Sizes</dt><dd>
+          <ul id="sizes" class="chips sizes" aria-label="Sizes">
+            {% for s in v.sizes %}{% set name = s.name if s is mapping else s %}{% set out = s is mapping and not s.in_stock %}<li class="chip{{ ' out' if out }}" data-size="{{ name }}"{% if out %} aria-disabled="true" title="Sold out"{% endif %}>{{ name }}</li>{% endfor %}
+          </ul>
+          <p id="sizes-note" class="fine">{% if v.stock_at %}Sizes as of <time datetime="{{ v.stock_at }}">{{ v.stock_at[:10] }}</time>{% else %}Size availability per colour not available{% endif %}</p>
+        </dd>{% endif %}
+        {% if v.lengths %}<dt>Lengths</dt><dd><ul class="chips sizes" aria-label="Lengths">{% for s in v.lengths %}<li class="chip">{{ s }}</li>{% endfor %}</ul></dd>{% endif %}
       </dl>
       {% endif %}
-      <p><a href="{{ product.url }}" rel="noopener" target="_blank">View at retailer ↗</a></p>
+      <p><a href="{{ product.url }}" rel="noopener" target="_blank">View at retailer ↗</a>{% if v and v.colours %} · <a id="buy-colour" href="{{ product.url }}" rel="noopener" target="_blank">Buy this colour ↗</a>{% endif %}</p>
     </div>
   </div>
   <div class="chart-wrap"><canvas id="history" role="img" aria-label="Price history, last 180 days"></canvas></div>

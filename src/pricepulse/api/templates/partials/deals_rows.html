@@ -4,7 +4,7 @@
   <td class="name">
     <a href="/products/{{ d.product_id }}">{{ d.name }}</a>
     {% if d.category %}<small class="cat">{{ d.category }}</small>{% endif %}
-    {% if d.variants %}{% set v = d.variants %}<small class="variants">{{ v.colours|length }}{% if v.colour_total > v.colours|length %} of {{ v.colour_total }}{% endif %} colour{{ 's' if v.colour_total != 1 }} · {{ v.sizes|length }} size{{ 's' if v.sizes|length != 1 }}</small>{% endif %}
+    {% if d.variants %}{% set v = d.variants %}{% set k = v.sizes|selectattr('in_stock')|list|length %}<small class="variants">{{ v.colours|length }}{% if v.colour_total > v.colours|length %} of {{ v.colour_total }}{% endif %} colour{{ 's' if v.colour_total != 1 }} · {{ k }} size{{ 's' if k != 1 }}</small>{% endif %}
     {% if d.is_new %}<span class="badge new">new</span>{% endif %}
     {% if d.drop_vs_previous_pct > 0 %}<span class="badge drop">↓ {{ d.drop_vs_previous_pct }}% since last check</span>{% endif %}
     {% if d.days_left is not none and d.days_left <= 7 %}<span class="badge ends">ends in {{ d.days_left }}d</span>{% endif %}

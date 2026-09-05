@@ -7,7 +7,8 @@
    `{"source":"uniqlo"}`).
 2. **Scrape.** `Source.fetch()` walks the retailer's JSON endpoint (IKEA: one discovery request
    plus one request per offer tag, ~1 page, plus up to four sort orders of the last-chance set;
-   UNIQLO: 4 gender paths × ≤ 100 items/page, ~18 pages).
+   UNIQLO: 4 gender paths × ≤ 100 items/page, ~18 pages, then one per-SKU stock request per
+   (productId, priceGroup) — ~1,300, tagged `role: l2s` — over 3 worker threads).
    Every response is stored verbatim as `raw/<source>/<YYYY-MM-DD>/<HHMMSS>-<id>.json.gz` in the
    raw bucket. IKEA's discovery request is tagged `role: index` and skipped by `parse()`; its
    last-chance pages are tagged `role: last_chance` and parsed like offer pages.
@@ -52,7 +53,7 @@
 
 | Function | Trigger | DB user | Memory / timeout | Notes |
 | --- | --- | --- | --- | --- |
-| scrape | EventBridge Scheduler | — | 512 MB / 300 s | `on_failure` → SNS |
+| scrape | EventBridge Scheduler | — | 512 MB / 900 s | `on_failure` → SNS; UNIQLO runs ~6–7 min |
 | process | S3 ObjectCreated | app_rw | 1024 MB / 600 s | `on_success` → notify, `on_failure` → SNS; serialized by schedule + `claim_run` |
 | notify | Lambda Destination | — | 256 MB / 60 s | SES sandbox: recipients must be verified; invalidates CloudFront; `on_failure` → SNS |
 | mailer | S3 ObjectCreated (`outbox/`) | — | 256 MB / 60 s | one transactional email per object; `on_failure` → SNS |
@@ -70,8 +71,12 @@ TLS; each function reads its role's connection URL from SSM at cold start.
   identity column since 0005; ids 1–2 were seeded).
 - `product` — one row per retailer SKU, `UNIQUE (source_id, external_id)`, trigram index on name.
   `variants JSONB` (since 0006) is the retailer's current colour/size listing —
-  `{"colours": [{code, name, image, chip}], "sizes": [...], "lengths"?: [...], "colour_total"}` —
-  NULL when the retailer exposes none (IKEA); `labels JSONB` is the list of availability markers
+  `{"colours": [{code, name, image, chip, sizes?: [name, ...]}], "sizes": [{code, name,
+  in_stock}], "lengths"?: [...], "colour_total", "stock_at"?}` — `colours[].sizes` is the
+  in-stock size names for that colour and `stock_at` the payload's `fetched_at`, both present
+  only when per-SKU stock was fetched (UNIQLO); without it every listed size is `in_stock`.
+  NULL when the retailer exposes none (IKEA). The deals `size=` filter is jsonb containment on
+  `{"sizes": [{"name", "in_stock": true}]}`; `labels JSONB` is the list of availability markers
   (`last_chance`, `in_store_only`, `xl_store_only`, `online_only`, `select_variants`,
   `coming_soon`; vocabulary in `domain/models.py`). Both are current-state columns overwritten by
   every upsert, like `name` and `image_url`, and are read through a PK join from the summary —
@@ -104,9 +109,15 @@ TLS; each function reads its role's connection URL from SSM at cold start.
   style can be two rows in the deals list. Group 00's base price becomes the sibling groups'
   `list_price` — the only way UNIQLO exposes an original price; the 90-day baseline remains the
   fallback for everything else. `colors[]`/`sizes[]` on the list feed are stock-filtered by the
-  retailer (a listed colour has at least one buyable SKU), which is what `variants` stores;
-  `colour_total` counts the chip images, i.e. every colour the style has had. No per-SKU stock
-  is fetched: that would be one request per row and does not fit the 300 s scrape budget.
+  retailer (a listed colour has at least one buyable SKU); `colour_total` counts the chip images,
+  i.e. every colour the style has had. Size availability depends on the colour, so a second
+  stage calls `/products/{id}/price-groups/{pg}/l2s?withPrices=true&withStocks=true` once per
+  pair (3 threads, 0.5 s pause each ⇒ ~3.8 calls/s, ~6 min for ~1,300 pairs) and records, per
+  colour, the sizes with an `IN_STOCK`/`LOW_STOCK` SKU. The l2s body carries codes only, so
+  names are looked up in the list feed's stock-filtered `colors[]`/`sizes[]`: an option sold
+  out in every colour has no name and is skipped. A pair whose l2s call fails after retries is
+  logged and skipped (the product keeps list-level variants); `robots.txt` allows the path but
+  disallows `storeId=`, which is never sent.
 - **IKEA last chance and in-store offers.** The offers filter only lists Family prices;
   discontinued "while supply lasts" items come from `f-last-chance=true`. That endpoint has no
   offset parameter and its `max` under-reports, so the set is fetched as the union of up to four
@@ -154,8 +165,9 @@ One adapter and one Terraform map entry; nothing else in the tree names a retail
 
 Capacity (measured on the live stack where noted, otherwise derived):
 
-- `scrape` runs 300 s with a fixed 0.5 s pause after each request ⇒ at most ~400 requests per run
-  per source (derived); both retailers together make ~40 requests a day today (measured).
+- `scrape` runs 900 s with a fixed 0.5 s pause after each request ⇒ ~1,800 sequential requests,
+  or ~5,000 over the 3 l2s workers, per run per source (derived); UNIQLO makes ~1,320 requests a
+  run (18 list pages + one l2s call per product/price group, measured ~6 min), IKEA ~20.
 - The raw payload is assembled in memory before upload (512 MB function) — fine for tens of MB of
   JSON, not for image bodies.
 - Neon Free storage is 0.5 GB; at roughly 60–100 bytes per `price_observation` row including

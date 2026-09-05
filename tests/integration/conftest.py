@@ -16,11 +16,28 @@ from pricepulse.config import Settings
 
 SEED_VARIANTS = {
     "colours": [
-        {"code": "09", "name": "BLACK", "image": "https://img.example/09.jpg", "chip": None},
-        {"code": "64", "name": "BLUE", "image": None, "chip": "https://img.example/64_chip.jpg"},
+        {
+            "code": "09",
+            "name": "BLACK",
+            "image": "https://img.example/09.jpg",
+            "chip": None,
+            "sizes": ["S", "M"],
+        },
+        {
+            "code": "64",
+            "name": "BLUE",
+            "image": None,
+            "chip": "https://img.example/64_chip.jpg",
+            "sizes": ["M"],
+        },
     ],
-    "sizes": ["S", "M", "L"],
+    "sizes": [
+        {"code": "003", "name": "S", "in_stock": True},
+        {"code": "004", "name": "M", "in_stock": True},
+        {"code": "005", "name": "L", "in_stock": False},
+    ],
     "colour_total": 5,
+    "stock_at": "2026-09-04T13:10:00+00:00",
 }
 SEED_LABELS = ["last_chance", "select_variants"]
 

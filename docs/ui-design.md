@@ -16,8 +16,10 @@ categories are rendered here. Canonical is `{base}/`.
    brand dot; the current one has `aria-selected="true"`). Switching drops `category` and `cursor`
    and keeps `q`, `sort`, `min_discount`, `min_price`, `max_price`, `flagged_only`, `on_sale_only`.
 2. Toolbar (`<form id="filters">`, one row on desktop, wraps on narrow screens; ~32px controls):
-   search (300 ms debounce), category (this retailer's categories only), sort select, min discount
-   %, min $, max $, "Flagged" and "On sale" checkbox chips, and the image-size segmented control.
+   search (300 ms debounce), category (this retailer's categories only), sort select, label, size
+   (only when the retailer has in-stock sizes: names in retailer order, "Any" = unset), min
+   discount %, min $, max $, "Flagged" and "On sale" checkbox chips, and the image-size segmented
+   control.
    Every change re-renders `#deals-wrap` via htmx (`hx-select`, `hx-push-url`) so every view is a
    shareable URL; without JS the form submits as a normal GET. A hidden `source` input pins the
    filters to the current retailer.
@@ -31,9 +33,17 @@ categories are rendered here. Canonical is `{base}/`.
    "Load more" appends the next keyset page (`/partials/deals?cursor=…`).
 
 **Product page `/products/{id}`** — retailer chip, "no longer listed" badge when not current,
-name, category, retailer link; hero image (max 360px, contained) beside price, discount, usual
-price and 90-day summary; Chart.js price history (180 days); watch form (email + min % drop) with
-an `aria-live` result. Error (404/500/503) and watch confirm/unsubscribe pages reuse the base shell.
+name, category, retailer link; hero image (fixed 360px box, contained) beside price, discount,
+usual price and 90-day summary. Variants (UNIQLO): colour swatches are `<button class="swatch">`
+in a `role="group"`; clicking one (in-page, no navigation) sets `aria-pressed`, swaps the hero
+to that colour's image, writes "GRAY · 3 of 7 sizes" to `#colour-name` (`aria-live`) and re-marks
+the `#sizes` chips — every size is listed, sold-out ones are `.chip.out` (dimmed, struck,
+`aria-disabled`, title "Sold out"). "Buy this colour ↗" points at the retailer with
+`?colorDisplayCode=`. A muted "Sizes as of <local date>" line shows when per-SKU stock was
+fetched, otherwise "Size availability per colour not available". Initial selection is the first
+colour with an in-stock size; the server-rendered baseline (no JS) shows product-wide stock.
+Then Chart.js price history (180 days) and the watch form (email + min % drop) with an
+`aria-live` result. Error (404/500/503) and watch confirm/unsubscribe pages reuse the base shell.
 
 ## Image size
 

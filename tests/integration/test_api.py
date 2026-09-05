@@ -292,20 +292,45 @@ def test_variants_and_labels_on_api_and_pages(client: TestClient, seeded_variant
     assert client.get("/", params={"source": "uniqlo", "label": "bogus"}).status_code == 422
     # dashboard rows: counts line, label pills, and the toolbar select keeps the state
     rows = client.get("/", params={"source": "uniqlo", "label": "last_chance"}).text
-    assert '<small class="variants">2 of 5 colours · 3 sizes</small>' in rows
+    assert '<small class="variants">2 of 5 colours · 2 sizes</small>' in rows  # L is sold out
     assert '<span class="badge label last_chance">last chance</span>' in rows
     assert '<span class="badge label select_variants">select colours/sizes</span>' in rows
     assert '<option value="last_chance" selected>last chance</option>' in rows
     none = client.get("/", params={"source": "uniqlo", "label": "coming_soon"}).text
     assert "AIRism tee" not in none
-    # product page: swatches link to the retailer's colour, sizes as chips, hero from image_url
+    # ?size= is jsonb containment on in-stock sizes; the toolbar lists in-stock sizes in order
+    assert client.get("/v1/deals", params={"size": "M"}).json()["total"] == 1
+    assert client.get("/v1/deals", params={"size": "L"}).json()["total"] == 0  # sold out
+    assert client.get("/v1/deals", params={"size": "XXXL"}).json()["total"] == 0
+    assert client.get("/v1/deals", params={"size": "x" * 21}).status_code == 422
+    sized = client.get("/", params={"source": "uniqlo", "size": "M"}).text
+    assert re.search(r'<select name="size">\s*<option value="" >Any</option>', sized)
+    assert re.findall(r'<option value="([^"]+)"[^>]*>\1</option>', sized) == ["S", "M"]
+    assert '<option value="M" selected>M</option>' in sized and "AIRism tee" in sized
+    assert "AIRism tee" not in client.get("/", params={"source": "uniqlo", "size": "L"}).text
+    assert '<select name="size">' not in client.get("/", params={"source": "ikea"}).text
+    # product page: swatch buttons carry the colour's image and in-stock sizes; every size is a
+    # chip, sold-out ones dimmed; the retailer link is kept and JS points "Buy this colour"
     page_html = client.get(f"/products/{tee['product_id']}").text
-    assert 'href="https://uniqlo.example/E1?colorDisplayCode=64"' in page_html
-    chip = '<img src="https://img.example/64_chip.jpg" alt="BLUE" title="BLUE" width="28"'
-    assert chip in page_html
-    assert 'class="swatch" title="BLACK">BLACK</a>' in page_html  # no chip: name fallback
+    swatch = (
+        '<button type="button" class="swatch" data-colour="64" data-image=""'
+        ' data-sizes=\'["M"]\' aria-pressed="false" title="BLUE">'
+        '<img src="https://img.example/64_chip.jpg" alt="BLUE" width="28"'
+    )
+    assert swatch in page_html
+    assert 'title="BLACK">BLACK</button>' in page_html  # no chip: name fallback
     assert "<small>2 of 5 available</small>" in page_html
-    assert page_html.count('<span class="size">') == 3
+    assert page_html.count('<li class="chip"') == 2
+    assert (
+        '<li class="chip out" data-size="L" aria-disabled="true" title="Sold out">L</li>'
+        in page_html
+    )
+    assert '<time datetime="2026-09-04T13:10:00+00:00">2026-09-04</time>' in page_html
+    assert (
+        'href="https://uniqlo.example/E1" rel="noopener" target="_blank">View at retailer'
+        in page_html
+    )
+    assert '<a id="buy-colour" href="https://uniqlo.example/E1"' in page_html
     assert 'class="badge label last_chance">last chance</span>' in page_html
 
 

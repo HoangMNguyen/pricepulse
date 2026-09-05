@@ -1,0 +1,2273 @@
+{
+ "status": "ok",
+ "result": {
+  "l2s": [
+   {
+    "color": {
+     "code": "COL03",
+     "displayCode": "03"
+    },
+    "communicationCode": "450544-03-001-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA001",
+     "displayCode": "001"
+    },
+    "l2Id": "09214322",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL03",
+     "displayCode": "03"
+    },
+    "communicationCode": "450544-03-002-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA002",
+     "displayCode": "002"
+    },
+    "l2Id": "09101943",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL03",
+     "displayCode": "03"
+    },
+    "communicationCode": "450544-03-003-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA003",
+     "displayCode": "003"
+    },
+    "l2Id": "09101944",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL03",
+     "displayCode": "03"
+    },
+    "communicationCode": "450544-03-004-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA004",
+     "displayCode": "004"
+    },
+    "l2Id": "09101945",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL03",
+     "displayCode": "03"
+    },
+    "communicationCode": "450544-03-005-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA005",
+     "displayCode": "005"
+    },
+    "l2Id": "09101946",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL03",
+     "displayCode": "03"
+    },
+    "communicationCode": "450544-03-006-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA006",
+     "displayCode": "006"
+    },
+    "l2Id": "09101947",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL03",
+     "displayCode": "03"
+    },
+    "communicationCode": "450544-03-007-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA007",
+     "displayCode": "007"
+    },
+    "l2Id": "09101948",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL03",
+     "displayCode": "03"
+    },
+    "communicationCode": "450544-03-008-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA008",
+     "displayCode": "008"
+    },
+    "l2Id": "09101949",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL14",
+     "displayCode": "14"
+    },
+    "communicationCode": "450544-14-001-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA001",
+     "displayCode": "001"
+    },
+    "l2Id": "09620523",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL14",
+     "displayCode": "14"
+    },
+    "communicationCode": "450544-14-002-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA002",
+     "displayCode": "002"
+    },
+    "l2Id": "09620524",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL14",
+     "displayCode": "14"
+    },
+    "communicationCode": "450544-14-003-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA003",
+     "displayCode": "003"
+    },
+    "l2Id": "09620525",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL14",
+     "displayCode": "14"
+    },
+    "communicationCode": "450544-14-004-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA004",
+     "displayCode": "004"
+    },
+    "l2Id": "09620526",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL14",
+     "displayCode": "14"
+    },
+    "communicationCode": "450544-14-005-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA005",
+     "displayCode": "005"
+    },
+    "l2Id": "09620527",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL14",
+     "displayCode": "14"
+    },
+    "communicationCode": "450544-14-006-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA006",
+     "displayCode": "006"
+    },
+    "l2Id": "09620528",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL14",
+     "displayCode": "14"
+    },
+    "communicationCode": "450544-14-007-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA007",
+     "displayCode": "007"
+    },
+    "l2Id": "09620529",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL14",
+     "displayCode": "14"
+    },
+    "communicationCode": "450544-14-008-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA008",
+     "displayCode": "008"
+    },
+    "l2Id": "09620530",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL09",
+     "displayCode": "09"
+    },
+    "communicationCode": "450544-09-001-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA001",
+     "displayCode": "001"
+    },
+    "l2Id": "09214330",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL09",
+     "displayCode": "09"
+    },
+    "communicationCode": "450544-09-002-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA002",
+     "displayCode": "002"
+    },
+    "l2Id": "09101951",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL09",
+     "displayCode": "09"
+    },
+    "communicationCode": "450544-09-003-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA003",
+     "displayCode": "003"
+    },
+    "l2Id": "09101952",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL09",
+     "displayCode": "09"
+    },
+    "communicationCode": "450544-09-004-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA004",
+     "displayCode": "004"
+    },
+    "l2Id": "09101953",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL09",
+     "displayCode": "09"
+    },
+    "communicationCode": "450544-09-005-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA005",
+     "displayCode": "005"
+    },
+    "l2Id": "09101954",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL09",
+     "displayCode": "09"
+    },
+    "communicationCode": "450544-09-006-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA006",
+     "displayCode": "006"
+    },
+    "l2Id": "09101955",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL09",
+     "displayCode": "09"
+    },
+    "communicationCode": "450544-09-007-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA007",
+     "displayCode": "007"
+    },
+    "l2Id": "09101956",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL09",
+     "displayCode": "09"
+    },
+    "communicationCode": "450544-09-008-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA008",
+     "displayCode": "008"
+    },
+    "l2Id": "09101957",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL68",
+     "displayCode": "68"
+    },
+    "communicationCode": "450544-68-001-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA001",
+     "displayCode": "001"
+    },
+    "l2Id": "09620532",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL68",
+     "displayCode": "68"
+    },
+    "communicationCode": "450544-68-002-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA002",
+     "displayCode": "002"
+    },
+    "l2Id": "09620533",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL68",
+     "displayCode": "68"
+    },
+    "communicationCode": "450544-68-003-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA003",
+     "displayCode": "003"
+    },
+    "l2Id": "09620534",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL68",
+     "displayCode": "68"
+    },
+    "communicationCode": "450544-68-004-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA004",
+     "displayCode": "004"
+    },
+    "l2Id": "09620535",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL68",
+     "displayCode": "68"
+    },
+    "communicationCode": "450544-68-005-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA005",
+     "displayCode": "005"
+    },
+    "l2Id": "09620536",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL68",
+     "displayCode": "68"
+    },
+    "communicationCode": "450544-68-006-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA006",
+     "displayCode": "006"
+    },
+    "l2Id": "09620537",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL68",
+     "displayCode": "68"
+    },
+    "communicationCode": "450544-68-007-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA007",
+     "displayCode": "007"
+    },
+    "l2Id": "09620538",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL68",
+     "displayCode": "68"
+    },
+    "communicationCode": "450544-68-008-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA008",
+     "displayCode": "008"
+    },
+    "l2Id": "09620539",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL39",
+     "displayCode": "39"
+    },
+    "communicationCode": "450544-39-001-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA001",
+     "displayCode": "001"
+    },
+    "l2Id": "09486756",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL39",
+     "displayCode": "39"
+    },
+    "communicationCode": "450544-39-002-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA002",
+     "displayCode": "002"
+    },
+    "l2Id": "09486757",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL39",
+     "displayCode": "39"
+    },
+    "communicationCode": "450544-39-003-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA003",
+     "displayCode": "003"
+    },
+    "l2Id": "09486758",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL39",
+     "displayCode": "39"
+    },
+    "communicationCode": "450544-39-004-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA004",
+     "displayCode": "004"
+    },
+    "l2Id": "09486759",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL39",
+     "displayCode": "39"
+    },
+    "communicationCode": "450544-39-005-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA005",
+     "displayCode": "005"
+    },
+    "l2Id": "09486760",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL39",
+     "displayCode": "39"
+    },
+    "communicationCode": "450544-39-006-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA006",
+     "displayCode": "006"
+    },
+    "l2Id": "09486761",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL39",
+     "displayCode": "39"
+    },
+    "communicationCode": "450544-39-007-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA007",
+     "displayCode": "007"
+    },
+    "l2Id": "09486762",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL39",
+     "displayCode": "39"
+    },
+    "communicationCode": "450544-39-008-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA008",
+     "displayCode": "008"
+    },
+    "l2Id": "09486763",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL69",
+     "displayCode": "69"
+    },
+    "communicationCode": "450544-69-001-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA001",
+     "displayCode": "001"
+    },
+    "l2Id": "09214346",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL69",
+     "displayCode": "69"
+    },
+    "communicationCode": "450544-69-002-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA002",
+     "displayCode": "002"
+    },
+    "l2Id": "09101967",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL69",
+     "displayCode": "69"
+    },
+    "communicationCode": "450544-69-003-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA003",
+     "displayCode": "003"
+    },
+    "l2Id": "09101968",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL69",
+     "displayCode": "69"
+    },
+    "communicationCode": "450544-69-004-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA004",
+     "displayCode": "004"
+    },
+    "l2Id": "09101969",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL69",
+     "displayCode": "69"
+    },
+    "communicationCode": "450544-69-005-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA005",
+     "displayCode": "005"
+    },
+    "l2Id": "09101970",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL69",
+     "displayCode": "69"
+    },
+    "communicationCode": "450544-69-006-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA006",
+     "displayCode": "006"
+    },
+    "l2Id": "09101971",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL69",
+     "displayCode": "69"
+    },
+    "communicationCode": "450544-69-007-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA007",
+     "displayCode": "007"
+    },
+    "l2Id": "09101972",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   },
+   {
+    "color": {
+     "code": "COL69",
+     "displayCode": "69"
+    },
+    "communicationCode": "450544-69-008-000",
+    "flags": {
+     "priceFlags": [],
+     "productFlags": [
+      {
+       "id": 135,
+       "code": "unisex",
+       "name": "UNISEX",
+       "type": "product_flag",
+       "effectiveTime": {
+        "start": 0,
+        "end": 0
+       },
+       "detail": ""
+      }
+     ]
+    },
+    "pld": {
+     "code": "PTB000",
+     "displayCode": "000"
+    },
+    "size": {
+     "code": "SMA008",
+     "displayCode": "008"
+    },
+    "l2Id": "09101973",
+    "alterations": {},
+    "sales": true,
+    "salesType": "NORMAL",
+    "searchInStoresAvailable": true,
+    "isReturnable": true
+   }
+  ],
+  "stocks": {
+   "09214322": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101943": {
+    "statusCode": "STOCK_OUT",
+    "quantity": 0,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": true,
+    "disableSizeChip": true,
+    "transitLocalized": "",
+    "statusLocalized": "Out of stock",
+    "isDCStock": false
+   },
+   "09101944": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101945": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101946": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101947": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101948": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101949": {
+    "statusCode": "STOCK_OUT",
+    "quantity": 0,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "Out of stock",
+    "isDCStock": false
+   },
+   "09620523": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09620524": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09620525": {
+    "statusCode": "STOCK_OUT",
+    "quantity": 0,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "Out of stock",
+    "isDCStock": false
+   },
+   "09620526": {
+    "statusCode": "STOCK_OUT",
+    "quantity": 0,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "Out of stock",
+    "isDCStock": false
+   },
+   "09620527": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09620528": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09620529": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09620530": {
+    "statusCode": "STOCK_OUT",
+    "quantity": 0,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "Out of stock",
+    "isDCStock": false
+   },
+   "09214330": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101951": {
+    "preOrderEffectiveTimeWording": {
+     "format": "text_pre_order_available_date_early_month",
+     "substitutions": {
+      "month": "Oct"
+     }
+    },
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "preOrderEffectiveTime": "Expected to arrive early Oct",
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101952": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101953": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101954": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101955": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101956": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": true
+   },
+   "09101957": {
+    "statusCode": "STOCK_OUT",
+    "quantity": 0,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "Out of stock",
+    "isDCStock": true
+   },
+   "09620532": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09620533": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09620534": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09620535": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09620536": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09620537": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09620538": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09620539": {
+    "statusCode": "STOCK_OUT",
+    "quantity": 0,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "Out of stock",
+    "isDCStock": false
+   },
+   "09486756": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09486757": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09486758": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": true
+   },
+   "09486759": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09486760": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09486761": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09486762": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": true
+   },
+   "09486763": {
+    "statusCode": "STOCK_OUT",
+    "quantity": 0,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "Out of stock",
+    "isDCStock": false
+   },
+   "09214346": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101967": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101968": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101969": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101970": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101971": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101972": {
+    "statusCode": "IN_STOCK",
+    "quantity": 11,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "In stock",
+    "isDCStock": false
+   },
+   "09101973": {
+    "statusCode": "STOCK_OUT",
+    "quantity": 0,
+    "transitStatus": "NO_TRANSIT",
+    "backInStock": false,
+    "disableSizeChip": false,
+    "transitLocalized": "",
+    "statusLocalized": "Out of stock",
+    "isDCStock": true
+   }
+  },
+  "prices": {}
+ }
+}

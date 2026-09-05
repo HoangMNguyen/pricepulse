@@ -40,6 +40,16 @@
       {% endfor %}
     </select>
   </label>
+  {% if sizes %}
+  <label class="ctl"><span>Size</span>
+    <select name="size">
+      <option value="" {% if not params.size %}selected{% endif %}>Any</option>
+      {% for s in sizes %}
+      <option value="{{ s }}" {% if params.size == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  {% endif %}
   <label class="ctl narrow"><span>Min % off</span>
     <input type="number" name="min_discount" value="{{ params.min_discount or 0 }}" min="0" max="100" step="1" inputmode="numeric">
   </label>

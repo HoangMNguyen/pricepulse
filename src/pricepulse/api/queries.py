@@ -72,6 +72,7 @@ class DealFilters:
     max_price: Decimal | None = None
     q: str | None = None
     label: str | None = None
+    size: str | None = None
     sort: str = DEFAULT_SORT
     limit: int = 50
     cursor: str | None = None
@@ -117,6 +118,18 @@ def row_to_dict(row: Any, now: datetime | None = None) -> dict[str, Any]:
     return d
 
 
+def _jsonb_where(f: DealFilters, where: list[str], params: dict[str, Any]) -> None:
+    """Membership filters on the `product` JSONB columns (containment, GIN-friendly)."""
+    if f.label:
+        if f.label not in LABELS:
+            raise HTTPException(422, f"unknown label; expected one of {', '.join(LABELS)}")
+        where.append("p.labels @> CAST(:label AS jsonb)")
+        params["label"] = json.dumps([f.label])
+    if f.size:  # partial-object containment; an unknown size matches nothing (routes cap length)
+        where.append("p.variants @> CAST(:size AS jsonb)")
+        params["size"] = json.dumps({"sizes": [{"name": f.size, "in_stock": True}]})
+
+
 def _where(f: DealFilters, with_cursor: bool) -> tuple[list[str], dict[str, Any]]:
     if f.sort not in SORTS:
         raise HTTPException(400, "unknown sort")
@@ -141,11 +154,7 @@ def _where(f: DealFilters, with_cursor: bool) -> tuple[list[str], dict[str, Any]
     if f.q:
         where.append("s.name ILIKE '%' || :q || '%'")
         params["q"] = f.q
-    if f.label:
-        if f.label not in LABELS:
-            raise HTTPException(422, f"unknown label; expected one of {', '.join(LABELS)}")
-        where.append("p.labels @> CAST(:label AS jsonb)")
-        params["label"] = json.dumps([f.label])
+    _jsonb_where(f, where, params)
     if f.sort == "ending_soon":
         where.append("s.valid_to IS NOT NULL")
     if with_cursor and f.cursor:
@@ -222,6 +231,24 @@ def categories(conn: Connection) -> list[dict[str, Any]]:
         )
     ).all()
     return [{"source": r.source, "category": r.category, "products": int(r.products)} for r in rows]
+
+
+def sizes(conn: Connection, source: str) -> list[str]:
+    """Size names with at least one in-stock current product, in retailer (displayCode) order.
+    Empty for retailers without size data (IKEA)."""
+    rows = conn.execute(
+        text(
+            """
+            SELECT s->>'name' AS name, min(s->>'code') AS code
+            FROM product_price_summary ps
+            JOIN product p ON p.id = ps.product_id, jsonb_array_elements(p.variants->'sizes') s
+            WHERE ps.is_current AND ps.source = :source AND (s->>'in_stock') = 'true'
+            GROUP BY 1 ORDER BY 2, 1
+            """
+        ),
+        {"source": source},
+    ).all()
+    return [r.name for r in rows]
 
 
 def sitemap_entries(conn: Connection) -> list[tuple[int, datetime]]:

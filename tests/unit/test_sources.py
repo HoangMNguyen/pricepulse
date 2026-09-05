@@ -1,9 +1,11 @@
 import json
+import logging
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
 import httpx
+import pytest
 
 from pricepulse.config import Settings
 from pricepulse.sources.http import make_client
@@ -28,14 +30,24 @@ def ikea_raw() -> dict:
     }
 
 
-def uniqlo_raw() -> dict:
-    return {
-        "source": "uniqlo",
-        "fetched_at": "2026-09-04T13:10:00+00:00",
-        "requests": [
-            {"url": "p0", "status": 200, "path": "22211", "body": _load("uniqlo_men_page0.json")}
-        ],
-    }
+def uniqlo_raw(*, l2s: bool = False) -> dict:
+    """MEN page 0; with `l2s`, per-SKU stock for E450544-000 groups 00 and 01 (not 02)."""
+    requests = [
+        {"url": "p0", "status": 200, "path": "22211", "body": _load("uniqlo_men_page0.json")}
+    ]
+    if l2s:
+        requests += [
+            {
+                "url": f"l2s-{pg}",
+                "status": 200,
+                "role": "l2s",
+                "product_id": "E450544-000",
+                "price_group": pg,
+                "body": _load(f"uniqlo_l2s_E450544-000_{pg}.json"),
+            }
+            for pg in ("00", "01")
+        ]
+    return {"source": "uniqlo", "fetched_at": "2026-09-04T13:10:00+00:00", "requests": requests}
 
 
 def test_ikea_parse_maps_fields() -> None:
@@ -152,12 +164,41 @@ def test_uniqlo_parse_variants_and_labels() -> None:
     assert set(v) == {"colours", "sizes", "colour_total"}  # lengths omitted when just "-"
     assert len(v["colours"]) == 5 and v["colour_total"] == 17
     colour = v["colours"][0]
-    assert set(colour) == {"code", "name", "image", "chip"}
+    assert set(colour) == {"code", "name", "image", "chip"}  # no l2s data: no per-colour sizes
     assert colour["code"] and colour["name"]
     assert colour["image"] == snaps["E450544-000"].image_url
     assert colour["chip"].startswith("https://image.uniqlo.com/")
-    assert v["sizes"] == ["XS", "S", "M", "L", "XL", "XXL", "3XL"]
+    assert [s["name"] for s in v["sizes"]] == ["XS", "S", "M", "L", "XL", "XXL", "3XL"]
+    assert all(s["in_stock"] for s in v["sizes"])  # list-feed sizes are buyable somewhere
     assert snaps["E484610-000"].labels == ("xl_store_only",)
+
+
+def test_uniqlo_parse_per_colour_stock_from_l2s() -> None:
+    raw = uniqlo_raw(l2s=True)
+    snaps = {s.external_id: s for s in UniqloSource().parse(raw)}
+    v = snaps["E450544-000"].variants
+    assert v["stock_at"] == raw["fetched_at"]
+    by_code = {c["code"]: c for c in v["colours"]}
+    assert list(by_code) == ["03", "09", "14", "68", "69"]  # list-feed order; l2s colour 39 unnamed
+    assert by_code["03"]["sizes"] == ["S", "M", "L", "XL", "XXL"]  # XS and 3XL sold out
+    assert by_code["14"]["sizes"] == ["XS", "L", "XL", "XXL"]
+    assert by_code["09"]["sizes"] == ["XS", "S", "M", "L", "XL", "XXL"]  # size 001 has no name
+    sizes = {s["name"]: s for s in v["sizes"]}
+    assert [s["code"] for s in v["sizes"]] == ["002", "003", "004", "005", "006", "007", "008"]
+    assert sizes["3XL"]["in_stock"] is False  # STOCK_OUT in every colour
+    assert sizes["XS"]["in_stock"] is True  # sold out in GRAY, in stock elsewhere
+    clearance = snaps["E450544-000/01"].variants
+    assert {c["code"]: c["sizes"] for c in clearance["colours"]} == {"09": ["S", "M"], "69": ["L"]}
+    assert [(s["name"], s["in_stock"]) for s in clearance["sizes"]] == [
+        ("S", True),
+        ("M", True),
+        ("L", True),
+        ("XL", False),
+    ]
+    # a pair without l2s data keeps the list-level shape
+    other = snaps["E450544-000/02"].variants
+    assert "stock_at" not in other and "sizes" not in other["colours"][0]
+    assert all(s["in_stock"] for s in other["sizes"])
 
 
 def test_uniqlo_parse_dual_price_uses_promo() -> None:
@@ -175,6 +216,8 @@ def test_uniqlo_fetch_paginates_and_uses_only_allowed_params() -> None:
 
     def handler(request: httpx.Request) -> httpx.Response:
         params = dict(request.url.params)
+        if "/l2s" in request.url.path:
+            return httpx.Response(200, json={"status": "ok", "result": {"l2s": [], "stocks": {}}})
         seen.append(params)
         body = json.loads(json.dumps(page))
         offset = int(params["offset"])
@@ -187,9 +230,45 @@ def test_uniqlo_fetch_paginates_and_uses_only_allowed_params() -> None:
 
     client = httpx.Client(transport=httpx.MockTransport(handler))
     raw = UniqloSource().fetch(client)
-    assert {r["path"] for r in raw["requests"]} == {"22210", "22211", "22212", "22213"}
+    pages = [r for r in raw["requests"] if r.get("role") != "l2s"]
+    assert {r["path"] for r in pages} == {"22210", "22211", "22212", "22213"}
     assert all(set(p) == {"path", "limit", "offset", "httpFailure"} for p in seen)
     assert [p["offset"] for p in seen if p["path"] == "22211"] == ["0", "3"]
+
+
+def test_uniqlo_fetch_one_l2s_call_per_pair_and_skips_failures(
+    caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("time.sleep", lambda _: None)  # politeness pause + retry backoff
+    page = _load("uniqlo_men_page0.json")
+    l2s_calls: list[httpx.URL] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "/l2s" not in request.url.path:
+            return httpx.Response(200, json=page)  # every gender path lists the same 8 items
+        l2s_calls.append(request.url)
+        if request.url.path.endswith("/E484249-000/price-groups/01/l2s"):
+            return httpx.Response(500)
+        return httpx.Response(200, json=_load("uniqlo_l2s_E450544-000_00.json"))
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    with caplog.at_level(logging.WARNING, logger="pricepulse.sources.uniqlo"):
+        raw = UniqloSource().fetch(client)
+    pairs = {
+        (i["productId"], i["priceGroup"]) for i in page["result"]["items"]
+    }  # 8 pairs across 4 paths
+    assert len(l2s_calls) == len(pairs) + 2  # the failing pair is retried twice
+    assert {u.path for u in l2s_calls} == {
+        f"/us/api/commerce/v5/en/products/{pid}/price-groups/{pg}/l2s" for pid, pg in pairs
+    }
+    assert all(dict(u.params) == {"withPrices": "true", "withStocks": "true"} for u in l2s_calls)
+    l2s = [r for r in raw["requests"] if r.get("role") == "l2s"]
+    assert {(r["product_id"], r["price_group"]) for r in l2s} == pairs - {("E484249-000", "01")}
+    assert all(r["status"] == 200 and r["body"]["status"] == "ok" for r in l2s)
+    assert "l2s E484249-000/01 skipped" in caplog.text
+    snaps = {s.external_id: s for s in UniqloSource().parse(raw)}
+    assert "stock_at" not in snaps["E484249-000/01"].variants
+    assert "stock_at" in snaps["E484610-000"].variants
 
 
 def test_ikea_fetch_discovers_tags_and_splits_when_capped() -> None:
