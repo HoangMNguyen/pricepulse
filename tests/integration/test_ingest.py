@@ -10,6 +10,7 @@ import pytest
 from sqlalchemy import Engine, text
 
 from pricepulse.config import Settings
+from pricepulse.db import repo
 from pricepulse.services.ingest import run_process
 from pricepulse.storage.raw import LocalRawStore
 
@@ -82,6 +83,46 @@ def test_failed_run_can_be_retried(conn: Engine, settings: Settings) -> None:
     with conn.connect() as c:
         row = c.execute(text("SELECT status, error FROM ingestion_run")).one()
         assert (row.status, row.error) == ("succeeded", None)
+
+
+def test_post_processing_failure_is_retryable_with_alerts(
+    conn: Engine, settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failure after the DML commit (summary refresh) marks the run failed; the retry
+    re-inserts nothing and recomputes the same alerts, so the digest still goes out."""
+    key = store(settings).put(
+        "raw/ikea/2026-09-04/r.json.gz",
+        synthetic_ikea("70.00", "2026-09-04T13:00:00+00:00", list_price="100.00"),
+    )
+
+    def raiser(_conn: object) -> None:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr("pricepulse.db.repo.refresh_summary", raiser)
+    with pytest.raises(RuntimeError):
+        run_process(key, settings, conn)
+    with conn.connect() as c:
+        row = c.execute(text("SELECT status, error FROM ingestion_run")).one()
+        assert row.status == "failed" and row.error.startswith("RuntimeError")
+    monkeypatch.undo()
+    result = run_process(key, settings, conn)
+    assert result.skipped is False and result.observations_inserted == 0
+    assert [a.kind for a in result.alerts] == ["new_deal"]
+    with conn.connect() as c:
+        assert c.execute(text("SELECT status FROM ingestion_run")).scalar_one() == "succeeded"
+        assert c.execute(text("SELECT count(*) FROM alert")).scalar_one() == 1
+
+
+def test_ensure_source_registers_new_code(conn: Engine) -> None:
+    with conn.begin() as c:
+        try:
+            assert repo.ensure_source(c, "acme", "ACME US", "https://acme.example/") == 3
+            assert repo.ensure_source(c, "acme", "ACME", "https://acme.example/") == 3
+            name = c.execute(text("SELECT name FROM source WHERE code = 'acme'")).scalar_one()
+            assert name == "ACME"
+            assert repo.ensure_source(c, "ikea", "IKEA US", "https://www.ikea.com/us/en/") == 1
+        finally:
+            c.execute(text("DELETE FROM source WHERE code = 'acme'"))
 
 
 def test_new_deal_alert_from_retailer_list_price(conn: Engine, settings: Settings) -> None:

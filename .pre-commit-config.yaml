@@ -1,10 +1,17 @@
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.0
+  # ruff comes from uv.lock so pre-commit and CI run the same version.
+  - repo: local
     hooks:
       - id: ruff
-        args: [--fix]
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
       - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.99.0
     hooks:

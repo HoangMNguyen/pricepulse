@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterator
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal
 
 import pytest
@@ -16,98 +15,8 @@ from pricepulse.api.app import create_app
 from pricepulse.config import Settings
 
 pytestmark = pytest.mark.integration
-HEADERS = {"X-API-Key": "test-key"}
 
-
-def seed(engine: Engine, n: int = 12) -> None:
-    """n IKEA products with discounts n*2%, n*2-2%, ... plus one Uniqlo flagged product and one
-    IKEA product that is not on sale. first_seen_at is spread over 3 days (i % 3 days ago);
-    product n has valid_to in 2 days; product n-1 has an earlier, higher observation."""
-    with engine.begin() as c:
-        run_id = c.execute(
-            text(
-                "INSERT INTO ingestion_run (source_id, raw_object_key, status, finished_at) "
-                "VALUES (1, 'raw/seed', 'succeeded', now()) RETURNING id"
-            )
-        ).scalar()
-        c.execute(text("SELECT ensure_price_partition(now())"))
-        for i in range(1, n + 1):
-            pid = c.execute(
-                text(
-                    "INSERT INTO product (source_id, external_id, name, category, url, "
-                    "first_seen_at) VALUES (1, :ext, :name, :cat, 'https://ikea.example/' || :ext, "
-                    "now() - make_interval(days => :age)) RETURNING id"
-                ),
-                {
-                    "ext": f"ikea-{i}",
-                    "name": f"KALLAX shelf {i}",
-                    "cat": "Storage & organization" if i % 2 == 0 else "Baby & kids",
-                    "age": i % 3,
-                },
-            ).scalar()
-            if i == n - 1:
-                c.execute(
-                    text(
-                        "INSERT INTO price_observation (product_id, observed_at, run_id, price, "
-                        "list_price, retailer_sale_flag, retailer_tag) "
-                        "VALUES (:pid, now() - INTERVAL '1 hour', :run, 90, 100, true, "
-                        "'FAMILY_PRICE')"
-                    ),
-                    {"pid": pid, "run": run_id},
-                )
-            c.execute(
-                text(
-                    "INSERT INTO price_observation (product_id, observed_at, run_id, price, "
-                    "list_price, retailer_sale_flag, retailer_tag, valid_to) "
-                    "VALUES (:pid, now(), :run, :price, 100, true, 'FAMILY_PRICE', :valid_to)"
-                ),
-                {
-                    "pid": pid,
-                    "run": run_id,
-                    "price": Decimal(100 - 2 * i),
-                    "valid_to": date.today() + timedelta(days=2) if i == n else None,
-                },
-            )
-        pid = c.execute(
-            text(
-                "INSERT INTO product (source_id, external_id, name, category, url) VALUES "
-                "(1, 'ikea-full', 'BILLY bookcase', 'Storage & organization', "
-                "'https://ikea.example/billy') RETURNING id"
-            )
-        ).scalar()
-        c.execute(
-            text(
-                "INSERT INTO price_observation (product_id, observed_at, run_id, price, "
-                "retailer_sale_flag) VALUES (:pid, now(), :run, 59, false)"
-            ),
-            {"pid": pid, "run": run_id},
-        )
-        pid = c.execute(
-            text(
-                "INSERT INTO product (source_id, external_id, name, category, url) VALUES "
-                "(2, 'E1-000', 'AIRism tee', 'MEN', 'https://uniqlo.example/E1') RETURNING id"
-            )
-        ).scalar()
-        c.execute(
-            text(
-                "INSERT INTO price_observation (product_id, observed_at, run_id, price, "
-                "retailer_sale_flag, retailer_tag) "
-                "VALUES (:pid, now(), :run, 19.9, true, 'discount')"
-            ),
-            {"pid": pid, "run": run_id},
-        )
-        c.execute(text("REFRESH MATERIALIZED VIEW product_price_summary"))
-
-
-@pytest.fixture
-def client(
-    conn: Engine, settings: Settings, monkeypatch: pytest.MonkeyPatch
-) -> Iterator[TestClient]:
-    seed(conn)
-    monkeypatch.setattr("pricepulse.api.deps.get_engine", lambda: conn)
-    monkeypatch.setattr("pricepulse.api.deps.get_settings", lambda: settings)
-    with TestClient(create_app()) as c:
-        yield c
+NO_INLINE_SCRIPT = re.compile(r"<script(?![^>]*\bsrc=)")
 
 
 def test_health(client: TestClient) -> None:
@@ -144,7 +53,8 @@ def test_deals_filters(client: TestClient) -> None:
     assert len(uniqlo) == 1
     assert uniqlo[0]["discount_pct"] == "0.0" and uniqlo[0]["is_on_sale"] is True
     assert client.get("/v1/deals", params={"q": "AIRism"}).json()["items"][0]["source"] == "uniqlo"
-    assert client.get("/v1/deals", params={"source": "nope"}).status_code == 400
+    nope = client.get("/v1/deals", params={"source": "nope"})  # unknown code matches nothing
+    assert nope.status_code == 200 and nope.json()["total"] == 0
     assert client.get("/v1/deals", params={"cursor": "!!!"}).status_code == 400
 
 
@@ -259,13 +169,14 @@ def test_product_and_history(client: TestClient) -> None:
 
 def test_runs_and_stats(client: TestClient) -> None:
     runs = client.get("/v1/runs").json()
-    assert runs[0]["status"] == "succeeded" and runs[0]["source"] == "ikea"
+    assert [r["source"] for r in runs] == ["uniqlo", "ikea"]  # newest first
+    assert all(r["status"] == "succeeded" for r in runs)
     stats = {s["source"]: s for s in client.get("/v1/stats").json()}
     assert stats["ikea"]["products"] == 13 and stats["ikea"]["on_sale"] == 12
     assert stats["uniqlo"]["on_sale"] == 1
 
 
-def test_watch_flow_public_post_keyed_admin(client: TestClient) -> None:
+def test_watch_flow_public_post_keyed_admin(client: TestClient, api_headers: dict) -> None:
     pid = client.get("/v1/deals", params={"limit": 1}).json()["items"][0]["product_id"]
     body = {"product_id": pid, "email": "w@example.com", "min_discount_pct": 5}
     created = client.post("/v1/watches", json=body)  # no key needed
@@ -274,55 +185,150 @@ def test_watch_flow_public_post_keyed_admin(client: TestClient) -> None:
     assert client.post("/v1/watches", json=body).status_code == 409
     assert client.post("/v1/watches", json={**body, "product_id": 999999}).status_code == 404
     assert client.get("/v1/watches", params={"email": "w@example.com"}).status_code == 401
-    listed = client.get("/v1/watches", params={"email": "w@example.com"}, headers=HEADERS).json()
+    listed = client.get(
+        "/v1/watches", params={"email": "w@example.com"}, headers=api_headers
+    ).json()
     assert len(listed) == 1 and listed[0]["confirmed_at"] is None
     wid = listed[0]["id"]
     assert client.delete(f"/v1/watches/{wid}").status_code == 401
-    assert client.delete(f"/v1/watches/{wid}", headers=HEADERS).status_code == 204
-    assert client.delete(f"/v1/watches/{wid}", headers=HEADERS).status_code == 404
+    assert client.delete(f"/v1/watches/{wid}", headers=api_headers).status_code == 204
+    assert client.delete(f"/v1/watches/{wid}", headers=api_headers).status_code == 404
 
 
 def test_dashboard_renders(client: TestClient) -> None:
     home = client.get("/")
     assert home.status_code == 200 and "Current deals" in home.text
-    assert "Showing 14 of 14" in home.text and "Biggest % off" in home.text
-    partial = client.get("/partials/deals", params={"min_discount": 20})
+    assert 'role="tablist"' in home.text and 'id="deals-ikea"' in home.text
+    assert re.search(r'aria-selected="true"[^>]*>IKEA', home.text)
+    assert '<input type="hidden" name="source" value="ikea">' in home.text
+    assert "showing 13 of 13" in home.text and "Biggest % off" in home.text
+    assert ">Until<" in home.text and "90-day low" not in home.text
+    partial = client.get("/partials/deals", params={"source": "ikea", "min_discount": 20})
     assert partial.status_code == 200 and partial.text.count("<tr>") == 3
     assert "<table" not in partial.text
+    assert client.get("/partials/deals", params={"sort": "name"}).status_code == 422
     pid = client.get("/v1/deals", params={"limit": 1}).json()["items"][0]["product_id"]
     page = client.get(f"/products/{pid}")
     assert page.status_code == 200 and "KALLAX shelf 12" in page.text
     assert '<meta property="og:title" content="KALLAX shelf 12">' in page.text
+    assert '<link rel="canonical" href="http://localhost:8000/products/' in page.text
     assert client.get("/products/999999").status_code == 404
+
+
+def test_dashboard_tabs(client: TestClient) -> None:
+    uniqlo = client.get("/", params={"source": "uniqlo"})
+    assert uniqlo.status_code == 200 and 'id="deals-uniqlo"' in uniqlo.text
+    assert "90-day low" in uniqlo.text and ">Until<" not in uniqlo.text
+    assert '<link rel="canonical" href="http://localhost:8000/?source=uniqlo">' in uniqlo.text
+    options = re.findall(r'<option value="([^"]+)"[^>]*>[^<]*\(\d+\)</option>', uniqlo.text)
+    assert options == ["MEN"]
+    filtered = client.get("/", params={"source": "uniqlo", "min_discount": 5})
+    assert '<input type="hidden" name="source" value="uniqlo">' in filtered.text
+    assert client.get("/", params={"source": "nope"}).status_code == 404
+    rows = client.get("/partials/deals", params={"source": "ikea", "sort": "name"})
+    assert rows.status_code == 200 and "<tr" in rows.text and "<table" not in rows.text
+    product = client.get("/v1/deals", params={"source": "uniqlo"}).json()["items"][0]
+    assert "min_price_90d" in client.get(f"/v1/products/{product['product_id']}").json()
 
 
 def test_dashboard_sort_and_filters_are_url_state(client: TestClient) -> None:
     page = client.get("/", params={"sort": "price_asc", "source": "ikea"})
     assert page.status_code == 200
     assert '<option value="price_asc" selected>' in page.text
-    assert '<option value="ikea" selected>' in page.text
-    now_cell = r'>ikea</span></td>\s*<td class="num">\$([\d.]+)</td>'
+    now_cell = r'</td>\s*<td class="num">\$([\d.]+)</td>\s*<td class="num">'
     prices = re.findall(now_cell, page.text)
     assert len(prices) == 13 and Decimal(prices[0]) <= Decimal(prices[1])
-    assert "Showing 13 of 13 · Price: low to high" in page.text
+    assert "showing 13 of 13 · Price: low to high" in page.text
     baby = client.get("/", params={"category": "Baby & kids"})
-    assert "Showing 6 of 6" in baby.text and baby.text.count("KALLAX shelf") == 6
+    assert "showing 6 of 6" in baby.text and baby.text.count("KALLAX shelf") == 6
     assert 'value="Baby &amp; kids" selected' in baby.text
     assert client.get("/", params={"sort": "sideways"}).status_code == 422
     # blank number inputs (what a browser submits for an empty <input type=number>) mean "unset"
     blank = client.get("/", params={"min_price": "", "max_price": "", "min_discount": ""})
-    assert blank.status_code == 200 and "Showing 14 of 14" in blank.text
+    assert blank.status_code == 200 and "showing 13 of 13" in blank.text
     assert client.get("/", params={"min_price": "abc"}).status_code == 422
     assert client.get("/", params={"min_discount": "101"}).status_code == 422
 
 
 def test_dashboard_load_more_uses_cursor(client: TestClient) -> None:
-    first = client.get("/v1/deals", params={"sort": "name", "limit": 4}).json()
-    partial = client.get("/partials/deals", params={"sort": "name", "cursor": first["next_cursor"]})
+    first = client.get("/v1/deals", params={"sort": "name", "limit": 4, "source": "ikea"}).json()
+    partial = client.get(
+        "/partials/deals",
+        params={"sort": "name", "source": "ikea", "cursor": first["next_cursor"]},
+    )
     assert partial.status_code == 200 and "<table" not in partial.text
     names = re.findall(r'<a href="/products/\d+">([^<]+)</a>', partial.text)
     assert names and first["items"][-1]["name"] < names[0]
     assert "KALLAX shelf 1</a>" not in partial.text
+
+
+def test_static_assets_and_no_inline_code(client: TestClient) -> None:
+    js = client.get("/static/app.js")
+    assert js.status_code == 200 and js.headers["cache-control"].startswith("public")
+    pid = client.get("/v1/deals", params={"limit": 1}).json()["items"][0]["product_id"]
+    for path in ("/", f"/products/{pid}"):
+        html = client.get(path).text
+        assert "<style" not in html and "onclick=" not in html and "onsubmit=" not in html
+        assert not NO_INLINE_SCRIPT.search(html), path
+        assert "/static/app.js?v=" in html and "/static/app.css?v=" in html
+
+
+def test_robots_and_sitemap(client: TestClient) -> None:
+    robots = client.get("/robots.txt")
+    assert robots.status_code == 200 and "Sitemap: http://localhost:8000/sitemap.xml" in robots.text
+    assert robots.headers["cache-control"].startswith("public")
+    sitemap = client.get("/sitemap.xml")
+    assert sitemap.status_code == 200 and sitemap.headers["content-type"].startswith(
+        "application/xml"
+    )
+    assert sitemap.headers["cache-control"].startswith("public")
+    ids = [i["product_id"] for i in client.get("/v1/deals", params={"limit": 200}).json()["items"]]
+    assert len(ids) == 14
+    for pid in ids:
+        assert sitemap.text.count(f"<loc>http://localhost:8000/products/{pid}</loc>") == 1
+    assert sitemap.text.count("<loc>") == len(ids) + 2  # "/" and "/?source=uniqlo"
+    assert "<loc>http://localhost:8000/?source=uniqlo</loc>" in sitemap.text
+
+
+def test_delisted_product_hidden_from_deals_but_page_works(
+    client: TestClient, conn: Engine
+) -> None:
+    """A newer IKEA run without ikea-1 makes it non-current: gone from deals, stats, sitemap;
+    its product page and JSON stay reachable."""
+    before = {s["source"]: s for s in client.get("/v1/stats").json()}["ikea"]["products"]
+    with conn.begin() as c:
+        run_id = c.execute(
+            text(
+                "INSERT INTO ingestion_run (source_id, raw_object_key, status, finished_at) "
+                "VALUES (1, 'raw/seed-2', 'succeeded', now()) RETURNING id"
+            )
+        ).scalar()
+        c.execute(
+            text(
+                "INSERT INTO price_observation (product_id, observed_at, run_id, price, "
+                "list_price, retailer_sale_flag) "
+                "SELECT p.id, now() + INTERVAL '1 minute', :run, o.price, o.list_price, true "
+                "FROM product p JOIN price_observation o ON o.product_id = p.id "
+                "WHERE p.source_id = 1 AND p.external_id <> 'ikea-1' AND o.run_id <> :run "
+                "  AND o.observed_at = (SELECT max(observed_at) FROM price_observation "
+                "                       WHERE product_id = p.id)"
+            ),
+            {"run": run_id},
+        )
+        c.execute(text("REFRESH MATERIALIZED VIEW product_price_summary"))
+        gone = c.execute(text("SELECT id FROM product WHERE external_id = 'ikea-1'")).scalar_one()
+    names = {
+        i["name"]
+        for i in client.get("/v1/deals", params={"limit": 200, "sort": "name"}).json()["items"]
+    }
+    assert "KALLAX shelf 1" not in names and "KALLAX shelf 2" in names
+    after = {s["source"]: s for s in client.get("/v1/stats").json()}["ikea"]["products"]
+    assert after == before - 1
+    product = client.get(f"/v1/products/{gone}")
+    assert product.status_code == 200 and product.json()["is_current"] is False
+    page = client.get(f"/products/{gone}")
+    assert page.status_code == 200 and "no longer listed" in page.text
+    assert f"/products/{gone}</loc>" not in client.get("/sitemap.xml").text
 
 
 def test_cache_headers(client: TestClient) -> None:
@@ -336,6 +342,9 @@ def test_cache_headers(client: TestClient) -> None:
     assert client.get("/health").headers["cache-control"] == "no-store"
     assert client.get("/v1/products/999999").headers["cache-control"] == "no-store"
     assert client.post("/v1/watches", json={}).headers["cache-control"] == "no-store"
+    for path in ("/watches/confirm/nope", "/watches/unsubscribe/nope"):
+        assert client.get(path).headers["cache-control"] == "no-store"
+        assert client.post(path).headers["cache-control"] == "no-store"
 
 
 def test_html_error_pages(client: TestClient) -> None:
@@ -344,6 +353,25 @@ def test_html_error_pages(client: TestClient) -> None:
     assert missing.status_code == 404 and "<h2>404 · Not found</h2>" in missing.text
     assert client.get("/v1/products/999999", headers=html).json() == {"detail": "product not found"}
     assert client.get("/products/999999").json() == {"detail": "product not found"}
+
+
+def test_unhandled_error_is_branded_500(
+    conn: Engine, settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def boom(_conn: object) -> list:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr("pricepulse.api.queries.stats", boom)
+    monkeypatch.setattr("pricepulse.api.deps.get_engine", lambda: conn)
+    monkeypatch.setattr("pricepulse.api.deps.get_settings", lambda: settings)
+    with TestClient(create_app(), raise_server_exceptions=False) as client:
+        home = client.get("/", headers={"Accept": "text/html"})
+        assert home.status_code == 500 and "Something went wrong" in home.text
+        assert home.headers["cache-control"] == "no-store"
+        api = client.get("/v1/stats")
+        assert api.status_code == 500 and api.json() == {"detail": "internal server error"}
+        # the catch-all must not swallow HTTPException
+        assert client.get("/products/999999", headers={"Accept": "text/html"}).status_code == 404
 
 
 def test_database_unavailable_is_503_with_retry_after(

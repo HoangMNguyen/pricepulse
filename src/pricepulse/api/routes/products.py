@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query
 
 from pricepulse.api import queries
 from pricepulse.api.deps import ReadConn
-from pricepulse.api.schemas import DealsPage, HistoryPoint, ProductOut, SortKey
+from pricepulse.api.schemas import DealOut, DealsPage, HistoryPoint, SortKey
 
 router = APIRouter(prefix="/v1")
 
@@ -45,7 +45,7 @@ def deals(
     return {"items": items, "next_cursor": next_cursor, "total": total}
 
 
-@router.get("/products/{product_id}", response_model=ProductOut)
+@router.get("/products/{product_id}", response_model=DealOut)
 def product(conn: ReadConn, product_id: int) -> dict:
     return queries.get_product(conn, product_id)
 

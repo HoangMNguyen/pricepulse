@@ -1,4 +1,4 @@
-.PHONY: up down migrate test lint fmt serve build tf-plan tf-apply
+.PHONY: up down migrate test test-unit lint fmt serve build tf-plan tf-apply
 
 up:
 	docker compose up -d --wait db
@@ -11,6 +11,9 @@ migrate:
 
 test:
 	uv run pytest -q
+
+test-unit:
+	uv run pytest -q -m 'not integration'
 
 lint:
 	uv run ruff check . && uv run ruff format --check .

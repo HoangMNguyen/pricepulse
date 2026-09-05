@@ -1,23 +1,26 @@
 {% extends "base.html" %}
 {% block title %}{{ product.name }} · PricePulse{% endblock %}
+{% block description %}{{ product.name }} at {{ product.source|upper }}: ${{ '%.2f' % product.current_price }}{% if product.discount_pct > 0 %}, {{ product.discount_pct }}% below its usual price{% endif %}. Price history and alerts.{% endblock %}
 {% block head %}
   <meta property="og:title" content="{{ product.name }}">
   {% if product.image_url %}<meta property="og:image" content="{{ product.image_url }}">{% endif %}
   <meta property="og:description" content="${{ '%.2f' % product.current_price }}{% if product.discount_pct > 0 %} · −{{ product.discount_pct }}%{% endif %} at {{ product.source|upper }}">
   <meta property="og:type" content="product">
+  <script src="{{ cdn.chart[0] }}" integrity="{{ cdn.chart[1] }}" crossorigin="anonymous" defer></script>
 {% endblock %}
 {% block content %}
 <p><a href="/">← Back to deals</a></p>
-<article>
+<article id="product" data-product-id="{{ product.product_id }}">
   <header>
     <span class="badge {{ product.source }}">{{ product.source }}</span>
-    <h2 style="margin-bottom:0">{{ product.name }}</h2>
+    {% if not product.is_current %}<span class="badge ends">no longer listed · last seen {{ product.current_observed_at.strftime('%Y-%m-%d') }}</span>{% endif %}
+    <h2 class="tight">{{ product.name }}</h2>
     <small>{{ product.category or '' }} · <a href="{{ product.url }}" rel="noopener" target="_blank">view at retailer</a></small>
   </header>
   <div class="grid">
-    {% if product.image_url %}<img src="{{ product.image_url }}" alt="" style="max-height:240px;object-fit:contain">{% endif %}
+    {% if product.image_url %}<img src="{{ product.image_url }}" alt="{{ product.name }}" class="hero">{% endif %}
     <div>
-      <p><strong style="font-size:1.6rem">${{ '%.2f' % product.current_price }}</strong>
+      <p><strong class="price-now">${{ '%.2f' % product.current_price }}</strong>
         {% if product.discount_pct > 0 %}<span class="pct">-{{ product.discount_pct }}%</span>
         <s>${{ '%.2f' % product.reference_price }}</s>{% endif %}</p>
       <p><small>
@@ -28,51 +31,21 @@
       </small></p>
     </div>
   </div>
-  <canvas id="history" height="110"></canvas>
+  <canvas id="history" height="110" role="img" aria-label="Price history, last 180 days"></canvas>
 </article>
 
 <article>
   <header><strong>Watch this product</strong> <small>· email me when it drops by at least</small></header>
-  <form id="watch" onsubmit="return createWatch(event)" class="grid">
-    <input type="email" name="email" placeholder="you@example.com" required>
-    <input type="number" name="min_discount_pct" value="10" min="0" max="100" step="0.5" aria-label="minimum % drop">
+  <form id="watch" class="grid">
+    <label for="watch-email">Email
+      <input id="watch-email" type="email" name="email" autocomplete="email" placeholder="you@example.com" required>
+    </label>
+    <label for="watch-pct">Min % drop
+      <input id="watch-pct" type="number" name="min_discount_pct" value="10" min="0" max="100" step="0.5">
+    </label>
     <button type="submit">Watch</button>
   </form>
-  <p id="watch-result"></p>
+  <p id="watch-result" aria-live="polite"></p>
   <p><small>You will get one confirmation email first; every alert carries an unsubscribe link.</small></p>
 </article>
-
-<script src="{{ cdn.chart[0] }}" integrity="{{ cdn.chart[1] }}" crossorigin="anonymous"></script>
-<script>
-  const PRODUCT_ID = {{ product.product_id }};
-  fetch(`/v1/products/${PRODUCT_ID}/history?days=180`).then(r => r.json()).then(points => {
-    const labels = points.map(p => p.observed_at.slice(0, 10));
-    new Chart(document.getElementById('history'), {
-      type: 'line',
-      data: { labels, datasets: [
-        { label: 'Price', data: points.map(p => Number(p.price)), borderColor: '#1a7f37', tension: .2 },
-        { label: 'List price', data: points.map(p => p.list_price === null ? null : Number(p.list_price)), borderColor: '#999', borderDash: [4, 4], spanGaps: true },
-      ]},
-      options: { scales: { y: { ticks: { callback: v => '$' + v } } }, plugins: { legend: { position: 'bottom' } } },
-    });
-  });
-  async function createWatch(ev) {
-    ev.preventDefault();
-    const f = new FormData(ev.target);
-    const res = await fetch('/v1/watches', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ product_id: PRODUCT_ID, email: f.get('email'), min_discount_pct: Number(f.get('min_discount_pct')) }),
-    });
-    const body = await res.json();
-    const out = document.getElementById('watch-result');
-    out.textContent = '';
-    if (res.status === 202) {
-      out.append('Check ', Object.assign(document.createElement('strong'), { textContent: body.email }), ' for a confirmation link.');
-    } else {
-      out.textContent = typeof body.detail === 'string' ? body.detail : `Error ${res.status}`;
-    }
-    return false;
-  }
-</script>
 {% endblock %}

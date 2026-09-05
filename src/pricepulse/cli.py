@@ -17,7 +17,9 @@ def _setup(verbose: bool = typer.Option(False, "--verbose", "-v")) -> None:
 
 
 @app.command()
-def scrape(source: str = typer.Option(..., help="ikea | uniqlo")) -> None:
+def scrape(
+    source: str = typer.Option(..., help="retailer code (a key of pricepulse.sources.SOURCES)"),
+) -> None:
     """Fetch a retailer and store the raw payload; prints the raw object key."""
     from pricepulse.services.ingest import run_scrape
 
@@ -33,7 +35,9 @@ def process(key: str = typer.Option(..., help="raw object key from `scrape`")) -
 
 
 @app.command()
-def run(source: str = typer.Option(..., help="ikea | uniqlo")) -> None:
+def run(
+    source: str = typer.Option(..., help="retailer code (a key of pricepulse.sources.SOURCES)"),
+) -> None:
     """scrape + process in one go."""
     from pricepulse.services.ingest import run_process, run_scrape
 
@@ -49,19 +53,18 @@ def notify(
     from pricepulse.config import get_settings
     from pricepulse.services.digest import build_digests
     from pricepulse.services.ingest import ProcessResult
-    from pricepulse.services.mail import render_text, send_digests
+    from pricepulse.services.mail import render_text
+    from pricepulse.services.notify import run_notify
 
     settings = get_settings()
     result = ProcessResult.from_dict(json.loads(key_json.read_text()))
-    digests = build_digests(result, settings.alert_recipients, settings.public_base_url)
     if dry_run:
+        digests = build_digests(result, settings.alert_recipients, settings.public_base_url)
         for to, digest in digests.items():
             typer.echo(f"--- to: {to}\n{render_text(digest)}")
         typer.echo(f"{len(digests)} digest(s) (dry run)")
         return
-    if not settings.ses_sender:
-        raise typer.BadParameter("SES_SENDER is not set")
-    typer.echo(f"sent {send_digests(digests, settings.ses_sender)} email(s)")
+    typer.echo(f"sent {run_notify(result, settings)} email(s)")
 
 
 @app.command()
@@ -71,19 +74,18 @@ def mailer(
 ) -> None:
     """Send one transactional email from the outbox (what the mailer Lambda does per S3 event)."""
     from pricepulse.config import get_settings
-    from pricepulse.services.mail import render_confirm, send_email
+    from pricepulse.services.mail import render_confirm, send_outbox_message, ses_client
     from pricepulse.storage.outbox import make_outbox
 
     settings = get_settings()
-    message = make_outbox(settings).get(key)
-    subject, html, text, unsubscribe = render_confirm(message, settings.public_base_url)
+    outbox = make_outbox(settings)
     if dry_run:
+        message = outbox.get(key)
+        subject, _html, text, _unsubscribe = render_confirm(message, settings.public_base_url)
         typer.echo(f"--- to: {message['email']}\nsubject: {subject}\n{text}")
         return
-    if not settings.ses_sender:
-        raise typer.BadParameter("SES_SENDER is not set")
-    send_email(message["email"], subject, html, text, settings.ses_sender, unsubscribe)
-    typer.echo(f"sent to {message['email']}")
+    send_outbox_message(outbox, key, settings, ses_client(settings))
+    typer.echo("sent")
 
 
 @app.command()

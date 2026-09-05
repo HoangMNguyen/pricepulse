@@ -1,10 +1,9 @@
 import json
-import os
 
 import boto3
+import pytest
 from moto import mock_aws
 
-from pricepulse.config import get_settings
 from pricepulse.lambda_handlers import mailer
 from pricepulse.storage.outbox import LocalOutbox, S3Outbox
 
@@ -36,25 +35,17 @@ def test_local_outbox_round_trip(tmp_path) -> None:  # noqa: ANN001
 
 
 @mock_aws
-def test_mailer_handler_sends_one_email_per_record() -> None:
-    os.environ.update(
-        SES_SENDER="sender@example.com",
-        RAW_BUCKET="pricepulse-test-raw",
-        PUBLIC_BASE_URL="https://pp.example",
-        AWS_REGION="us-east-1",
-        AWS_DEFAULT_REGION="us-east-1",
+def test_mailer_handler_sends_one_email_per_record(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SES_SENDER", "sender@example.com")
+    monkeypatch.setenv("RAW_BUCKET", "pricepulse-test-raw")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://pp.example")
+    monkeypatch.setenv("AWS_REGION", "us-east-1")
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
+    boto3.client("s3", region_name="us-east-1").create_bucket(Bucket="pricepulse-test-raw")
+    boto3.client("sesv2", region_name="us-east-1").create_email_identity(
+        EmailIdentity="sender@example.com"
     )
-    get_settings.cache_clear()
-    try:
-        boto3.client("s3", region_name="us-east-1").create_bucket(Bucket="pricepulse-test-raw")
-        boto3.client("sesv2", region_name="us-east-1").create_email_identity(
-            EmailIdentity="sender@example.com"
-        )
-        key = S3Outbox("pricepulse-test-raw").put(MESSAGE)
-        event = {"Records": [{"s3": {"object": {"key": key}}}]}
-        assert mailer.handler(event, _Ctx()) == {"sent": 1}
-        assert mailer.handler({"Records": []}, _Ctx()) == {"sent": 0}
-    finally:
-        for name in ("RAW_BUCKET", "PUBLIC_BASE_URL"):
-            os.environ.pop(name, None)
-        get_settings.cache_clear()
+    key = S3Outbox("pricepulse-test-raw").put(MESSAGE)
+    event = {"Records": [{"s3": {"object": {"key": key}}}]}
+    assert mailer.handler(event, _Ctx()) == {"sent": 1}
+    assert mailer.handler({"Records": []}, _Ctx()) == {"sent": 0}

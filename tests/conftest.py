@@ -15,7 +15,6 @@ from sqlalchemy.engine import make_url
 from pricepulse.config import Settings, get_settings
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURES = Path(__file__).parent / "fixtures"
 DEFAULT_TEST_URL = "postgresql+psycopg://pricepulse:pricepulse@localhost:5433/pricepulse_test"
 
 
@@ -38,6 +37,11 @@ def test_db_url() -> str:
 
 @pytest.fixture(scope="session")
 def db_engine(test_db_url: str) -> Iterator[Engine]:
+    db = make_url(test_db_url).database
+    if not db or not db.endswith("_test"):
+        pytest.exit(
+            f"refusing to reset database {db!r}: TEST_DATABASE_URL must name a *_test database"
+        )
     _ensure_database(test_db_url)
     engine = create_engine(test_db_url)
     cfg = Config(str(ROOT / "alembic.ini"))
@@ -47,6 +51,14 @@ def db_engine(test_db_url: str) -> Iterator[Engine]:
         command.upgrade(cfg, "head")
     yield engine
     engine.dispose()
+
+
+@pytest.fixture(autouse=True)
+def _fresh_settings() -> Iterator[None]:
+    """Settings are cached per process; env-driven tests must not leak into each other."""
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
 
 
 @pytest.fixture
@@ -60,7 +72,6 @@ def settings(test_db_url: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
         api_key="test-key",
         _env_file=None,
     )
-    get_settings.cache_clear()
     monkeypatch.setattr("pricepulse.config.get_settings", lambda: s)
     return s
 

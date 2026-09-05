@@ -1,4 +1,4 @@
-# Neon Free: serverless PostgreSQL 16 that suspends after 5 idle minutes and resumes in ~0.5 s.
+# Neon Free: serverless PostgreSQL 16 that suspends after 5 idle minutes and resumes in ≈ 1 s.
 # The project's default role (app_migrator) owns the schema; least-privilege app roles are
 # created with SQL by scripts/bootstrap_db.sh. Connection URLs (with credentials) live in SSM
 # SecureString parameters, one per role, read by each Lambda at cold start. See ADR-0009.

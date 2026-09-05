@@ -1,37 +1,26 @@
 {% extends "base.html" %}
-{% block title %}Deals · PricePulse{% endblock %}
+{% block title %}{{ source|upper }} deals · PricePulse{% endblock %}
 {% block content %}
 <header>
   <h1>Current deals</h1>
-  <p>
-    {% for s in stats %}
-    <span class="badge {{ s.source }}">{{ s.source }}</span> {{ s.products }} products, {{ s.on_sale }} on sale
-    {% if s.last_run_at %} · last run {{ s.last_run_at.strftime('%Y-%m-%d %H:%M UTC') }}{% endif %}
-    {% if not loop.last %}&nbsp;&nbsp;{% endif %}
-    {% endfor %}
-  </p>
 </header>
+
+<nav class="tabs" role="tablist">
+  {% for code in tabs %}
+  <a role="tab" aria-selected="{{ 'true' if code == source else 'false' }}" class="badge {{ code }}" href="/?{{ qs(params, source=code, cursor=None) }}">{{ code|upper }} · {{ stats[code].on_sale }} on sale</a>
+  {% endfor %}
+</nav>
 
 <form id="filters" method="get" action="/"
       hx-get="/" hx-select="#deals-wrap" hx-target="#deals-wrap" hx-swap="outerHTML" hx-push-url="true"
       hx-trigger="change, keyup changed delay:300ms from:#q, submit">
+  <input type="hidden" name="source" value="{{ source }}">
   <div class="grid">
-    <label>Source
-      <select name="source">
-        <option value="" {% if not params.source %}selected{% endif %}>All</option>
-        <option value="ikea" {% if params.source == 'ikea' %}selected{% endif %}>IKEA</option>
-        <option value="uniqlo" {% if params.source == 'uniqlo' %}selected{% endif %}>UNIQLO</option>
-      </select>
-    </label>
     <label>Category
       <select name="category">
         <option value="" {% if not params.category %}selected{% endif %}>All</option>
-        {% for src in ('ikea', 'uniqlo') %}
-        <optgroup label="{{ src|upper }}">
-          {% for c in categories if c.source == src %}
-          <option value="{{ c.category }}" {% if params.category == c.category %}selected{% endif %}>{{ c.category }} ({{ c.products }})</option>
-          {% endfor %}
-        </optgroup>
+        {% for c in categories %}
+        <option value="{{ c.category }}" {% if params.category == c.category %}selected{% endif %}>{{ c.category }} ({{ c.products }})</option>
         {% endfor %}
       </select>
     </label>
@@ -41,6 +30,9 @@
         <option value="{{ s }}" {% if params.sort == s %}selected{% endif %}>{{ sort_labels[s] }}</option>
         {% endfor %}
       </select>
+    </label>
+    <label>Search
+      <input type="search" id="q" name="q" value="{{ params.q or '' }}" placeholder="name contains…" maxlength="100">
     </label>
   </div>
   <div class="grid">
@@ -53,9 +45,6 @@
     <label>Max price $
       <input type="number" name="max_price" value="{{ params.max_price if params.max_price is not none else '' }}" min="0" step="1" placeholder="any">
     </label>
-    <label>Search
-      <input type="search" id="q" name="q" value="{{ params.q or '' }}" placeholder="name contains…" maxlength="100">
-    </label>
   </div>
   <fieldset>
     <label><input type="checkbox" name="flagged_only" value="true" {% if params.flagged_only %}checked{% endif %}> Retailer-flagged only</label>
@@ -64,5 +53,5 @@
   </fieldset>
 </form>
 
-{% include "partials/deals_table.html" %}
+<div id="deals-wrap">{% include "partials/deals_table.html" %}</div>
 {% endblock %}

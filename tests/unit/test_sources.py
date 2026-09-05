@@ -62,6 +62,18 @@ def test_ikea_parse_skips_not_online_sellable_and_dedupes() -> None:
     assert items[1]["product"]["itemNo"] not in {s.external_id for s in snaps}
 
 
+def test_ikea_parse_skips_index_request() -> None:
+    """The size=1 discovery request is metadata: its one arbitrary item is not an offer."""
+    raw = ikea_raw()
+    offers_item = raw["requests"][1]["body"]["searchResultPage"]["products"]["main"]["items"][0]
+    stray = json.loads(json.dumps(offers_item))
+    stray["product"]["itemNo"] = "99999999"
+    raw["requests"][0]["body"]["searchResultPage"]["products"]["main"]["items"] = [stray]
+    assert "99999999" in {s.external_id for s in IkeaSource().parse(raw)}  # legacy payload
+    raw["requests"][0]["role"] = "index"
+    assert "99999999" not in {s.external_id for s in IkeaSource().parse(raw)}
+
+
 def test_uniqlo_parse_flagged_item_has_no_list_price() -> None:
     snaps = {s.external_id: s for s in UniqloSource().parse(uniqlo_raw())}
     assert len(snaps) == 3

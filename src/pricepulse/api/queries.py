@@ -16,8 +16,6 @@ from sqlalchemy import Connection, text
 from pricepulse.domain.pricing import discount_pct
 
 MAX_LIMIT = 200
-SOURCE_CODES = {1: "ikea", 2: "uniqlo"}
-SOURCE_IDS = {v: k for k, v in SOURCE_CODES.items()}
 
 # key -> (column, direction). Dict order is the UI order.
 SORTS: dict[str, tuple[str, str]] = {
@@ -41,11 +39,12 @@ SORT_LABELS = {
 }
 
 _SUMMARY_COLUMNS = """
-    s.product_id, s.source_id, s.name, s.category, s.url, s.image_url, s.currency,
+    s.product_id, s.source, s.name, s.category, s.url, s.image_url, s.currency,
     s.first_seen_at, s.last_seen_at,
     s.current_price, s.current_observed_at, s.retailer_sale_flag, s.retailer_tag, s.valid_to,
     s.list_price, s.reference_price, s.mode_price_90d, s.min_price_90d, s.max_price_90d,
-    s.observations_90d, s.discount_pct, s.previous_price, s.previous_observed_at, s.savings
+    s.observations_90d, s.discount_pct, s.previous_price, s.previous_observed_at, s.savings,
+    s.is_current
 """
 _SUMMARY_SELECT = f"SELECT {_SUMMARY_COLUMNS} FROM product_price_summary s"  # noqa: S608 - constant
 
@@ -98,7 +97,6 @@ def decode_cursor(cursor: str, sort: str) -> tuple[Any, int]:
 def row_to_dict(row: Any, now: datetime | None = None) -> dict[str, Any]:
     now = now or datetime.now(UTC)
     d = dict(row._mapping)
-    d["source"] = SOURCE_CODES.get(d.pop("source_id"), "unknown")
     d["is_on_sale"] = bool(d["discount_pct"] > 0 or d["retailer_sale_flag"])
     d["is_new"] = d["first_seen_at"] >= now - timedelta(hours=24)
     d["drop_vs_previous_pct"] = discount_pct(d["current_price"], d.get("previous_price"))
@@ -109,13 +107,11 @@ def row_to_dict(row: Any, now: datetime | None = None) -> dict[str, Any]:
 def _where(f: DealFilters, with_cursor: bool) -> tuple[list[str], dict[str, Any]]:
     if f.sort not in SORTS:
         raise HTTPException(400, "unknown sort")
-    where = ["s.discount_pct >= :min_discount"]
+    where = ["s.is_current", "s.discount_pct >= :min_discount"]
     params: dict[str, Any] = {"min_discount": f.min_discount}
-    if f.source:
-        if f.source not in SOURCE_IDS:
-            raise HTTPException(400, f"unknown source {f.source!r}")
-        where.append("s.source_id = :source_id")
-        params["source_id"] = SOURCE_IDS[f.source]
+    if f.source:  # an unknown code matches nothing
+        where.append("s.source = :source")
+        params["source"] = f.source
     if f.flagged_only:
         where.append("s.retailer_sale_flag")
     if f.on_sale_only:
@@ -143,16 +139,20 @@ def _where(f: DealFilters, with_cursor: bool) -> tuple[list[str], dict[str, Any]
     return where, params
 
 
-def list_deals(conn: Connection, f: DealFilters) -> tuple[list[dict[str, Any]], str | None, int]:
-    """One page of deals plus the next keyset cursor and the total matching count."""
+def list_deals(
+    conn: Connection, f: DealFilters, *, with_total: bool = True
+) -> tuple[list[dict[str, Any]], str | None, int | None]:
+    """One page of deals plus the next keyset cursor and, unless `with_total` is off (HTMX
+    "load more" discards it), the total matching count."""
     limit = max(1, min(f.limit, MAX_LIMIT))
-    where, params = _where(f, with_cursor=True)  # validates sort, source, cursor
-    count_where, count_params = _where(f, with_cursor=False)
+    where, params = _where(f, with_cursor=True)  # validates sort and cursor
     col, direction = SORTS[f.sort]
-    total = conn.execute(
-        text(f"SELECT count(*) FROM product_price_summary s WHERE {' AND '.join(count_where)}"),  # noqa: S608 - fragments are constants
-        count_params,
-    ).scalar_one()
+    total = None
+    if with_total:
+        count_where, count_params = _where(f, with_cursor=False)
+        count_sql = "SELECT count(*) FROM product_price_summary s WHERE "
+        count_sql += " AND ".join(count_where)
+        total = int(conn.execute(text(count_sql), count_params).scalar_one())
     sql = (
         f"{_SUMMARY_SELECT} WHERE {' AND '.join(where)} "  # noqa: S608 - fragments are constants
         f"ORDER BY {col} {direction}, s.product_id ASC LIMIT :limit"
@@ -164,7 +164,7 @@ def list_deals(conn: Connection, f: DealFilters) -> tuple[list[dict[str, Any]], 
     if len(rows) > limit and items:
         last = rows[limit - 1]._mapping
         next_cursor = encode_cursor(f.sort, last[col.removeprefix("s.")], last["product_id"])
-    return items, next_cursor, int(total)
+    return items, next_cursor, total
 
 
 def get_product(conn: Connection, product_id: int) -> dict[str, Any]:
@@ -196,21 +196,24 @@ def categories(conn: Connection) -> list[dict[str, Any]]:
     rows = conn.execute(
         text(
             """
-            SELECT s.source_id, s.category, count(*) AS products
+            SELECT s.source, s.category, count(*) AS products
             FROM product_price_summary s
-            WHERE s.category IS NOT NULL
+            WHERE s.is_current AND s.category IS NOT NULL
             GROUP BY 1, 2 ORDER BY 1, 2
             """
         )
     ).all()
-    return [
-        {
-            "source": SOURCE_CODES.get(r.source_id, "unknown"),
-            "category": r.category,
-            "products": int(r.products),
-        }
-        for r in rows
-    ]
+    return [{"source": r.source, "category": r.category, "products": int(r.products)} for r in rows]
+
+
+def sitemap_entries(conn: Connection) -> list[tuple[int, datetime]]:
+    rows = conn.execute(
+        text(
+            "SELECT product_id, current_observed_at FROM product_price_summary "
+            "WHERE is_current ORDER BY product_id"
+        )
+    ).all()
+    return [(int(r.product_id), r.current_observed_at) for r in rows]
 
 
 def list_runs(conn: Connection, limit: int) -> list[dict[str, Any]]:
@@ -243,7 +246,7 @@ def stats(conn: Connection) -> list[dict[str, Any]]:
                      AS on_sale,
                    lr.started_at AS last_run_at, lr.status AS last_run_status
             FROM source src
-            LEFT JOIN product_price_summary s ON s.source_id = src.id
+            LEFT JOIN product_price_summary s ON s.source_id = src.id AND s.is_current
             LEFT JOIN last_run lr ON lr.source_id = src.id
             GROUP BY src.code, lr.started_at, lr.status
             ORDER BY src.code

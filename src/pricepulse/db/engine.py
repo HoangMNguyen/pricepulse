@@ -29,9 +29,11 @@ def resolve_database_url(settings: Settings) -> str:
 
 def make_engine(settings: Settings) -> Engine:
     url = resolve_database_url(settings)
-    if settings.pricepulse_env == "dev":
-        return create_engine(url, pool_pre_ping=True, poolclass=NullPool)
-    return create_engine(url, pool_pre_ping=True)
+    # `local`/`test` are long-lived processes; every other stage is Lambda, one connection
+    # per invocation.
+    if settings.pricepulse_env in ("local", "test"):
+        return create_engine(url, pool_pre_ping=True)
+    return create_engine(url, pool_pre_ping=True, poolclass=NullPool)
 
 
 def wait_for_db(engine: Engine, max_wait_s: int) -> None:

@@ -1,7 +1,8 @@
 from datetime import date
 from decimal import Decimal
 
-from pricepulse.db.repo import PrevObservation, WatchRow
+from pricepulse.db.repo import PrevObservation
+from pricepulse.db.watches import WatchRow
 from pricepulse.domain.models import ProductSnapshot
 from pricepulse.services.ingest import classify_alerts
 

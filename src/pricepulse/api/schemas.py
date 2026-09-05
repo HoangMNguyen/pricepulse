@@ -4,14 +4,12 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field
 
 SortKey = Literal["discount", "savings", "price_asc", "price_desc", "name", "newest", "ending_soon"]
 
 
 class DealOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     product_id: int
     source: str
     name: str
@@ -35,13 +33,11 @@ class DealOut(BaseModel):
     drop_vs_previous_pct: Decimal
     savings: Decimal
     days_left: int | None
-
-
-class ProductOut(DealOut):
     mode_price_90d: Decimal | None
     min_price_90d: Decimal | None
     max_price_90d: Decimal | None
     observations_90d: int
+    is_current: bool
 
 
 class DealsPage(BaseModel):
@@ -64,8 +60,6 @@ class HistoryPoint(BaseModel):
 
 
 class RunOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: int
     source: str
     raw_object_key: str
@@ -92,8 +86,6 @@ class WatchIn(BaseModel):
 
 
 class WatchOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: int
     product_id: int
     email: str

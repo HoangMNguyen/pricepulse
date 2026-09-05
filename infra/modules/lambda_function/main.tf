@@ -71,7 +71,7 @@ resource "aws_lambda_function" "this" {
   ]
 
   # checkov:skip=CKV_AWS_50: X-Ray tracing adds cost without value for a daily batch job
-  # checkov:skip=CKV_AWS_116: DLQ is replaced by an on_failure Lambda Destination to SNS
+  # checkov:skip=CKV_AWS_116: every asynchronously invoked function has an on_failure Destination to SNS; api and migrate are invoked synchronously
   # checkov:skip=CKV_AWS_173: env vars hold no secrets (API key excepted; rotated via terraform)
   # checkov:skip=CKV_AWS_272: code signing is out of scope for a single-developer project
   # checkov:skip=CKV_AWS_117: no VPC by design; the database is an external managed service (ADR-0009)

@@ -30,13 +30,12 @@ pricepulse = "pricepulse.cli:app"
 [dependency-groups]
 dev = [
     "pytest",
-    "pytest-cov",
     "moto[s3,ses]",
     "ruff",
     "pre-commit",
     "uvicorn",
-    "checkov",
 ]
+infra = ["checkov"]
 
 [build-system]
 requires = ["uv_build>=0.12.8,<0.13.0"]
@@ -49,6 +48,7 @@ module-name = "pricepulse"
 line-length = 100
 target-version = "py314"
 extend-exclude = ["alembic/versions"]
+force-exclude = true # pre-commit passes explicit paths
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "S", "PL"]

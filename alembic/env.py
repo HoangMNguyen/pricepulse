@@ -1,5 +1,5 @@
-"""Alembic environment. Builds the engine through pricepulse.db.engine so IAM auth works in
-the migrate Lambda exactly as it does locally. Tests may inject an engine via
+"""Alembic environment. Builds the engine through `pricepulse.db.engine` so the migrate Lambda
+resolves its SSM-held URL exactly as the app does. Tests may inject an engine via
 `config.attributes["connection"]`."""
 
 from alembic import context

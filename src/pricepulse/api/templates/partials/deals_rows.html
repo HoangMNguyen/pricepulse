@@ -1,6 +1,6 @@
 {% for d in items %}
 <tr>
-  <td>{% if d.image_url %}<img src="{{ d.image_url }}" alt="" loading="lazy" width="40" height="40" style="object-fit:contain">{% endif %}</td>
+  <td>{% if d.image_url %}<img src="{{ d.image_url }}" alt="" loading="lazy" width="40" height="40" class="thumb">{% endif %}</td>
   <td>
     <a href="/products/{{ d.product_id }}">{{ d.name }}</a>
     {% if d.category %}<small>· {{ d.category }}</small>{% endif %}
@@ -8,20 +8,27 @@
     {% if d.drop_vs_previous_pct > 0 %}<span class="badge drop">↓ {{ d.drop_vs_previous_pct }}% since last check</span>{% endif %}
     {% if d.days_left is not none and d.days_left <= 7 %}<span class="badge ends">ends in {{ d.days_left }}d</span>{% endif %}
   </td>
-  <td><span class="badge {{ d.source }}">{{ d.source }}</span></td>
   <td class="num">${{ '%.2f' % d.current_price }}</td>
+  {% if layout == 'list_price' %}
   <td class="num">{% if d.reference_price and d.reference_price > d.current_price %}<s>${{ '%.2f' % d.reference_price }}</s>{% else %}–{% endif %}</td>
   <td class="num">{% if d.discount_pct > 0 %}<span class="pct">-{{ d.discount_pct }}%</span>{% else %}–{% endif %}</td>
   <td class="num">{% if d.savings > 0 %}${{ '%.2f' % d.savings }}{% else %}–{% endif %}</td>
   <td>{% if d.retailer_tag %}<small>{{ d.retailer_tag }}</small>{% endif %}</td>
   <td>{% if d.valid_to %}<small>{{ d.valid_to }}</small>{% endif %}</td>
+  {% else %}
+  <td class="num">{% if d.reference_price and d.reference_price > d.current_price %}<s>${{ '%.2f' % d.reference_price }}</s>{% elif d.reference_price %}${{ '%.2f' % d.reference_price }}{% else %}–{% endif %}</td>
+  <td class="num">{% if d.min_price_90d %}${{ '%.2f' % d.min_price_90d }}{% else %}–{% endif %}</td>
+  <td class="num">{% if d.discount_pct > 0 %}<span class="pct">-{{ d.discount_pct }}%</span>{% else %}–{% endif %}</td>
+  <td class="num">{% if d.savings > 0 %}${{ '%.2f' % d.savings }}{% else %}–{% endif %}</td>
+  <td>{% if d.retailer_sale_flag %}<span class="badge drop">sale</span>{% else %}–{% endif %}</td>
+  {% endif %}
 </tr>
 {% else %}
-<tr><td colspan="9"><em>No products match.</em></td></tr>
+<tr><td colspan="8"><em>No products match.</em></td></tr>
 {% endfor %}
 {% if next_cursor %}
 <tr id="more">
-  <td colspan="9" style="text-align:center">
+  <td colspan="8" class="center">
     <button class="secondary outline" hx-get="/partials/deals?{{ qs(params, cursor=next_cursor) }}" hx-target="#more" hx-swap="outerHTML">Load more <span class="htmx-indicator">…</span></button>
   </td>
 </tr>

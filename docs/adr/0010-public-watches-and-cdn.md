@@ -13,9 +13,11 @@ into a spam source, how to keep the database asleep under traffic, and how to do
 - **Double opt-in, token links, no accounts.** A watch is created unconfirmed with a random
   `token` (`secrets.token_urlsafe(32)`); the API writes an `outbox/watch_confirm/*.json` object and
   the `mailer` Lambda sends the confirmation (S3 event → SES). Only confirmed watches reach
-  `classify_alerts`; every digest sent to a watcher carries `/watches/unsubscribe/<token>` and a
-  `List-Unsubscribe` header. Abuse limits: unique `(product, email)`, at most 5 unconfirmed watches
-  per email, outbox objects expire after 7 days. Admin list/delete stay behind the API key.
+  `classify_alerts`; every digest sent to a watcher carries `/watches/unsubscribe/<token>` and the
+  `List-Unsubscribe` / `List-Unsubscribe-Post` headers. Confirmation and unsubscribe links render
+  a page and mutate on POST (mail scanners prefetch GETs); one-click unsubscribe per RFC 8058.
+  Abuse limits: unique `(product, email)`, at most 5 unconfirmed watches per email, outbox objects
+  expire after 7 days. Admin list/delete stay behind the API key.
 - **Outbox instead of sending from the API.** The API Lambda never holds SES permissions and never
   waits on SES; a failed send leaves the object in place for a retry. It is the same
   S3-event pattern the ingestion pipeline already uses.
@@ -32,7 +34,7 @@ into a spam source, how to keep the database asleep under traffic, and how to do
   SES production access is still required for unverified recipients (README).
 - Visitors between runs never touch Neon: the database stays suspended and the free CU-hours are
   spent by the pipeline only. A cold visitor after an invalidation pays one origin request.
-- Mail-scanner prefetch of a confirmation link may auto-confirm; accepted for a price tracker
-  (no purchase or PII beyond the address).
+- A mail scanner that prefetches a confirmation link only sees the confirmation page; the watch is
+  confirmed by the reader pressing the button.
 - Cost: CloudFront and ACM are free at this traffic; a hosted zone is $0.50/month; WAF was rejected
   ($5+/month) — rate limiting is left to API Gateway's default throttling.

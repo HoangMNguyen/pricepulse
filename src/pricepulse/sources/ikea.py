@@ -38,11 +38,15 @@ def _main(body: dict[str, Any]) -> dict[str, Any]:
 
 class IkeaSource:
     code = "ikea"
+    name = "IKEA US"
+    base_url = "https://www.ikea.com/us/en/"
+    layout = "list_price"
 
     def fetch(self, client: httpx.Client) -> dict[str, Any]:
         raw = new_raw_payload(self.code)
         url, status, index = get_json(client, BASE, {"size": 1, "types": "PRODUCT"})
-        raw["requests"].append({"url": url, "status": status, "body": index})
+        # Discovery only (offer tags); its one arbitrary item is not an offer.
+        raw["requests"].append({"url": url, "status": status, "role": "index", "body": index})
         tags = _filter_values(index, "OFFERS")
         for tag in tags:
             params = {
@@ -63,6 +67,8 @@ class IkeaSource:
     def parse(self, raw: dict[str, Any]) -> list[ProductSnapshot]:
         seen: dict[str, ProductSnapshot] = {}
         for request in raw["requests"]:
+            if request.get("role") == "index":
+                continue
             body = request["body"]
             main = body.get("searchResultPage", {}).get("products", {}).get("main")
             if not main:

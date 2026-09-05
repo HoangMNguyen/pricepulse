@@ -1,6 +1,8 @@
 """Scrape (network -> raw store) and process (raw store -> Postgres + alerts).
 
-`run_process` is idempotent on the raw object key: re-delivering the same S3 event is a no-op.
+`run_process` is idempotent on the raw object key: re-delivering the same S3 event is a no-op,
+and a failed run (including a failed summary refresh) can be retried; alerts are recomputed
+against observations older than the payload, so a retry yields the same alerts.
 Alert classification happens here, in Python, against the previous observation per product.
 """
 
@@ -17,6 +19,7 @@ from sqlalchemy import Engine
 from pricepulse.config import Settings, get_settings
 from pricepulse.db import repo
 from pricepulse.db.engine import get_engine
+from pricepulse.db.watches import WatchRow, watches_for
 from pricepulse.domain.models import ProductSnapshot
 from pricepulse.domain.pricing import discount_pct
 from pricepulse.sources import get_source
@@ -101,7 +104,7 @@ def run_scrape(source_code: str, settings: Settings | None = None) -> str:
 def classify_alerts(
     snapshots: list[tuple[int, ProductSnapshot]],
     prev: dict[int, repo.PrevObservation],
-    watches: dict[int, list[repo.WatchRow]],
+    watches: dict[int, list[WatchRow]],
     threshold: Decimal,
 ) -> list[AlertOut]:
     alerts: list[AlertOut] = []
@@ -161,35 +164,37 @@ def run_process(
     raw = make_raw_store(settings).get(key)
     source_code = raw["source"]
     source = get_source(source_code)
-    source_id = repo.SOURCE_IDS[source_code]
     observed_at = datetime.fromisoformat(raw["fetched_at"])
 
     with engine.begin() as conn:
+        source_id = repo.ensure_source(conn, source.code, source.name, source.base_url)
         run_id = repo.claim_run(conn, source_id, key)
     if run_id is None:
         log.info("skip %s: already processed", key)
         return ProcessResult(None, source_code, key, 0, 0, [], skipped=True)
 
+    # Anything failing after the claim marks the run failed, so the Lambda retry reclaims it:
+    # observations are ON CONFLICT DO NOTHING and alerts are recomputed against rows older
+    # than this payload, so the retry returns the same alerts and the digest still goes out.
     try:
         snapshots = source.parse(raw)
         with engine.begin() as conn:
             repo.ensure_partition(conn, observed_at)
             ids = repo.upsert_products(conn, source_id, snapshots)
             rows = [(ids[s.external_id], s) for s in snapshots]
-            prev = repo.latest_observations(conn, ids.values())
+            prev = repo.latest_observations(conn, ids.values(), before=observed_at)
             inserted = repo.insert_observations(conn, run_id, observed_at, rows)
-            watches = repo.watches_for(conn, ids.values())
+            watches = watches_for(conn, ids.values())
             alerts = classify_alerts(rows, prev, watches, settings.alert_min_discount_pct)
             repo.insert_alerts(conn, run_id, [asdict(a) for a in alerts])
             repo.finish_run(conn, run_id, len(snapshots), inserted)
+        with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+            repo.refresh_summary(conn)
+            dropped = repo.prune_partitions(conn, settings.retention_months)
     except Exception as exc:
         with engine.begin() as conn:
             repo.fail_run(conn, run_id, f"{type(exc).__name__}: {exc}")
         raise
-
-    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-        repo.refresh_summary(conn)
-        dropped = repo.prune_partitions(conn, settings.retention_months)
 
     log.info(
         "processed %s: products=%d inserted=%d alerts=%d partitions_dropped=%d",

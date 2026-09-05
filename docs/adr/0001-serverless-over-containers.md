@@ -16,8 +16,8 @@ only for the local Postgres.
 ## Consequences
 
 - Idle cost is zero; the whole stack is torn down with one `terraform destroy`.
-- Cold starts (~1–2 s) and the Aurora resume (~15 s from 0 ACU) are acceptable for a batch job
-  and a portfolio API; they are documented in the README.
+- Cold starts (~1–2 s) and the database resume (≈ 1 s on Neon; was ~15 s on Aurora, see
+  ADR-0009) are acceptable for a batch job and a small public API; documented in the README.
 - The code is deliberately runtime-agnostic: every handler is a thin wrapper over
   `pricepulse.services`, so moving to a container is a packaging change, not a rewrite.
-- Kubernetes/ECS skills are not demonstrated by this project (stated in the README).
+- Kubernetes/ECS operations are not part of this project.

@@ -17,7 +17,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
 
 # Silence is a failure: each retailer must scrape once a day and return a plausible catalog.
 resource "aws_cloudwatch_metric_alarm" "no_scrape" {
-  for_each            = toset(["ikea", "uniqlo"])
+  for_each            = var.sources
   alarm_name          = "${local.name}-no-scrape-${each.key}"
   namespace           = "PricePulse"
   metric_name         = "ScrapeRuns"
@@ -32,7 +32,7 @@ resource "aws_cloudwatch_metric_alarm" "no_scrape" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "low_products" {
-  for_each            = toset(["ikea", "uniqlo"])
+  for_each            = var.sources
   alarm_name          = "${local.name}-low-products-${each.key}"
   namespace           = "PricePulse"
   metric_name         = "ProductsSeen"
@@ -40,7 +40,7 @@ resource "aws_cloudwatch_metric_alarm" "low_products" {
   statistic           = "Minimum"
   period              = 86400
   evaluation_periods  = 1
-  threshold           = 100
+  threshold           = each.value.min_products
   comparison_operator = "LessThanThreshold"
   treat_missing_data  = "notBreaching"
   alarm_actions       = [aws_sns_topic.alarms.arn]

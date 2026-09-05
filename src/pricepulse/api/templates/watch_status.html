@@ -2,15 +2,30 @@
 {% block title %}Watch {{ state }} · PricePulse{% endblock %}
 {% block content %}
 <article>
-  {% if state == "confirmed" %}
+  {% if state == "confirm_prompt" %}
+  <header><h2>Confirm your watch</h2></header>
+  <form method="post" action="/watches/confirm/{{ token }}">
+    <p>Confirm alerts for <strong>{{ watch.email }}</strong> on
+      <a href="/products/{{ watch.product_id }}">{{ watch.product_name }}</a> when it drops by at least
+      {{ watch.min_discount_pct }}%.</p>
+    <button type="submit">Confirm watch</button>
+  </form>
+  {% elif state == "confirmed" %}
   <header><h2>Watch confirmed</h2></header>
   <p>We will email <strong>{{ watch.email }}</strong> when
-    <a href="/products/{{ watch.product_id }}">{{ watch.name }}</a> drops by at least
+    <a href="/products/{{ watch.product_id }}">{{ watch.product_name }}</a> drops by at least
     {{ watch.min_discount_pct }}%. Every email carries an unsubscribe link.</p>
+  {% elif state == "unsubscribe_prompt" %}
+  <header><h2>Unsubscribe</h2></header>
+  <form method="post" action="/watches/unsubscribe/{{ token }}">
+    <p>Stop alerts for <strong>{{ watch.email }}</strong> on
+      <a href="/products/{{ watch.product_id }}">{{ watch.product_name }}</a>.</p>
+    <button type="submit" class="secondary">Unsubscribe</button>
+  </form>
   {% elif state == "unsubscribed" %}
   <header><h2>Unsubscribed</h2></header>
   <p><strong>{{ watch.email }}</strong> will no longer receive alerts for
-    <a href="/products/{{ watch.product_id }}">{{ watch.name }}</a>.</p>
+    <a href="/products/{{ watch.product_id }}">{{ watch.product_name }}</a>.</p>
   {% else %}
   <header><h2>Link not found</h2></header>
   <p>This confirmation or unsubscribe link is unknown or was already used.</p>

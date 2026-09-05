@@ -1,27 +1,34 @@
 {% macro th(label, sort, alt=None) -%}
 {%- set active = params.sort == sort or (alt and params.sort == alt) -%}
 <th{% if label in ('Now', 'Off', 'Save') %} class="num"{% endif %}>
-  <button type="button" class="sort{% if active %} active{% endif %}" data-sort="{{ sort }}"{% if alt %} data-alt="{{ alt }}"{% endif %} onclick="setSort(this)">{{ label }}{% if active %} {{ '▼' if params.sort in ('discount', 'savings', 'price_desc', 'newest') else '▲' }}{% endif %}</button>
+  <button type="button" class="sort{% if active %} active{% endif %}" data-sort="{{ sort }}"{% if alt %} data-alt="{{ alt }}"{% endif %}>{{ label }}{% if active %} {{ '▼' if params.sort in ('discount', 'savings', 'price_desc', 'newest') else '▲' }}{% endif %}</button>
 </th>
 {%- endmacro %}
-<div id="deals-wrap">
-  <p><small>Showing {{ items|length }} of {{ total }} · {{ sort_labels[params.sort] }}</small></p>
+<section id="deals-{{ source }}">
+  <header><p><small>{{ stat.products }} products, {{ stat.on_sale }} on sale{% if stat.last_run_at %} · checked {{ stat.last_run_at.strftime('%Y-%m-%d %H:%M UTC') }}{% endif %} · showing {{ items|length }} of {{ total }} · {{ sort_labels[params.sort] }}</small></p></header>
   <table>
     <thead>
       <tr>
         <th></th>
         {{ th('Product', 'name') }}
-        <th>Source</th>
         {{ th('Now', 'price_asc', 'price_desc') }}
+        {% if layout == 'list_price' %}
         <th class="num">Was</th>
         {{ th('Off', 'discount') }}
         {{ th('Save', 'savings') }}
         <th>Tag</th>
         {{ th('Until', 'ending_soon') }}
+        {% else %}
+        <th class="num" title="Typical price over the last 90 days">Usual</th>
+        <th class="num">90-day low</th>
+        {{ th('Off', 'discount') }}
+        {{ th('Save', 'savings') }}
+        <th>Sale</th>
+        {% endif %}
       </tr>
     </thead>
-    <tbody id="deals">
+    <tbody id="deals-rows">
       {% include "partials/deals_rows.html" %}
     </tbody>
   </table>
-</div>
+</section>

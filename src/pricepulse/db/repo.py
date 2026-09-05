@@ -1,5 +1,6 @@
-"""SQL for ingestion and the API. Kept as explicit statements so the schema tricks
-(partitions, ON CONFLICT upserts, DISTINCT ON, keyset pagination) are visible in one place."""
+"""Ingestion SQL. Kept as explicit statements so the schema tricks (partitions, ON CONFLICT
+upserts, DISTINCT ON, array unnest) are visible in one place. Reads for the API live in
+`pricepulse.api.queries`; watch SQL in `pricepulse.db.watches`."""
 
 from __future__ import annotations
 
@@ -15,8 +16,6 @@ from pricepulse.domain.models import ProductSnapshot
 
 CHUNK = 500
 
-SOURCE_IDS = {"ikea": 1, "uniqlo": 2}
-
 
 @dataclass(frozen=True, slots=True)
 class PrevObservation:
@@ -24,12 +23,28 @@ class PrevObservation:
     retailer_sale_flag: bool
 
 
-@dataclass(frozen=True, slots=True)
-class WatchRow:
-    product_id: int
-    email: str
-    min_discount_pct: Decimal
-    token: str
+def ensure_source(conn: Connection, code: str, name: str, base_url: str) -> int:
+    """Register (or refresh) the adapter's source row; returns its id. Update first: an
+    INSERT ... ON CONFLICT would burn an identity value on every run."""
+    params = {"code": code, "name": name, "base_url": base_url}
+    row = conn.execute(
+        text(
+            "UPDATE source SET name = :name, base_url = :base_url WHERE code = :code RETURNING id"
+        ),
+        params,
+    ).first()
+    if row is None:
+        row = conn.execute(
+            text(
+                """
+                INSERT INTO source (code, name, base_url) VALUES (:code, :name, :base_url)
+                ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, base_url = EXCLUDED.base_url
+                RETURNING id
+                """
+            ),
+            params,
+        ).one()
+    return int(row.id)
 
 
 def claim_run(conn: Connection, source_id: int, raw_object_key: str) -> int | None:
@@ -60,12 +75,18 @@ def ensure_partition(conn: Connection, observed_at: datetime) -> None:
 def upsert_products(
     conn: Connection, source_id: int, snapshots: Sequence[ProductSnapshot]
 ) -> dict[str, int]:
-    """Upsert products in chunks; returns external_id -> product id."""
+    """Upsert products one statement per CHUNK (unnest of parallel arrays); returns
+    external_id -> product id. `snapshots` must not repeat an external_id: duplicate keys in
+    one ON CONFLICT DO UPDATE statement are an error (`parse()` de-duplicates per payload)."""
     ids: dict[str, int] = {}
     stmt = text(
         """
         INSERT INTO product (source_id, external_id, name, category, url, image_url, currency)
-        VALUES (:source_id, :external_id, :name, :category, :url, :image_url, :currency)
+        SELECT :source_id, u.external_id, u.name, u.category, u.url, u.image_url, u.currency
+        FROM unnest(CAST(:external_ids AS text[]), CAST(:names AS text[]),
+                    CAST(:categories AS text[]), CAST(:urls AS text[]),
+                    CAST(:image_urls AS text[]), CAST(:currencies AS text[]))
+             AS u(external_id, name, category, url, image_url, currency)
         ON CONFLICT (source_id, external_id) DO UPDATE
           SET name = EXCLUDED.name, category = EXCLUDED.category, url = EXCLUDED.url,
               image_url = EXCLUDED.image_url, last_seen_at = now()
@@ -73,34 +94,39 @@ def upsert_products(
         """
     )
     for start in range(0, len(snapshots), CHUNK):
-        for snap in snapshots[start : start + CHUNK]:
-            row = conn.execute(
-                stmt,
-                {
-                    "source_id": source_id,
-                    "external_id": snap.external_id,
-                    "name": snap.name,
-                    "category": snap.category,
-                    "url": snap.url,
-                    "image_url": snap.image_url,
-                    "currency": snap.currency,
-                },
-            ).one()
+        chunk = snapshots[start : start + CHUNK]
+        rows = conn.execute(
+            stmt,
+            {
+                "source_id": source_id,
+                "external_ids": [s.external_id for s in chunk],
+                "names": [s.name for s in chunk],
+                "categories": [s.category for s in chunk],
+                "urls": [s.url for s in chunk],
+                "image_urls": [s.image_url for s in chunk],
+                "currencies": [s.currency for s in chunk],
+            },
+        )
+        for row in rows:
             ids[row.external_id] = int(row.id)
     return ids
 
 
-def latest_observations(conn: Connection, product_ids: Iterable[int]) -> dict[int, PrevObservation]:
+def latest_observations(
+    conn: Connection, product_ids: Iterable[int], before: datetime
+) -> dict[int, PrevObservation]:
+    """Latest observation per product strictly older than `before` (the payload's timestamp),
+    so a retried run compares against history, not its own already-inserted rows."""
     rows = conn.execute(
         text(
             """
             SELECT DISTINCT ON (product_id) product_id, price, retailer_sale_flag
             FROM price_observation
-            WHERE product_id = ANY(:ids)
+            WHERE product_id = ANY(:ids) AND observed_at < :before
             ORDER BY product_id, observed_at DESC
             """
         ),
-        {"ids": list(product_ids)},
+        {"ids": list(product_ids), "before": before},
     )
     return {int(r.product_id): PrevObservation(r.price, r.retailer_sale_flag) for r in rows}
 
@@ -139,23 +165,6 @@ def insert_observations(
         ]
         inserted += conn.execute(stmt, params).rowcount
     return inserted
-
-
-def watches_for(conn: Connection, product_ids: Iterable[int]) -> dict[int, list[WatchRow]]:
-    """Confirmed watches only: unconfirmed rows never produce mail."""
-    rows = conn.execute(
-        text(
-            "SELECT product_id, email, min_discount_pct, token FROM watch "
-            "WHERE product_id = ANY(:ids) AND confirmed_at IS NOT NULL"
-        ),
-        {"ids": list(product_ids)},
-    )
-    out: dict[int, list[WatchRow]] = {}
-    for r in rows:
-        out.setdefault(int(r.product_id), []).append(
-            WatchRow(int(r.product_id), r.email, r.min_discount_pct, r.token)
-        )
-    return out
 
 
 def insert_alerts(conn: Connection, run_id: int, alerts: Sequence[dict[str, Any]]) -> None:

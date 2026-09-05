@@ -1,10 +1,10 @@
 # Runbook
 
-All commands assume `aws login` done, region `us-east-1`, `NEON_API_KEY` exported, and
-`cd infra/envs/dev` for outputs.
+All commands run from the repo root and assume `aws login` done, region `us-east-1`, and
+`NEON_API_KEY` exported. Terraform is always addressed with `-chdir=infra/envs/dev`.
 
 ```bash
-sql() { psql "$(terraform output -raw migrator_database_url)" -Atc "$1"; }
+sql() { psql "$(terraform -chdir=infra/envs/dev output -raw migrator_database_url)" -Atc "$1"; }
 ```
 
 
@@ -32,7 +32,7 @@ Porkbun, created through the Porkbun API. The parent domain's other records are 
 ```bash
 auth="{\"apikey\":\"$PORKBUN_API_KEY\",\"secretapikey\":\"$PORKBUN_SECRET_KEY\"}"
 curl -sS -X POST https://api.porkbun.com/api/json/v3/dns/retrieve/hoangmnguyen.com -H 'content-type: application/json' -d "$auth" | jq '.records[] | {id,name,type,content}'
-# add one NS record (repeat per name server from `terraform output name_servers`):
+# add one NS record (repeat per name server from `terraform -chdir=infra/envs/dev output name_servers`):
 curl -sS -X POST https://api.porkbun.com/api/json/v3/dns/create/hoangmnguyen.com -H 'content-type: application/json' \
   -d "{\"apikey\":\"$PORKBUN_API_KEY\",\"secretapikey\":\"$PORKBUN_SECRET_KEY\",\"name\":\"pricepulse\",\"type\":\"NS\",\"content\":\"ns-297.awsdns-37.com\",\"ttl\":\"600\"}"
 # delete by id: POST .../dns/delete/hoangmnguyen.com/<id>
@@ -61,8 +61,8 @@ aws logs tail /aws/lambda/pricepulse-dev-process --since 10m --follow
 ## Rotate the API key
 
 ```bash
-terraform taint random_password.api_key && terraform apply
-terraform output -raw api_key
+terraform -chdir=infra/envs/dev taint random_password.api_key && terraform -chdir=infra/envs/dev apply
+terraform -chdir=infra/envs/dev output -raw api_key
 ```
 
 ## Query the database
@@ -70,14 +70,18 @@ terraform output -raw api_key
 ```bash
 sql "SELECT version_num FROM alembic_version"
 sql "SELECT source_id, count(*) FROM product GROUP BY 1"
-sql "SELECT name, current_price, reference_price, discount_pct FROM product_price_summary ORDER BY discount_pct DESC LIMIT 10"
+sql "SELECT source, name, current_price, reference_price, discount_pct FROM product_price_summary WHERE is_current ORDER BY discount_pct DESC LIMIT 10"
+sql "SELECT source, count(*) FILTER (WHERE is_current) AS current, count(*) AS total FROM product_price_summary GROUP BY 1"
 ```
 
 ## Partitions
 
 Created automatically per run; partitions older than `RETENTION_MONTHS` (13) are dropped after each run
-by `prune_price_partitions()`. By hand: `sql "SELECT ensure_price_partition('2027-01-01T00:00:00Z')"`,
-`sql "SELECT prune_price_partitions(13)"`.
+by `prune_price_partitions()`, which refuses `keep_months < 1`. By hand:
+`sql "SELECT ensure_price_partition('2027-01-01T00:00:00Z')"`, `sql "SELECT prune_price_partitions(13)"`.
+
+A run whose summary refresh or prune failed is marked `failed` (the DML transaction is already
+committed); Lambda's automatic retry reclaims it and produces the same alerts. See "Re-run a failed key".
 
 ## Watches
 
@@ -89,7 +93,8 @@ aws logs tail /aws/lambda/pricepulse-dev-mailer --since 1h --format short
 ```
 
 Admin routes (`GET /v1/watches?email=`, `DELETE /v1/watches/{id}`) take `X-API-Key`; the key is
-`terraform output -raw api_key`.
+`terraform -chdir=infra/envs/dev output -raw api_key`. Confirmation and unsubscribe links show a page on
+GET and act on POST; a one-click unsubscribe (RFC 8058) is a POST to `/watches/unsubscribe/<token>`.
 
 A confirmation that SES rejected (sandbox, unverified recipient) stays in the outbox; re-send it
 after fixing the cause:
@@ -103,8 +108,10 @@ aws lambda invoke --function-name pricepulse-dev-mailer --cli-binary-format raw-
 
 Pages are cached up to 24 h at CloudFront and invalidated by `notify` after every run. Force it:
 `aws cloudfront create-invalidation --distribution-id $(terraform -chdir=infra/envs/dev output -raw cloudfront_distribution_id) --paths '/*'`.
-Custom domain: `terraform output name_servers` → registrar; certificate status
+Custom domain: `terraform -chdir=infra/envs/dev output name_servers` → registrar; certificate status
 `aws acm list-certificates --query 'CertificateSummaryList[].[DomainName,Status]'`.
+The response-headers policy carries the CSP: no `'unsafe-inline'`, so a template must never add
+inline `<style>`/`<script>`/`on*=` — put it in `src/pricepulse/api/static` instead.
 
 ## SES
 
@@ -114,17 +121,19 @@ Re-send verification: `aws sesv2 create-email-identity --email-identity you@exam
 ## Alarms
 
 `pricepulse-dev-alarms` (SNS) receives Lambda error alarms, `no-scrape-<source>` (no scrape in
-24 h — the schedule or the scraper is broken), `low-products-<source>` (a run parsed fewer than 100
-products — the adapter is probably broken), and `on_failure` invocation records from `process`
-(JSON with `requestContext.condition` and the error payload). Both metric alarms evaluate one
+24 h — the schedule or the scraper is broken), `low-products-<source>` (a run parsed fewer than the
+source's `min_products` — the adapter is probably broken), and `on_failure` invocation records from
+the asynchronously invoked functions (`scrape`, `process`, `notify`, `mailer`; JSON with
+`requestContext.condition` and the error payload). Both metric alarms evaluate one
 24-hour period, so a bad datapoint keeps them in `ALARM` for up to a day; skipped (duplicate)
-runs emit no `ProductsSeen` datapoint on purpose.
+runs emit no `ProductsSeen` datapoint on purpose. Sources, schedules and thresholds come from the
+`sources` Terraform variable.
 
 ## Database
 
 Neon console → project `pricepulse-dev` shows compute hours, storage and connections. Roles:
 `app_migrator` (owner, used by `migrate`), `app_rw` (process/api), `app_ro` (humans). Rotate an app
-password: `terraform taint random_password.app_rw && terraform apply && scripts/bootstrap_db.sh`.
+password: `terraform -chdir=infra/envs/dev taint random_password.app_rw && terraform -chdir=infra/envs/dev apply && scripts/bootstrap_db.sh`.
 
 ## Terraform state lock
 
@@ -138,6 +147,7 @@ terraform -chdir=infra/envs/dev force-unlock -force <id>
 ## Tear down
 
 ```bash
+aws s3 rm "s3://$(terraform -chdir=infra/envs/dev output -raw raw_bucket)" --recursive   # the raw bucket has no force_destroy
 terraform -chdir=infra/envs/dev destroy      # includes the Neon project
-terraform -chdir=infra/bootstrap destroy   # empties nothing: delete state bucket objects first
+terraform -chdir=infra/bootstrap destroy     # separate state: delete the state bucket's objects first
 ```

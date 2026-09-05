@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Response, status
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.exc import NoResultFound, OperationalError
+from sqlalchemy.exc import OperationalError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -15,12 +17,16 @@ import pricepulse
 from pricepulse.api.routes import dashboard, products, system, watches
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
+STATIC_DIR = Path(__file__).parent / "static"
+STATIC_FILES = ("app.css", "app.js")
 
 # CloudFront honours s-maxage; the daily pipeline invalidates after each run.
 CACHEABLE = "public, max-age=300, s-maxage=86400"
 NO_STORE = "no-store"
-CACHEABLE_EXACT = frozenset({"/", "/v1/deals", "/v1/categories", "/v1/stats"})
-CACHEABLE_PREFIXES = ("/products/", "/partials/", "/v1/products/")
+CACHEABLE_EXACT = frozenset(
+    {"/", "/v1/deals", "/v1/categories", "/v1/stats", "/robots.txt", "/sitemap.xml"}
+)
+CACHEABLE_PREFIXES = ("/products/", "/partials/", "/v1/products/", "/static/")
 
 
 def cache_control_for(method: str, path: str, status_code: int) -> str:
@@ -70,6 +76,10 @@ def create_app() -> FastAPI:
     )
     templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
     templates.env.globals["qs"] = dashboard.qs
+    # Cache-busting query string for /static links; changes only when the assets change.
+    templates.env.globals["asset_v"] = hashlib.sha256(
+        b"".join((STATIC_DIR / name).read_bytes() for name in STATIC_FILES)
+    ).hexdigest()[:8]
     app.state.templates = templates
 
     def error_page(request: Request, status_code: int, title: str, message: str) -> HTMLResponse:
@@ -103,12 +113,6 @@ def create_app() -> FastAPI:
         response.headers["Retry-After"] = "5"
         return response
 
-    @app.exception_handler(NoResultFound)
-    async def _not_found(request: Request, __: NoResultFound) -> Response:
-        if wants_html(request):
-            return error_page(request, 404, "Not found", "Nothing here.")
-        return JSONResponse({"detail": "not found"}, status_code=404)
-
     @app.exception_handler(StarletteHTTPException)
     async def _http_error(request: Request, exc: StarletteHTTPException) -> Response:
         if wants_html(request):
@@ -120,9 +124,23 @@ def create_app() -> FastAPI:
             return error_page(request, exc.status_code, title, str(exc.detail))
         return await http_exception_handler(request, exc)
 
+    @app.exception_handler(Exception)
+    async def _unhandled(request: Request, _: Exception) -> Response:
+        # No logging here: ServerErrorMiddleware re-raises after sending, and the ASGI server
+        # (Mangum / uvicorn) logs the traceback once.
+        if wants_html(request):
+            response: Response = error_page(
+                request, 500, "Something went wrong", "We logged it. Please try again in a moment."
+            )
+        else:
+            response = JSONResponse({"detail": "internal server error"}, status_code=500)
+        response.headers["Cache-Control"] = NO_STORE  # the cache middleware does not run here
+        return response
+
     app.include_router(system.router)
     app.include_router(products.router)
     app.include_router(watches.router)
     app.include_router(dashboard.router)
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
     app.add_middleware(HeadAsGet)
     return app

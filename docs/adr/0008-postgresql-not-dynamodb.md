@@ -1,4 +1,4 @@
-# ADR-0008: PostgreSQL (Aurora Serverless v2), not DynamoDB
+# ADR-0008: PostgreSQL, not DynamoDB
 
 ## Context
 
@@ -13,13 +13,13 @@ pauses to 0 otherwise; the first API request after a pause takes ~5 s.
 
 ## Comparison
 
-| | Aurora Serverless v2 (chosen) | DynamoDB on-demand |
+| | PostgreSQL (chosen) | DynamoDB on-demand |
 | --- | --- | --- |
 | Monthly cost | ≈ $1.2–3.4 on Aurora at the time of writing; $0 after the move to Neon Free ([ADR-0009](0009-neon-instead-of-aurora.md)) | ≈ $0.03 (50k writes/month; storage inside the always-free 25 GB) |
 | Networking | VPC, private subnets, security groups, S3 gateway endpoint; functions split in/out of the VPC with Lambda Destinations bridging them (ADR-0003) | None; every function outside a VPC with an IAM policy on the table |
 | Auth & roles | IAM DB tokens, `verify-full` TLS, `app_migrator`/`app_rw`/`app_ro`, `SECURITY DEFINER` helpers | IAM on the table (optionally key-scoped conditions) |
 | Schema evolution | Alembic migrations, partitions, materialized view, `migrate` Lambda | No migrations; key design fixed up front |
-| Cold path | ~15 s Aurora resume + Lambda init at the time of writing; ≈ 0.5 s on Neon | Lambda init only (milliseconds to the store) |
+| Cold path | ~15 s Aurora resume + Lambda init at the time of writing; ≈ 1 s on Neon | Lambda init only (milliseconds to the store) |
 | Deals: order by discount + filters | Indexed materialized view | GSI `PK=source|ALL`, `SK=discount_pct#product_id`; `min_discount` as a range; `flagged_only` via sparse GSI or filter |
 | History for one product | Range scan on `(product_id, observed_at)` partition | Natural fit: `PK=PRODUCT#id`, `SK=OBS#ts` |
 | 90-day mode / min / max baseline | One SQL statement (`mode() WITHIN GROUP`, `LATERAL`), refreshed concurrently, redefinable without touching data | Computed in application code at write time and denormalized into the product item; changing the definition means a backfill job |
@@ -30,7 +30,7 @@ pauses to 0 otherwise; the first API request after a pause takes ~5 s.
 
 ## Decision
 
-Keep PostgreSQL on Aurora Serverless v2.
+Keep PostgreSQL (on Neon since ADR-0009).
 
 The deciding factor is the project's purpose, not the workload: it exists to demonstrate
 relational design and operations for backend/database roles. DynamoDB would remove roughly

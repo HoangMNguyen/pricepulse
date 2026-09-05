@@ -1,5 +1,6 @@
-"""S3 ObjectCreated target. Processes every key in the event; the return value becomes the
-notify Lambda's input via Lambda Destinations (on_success)."""
+"""S3 ObjectCreated target. S3 delivers exactly one record per invocation; a manual re-run
+passes {"raw_object_key": "raw/..."} instead. The return value becomes the notify Lambda's
+input via Lambda Destinations (on_success)."""
 
 from urllib.parse import unquote_plus
 

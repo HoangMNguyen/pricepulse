@@ -4,29 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}PricePulse{% endblock %}</title>
+  <meta name="description" content="{% block description %}Daily price tracking for IKEA US offers and the UNIQLO US catalog: real discounts measured against 90-day price history, with email alerts.{% endblock %}">
+  {% if canonical %}<link rel="canonical" href="{{ canonical }}">
+  <meta property="og:url" content="{{ canonical }}">{% endif %}
+  <meta property="og:site_name" content="PricePulse">
+  <meta name="htmx-config" content='{"includeIndicatorStyles": false}'>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%231a7f37'/%3E%3Cpolyline points='5,18 10,18 13,10 17,24 20,14 23,18 27,18' fill='none' stroke='%23fff' stroke-width='3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="{{ cdn.pico[0] }}" integrity="{{ cdn.pico[1] }}" crossorigin="anonymous">
+  <link rel="stylesheet" href="/static/app.css?v={{ asset_v }}">
   <script src="{{ cdn.htmx[0] }}" integrity="{{ cdn.htmx[1] }}" crossorigin="anonymous" defer></script>
-  <style>
-    .badge { font-size: .75rem; padding: .1rem .4rem; border-radius: .3rem; background: var(--pico-muted-border-color); }
-    .badge.ikea { background: #ffdb00; color: #0058a3; }
-    .badge.uniqlo { background: #ff0000; color: #fff; }
-    .badge.new { background: #1a7f37; color: #fff; }
-    .badge.drop { background: #e6f4ea; color: #1a7f37; }
-    .badge.ends { background: #fff4e5; color: #b35c00; }
-    .pct { font-weight: 700; color: #1a7f37; }
-    td.num, th.num { text-align: right; white-space: nowrap; }
-    th button.sort { all: unset; cursor: pointer; font-weight: 700; }
-    th button.sort.active { color: #1a7f37; }
-    .htmx-request .htmx-indicator { display: inline; }
-    .htmx-indicator { display: none; }
-  </style>
-  <script>
-    function setSort(b){const f=document.getElementById('filters');f.sort.value=(f.sort.value===b.dataset.sort&&b.dataset.alt)?b.dataset.alt:b.dataset.sort;htmx.trigger(f,'change');}
-    // Keep pushed URLs shareable: blank inputs are "unset", not "".
-    document.addEventListener('htmx:configRequest', e => { const p = e.detail.parameters; for (const [k, v] of [...p.entries()]) if (v === '') p.delete(k); });
-  </script>
   {% block head %}{% endblock %}
+  <script src="/static/app.js?v={{ asset_v }}" defer></script>
 </head>
 <body>
 <main class="container">

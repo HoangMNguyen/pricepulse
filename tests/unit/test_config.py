@@ -14,7 +14,7 @@ def test_recipients_from_comma_separated_env(monkeypatch: pytest.MonkeyPatch) ->
     assert s.alert_min_discount_pct == Decimal("15")
 
 
-def test_env_example_parses(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_env_example_parses(monkeypatch: pytest.MonkeyPatch) -> None:
     example = Path(__file__).resolve().parents[2] / ".env.example"
     monkeypatch.delenv("ALERT_RECIPIENTS", raising=False)
     s = Settings(_env_file=example)

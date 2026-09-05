@@ -33,6 +33,18 @@ variable "user_agent" {
   default = "pricepulse/0.1"
 }
 
+variable "sources" {
+  type = map(object({
+    schedule     = string
+    min_products = number
+  }))
+  description = "Retailers to scrape, keyed by adapter code: daily schedule (UTC cron) and the ProductsSeen floor below which the low-products alarm fires. Adding a retailer is one adapter plus one entry here."
+  default = {
+    ikea   = { schedule = "cron(0 13 * * ? *)", min_products = 100 }
+    uniqlo = { schedule = "cron(10 13 * * ? *)", min_products = 100 }
+  }
+}
+
 variable "app_package" {
   type    = string
   default = "../../../build/app.zip"

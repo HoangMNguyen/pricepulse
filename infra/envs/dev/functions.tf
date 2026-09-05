@@ -1,4 +1,4 @@
-# Five functions, none in a VPC: the database is Neon (public TLS endpoint, ADR-0009).
+# Six functions, none in a VPC: the database is Neon (public TLS endpoint, ADR-0009).
 # Destinations carry the processor's result to the notifier.
 
 resource "aws_lambda_layer_version" "deps" {
@@ -29,6 +29,10 @@ data "aws_iam_policy_document" "scrape" {
   statement {
     actions   = ["s3:PutObject"]
     resources = ["${aws_s3_bucket.raw.arn}/raw/*"]
+  }
+  statement {
+    actions   = ["sns:Publish"]
+    resources = [aws_sns_topic.alarms.arn]
   }
 }
 
@@ -114,6 +118,10 @@ data "aws_iam_policy_document" "notify" {
     actions   = ["cloudfront:CreateInvalidation"]
     resources = [aws_cloudfront_distribution.main.arn]
   }
+  statement {
+    actions   = ["sns:Publish"]
+    resources = [aws_sns_topic.alarms.arn]
+  }
 }
 
 module "notify" {
@@ -144,6 +152,10 @@ data "aws_iam_policy_document" "mailer" {
     actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.raw.arn}/outbox/*"]
   }
+  statement {
+    actions   = ["sns:Publish"]
+    resources = [aws_sns_topic.alarms.arn]
+  }
 }
 
 module "mailer" {
@@ -160,6 +172,23 @@ module "mailer" {
     RAW_BUCKET      = aws_s3_bucket.raw.bucket
     PUBLIC_BASE_URL = local.site_url
   })
+}
+
+# Every asynchronously invoked function reports failures to the alarms topic. process has its
+# own config above (it also chains on_success to notify); api and migrate are invoked synchronously.
+resource "aws_lambda_function_event_invoke_config" "async" {
+  for_each = {
+    scrape = module.scrape.function_name
+    notify = module.notify.function_name
+    mailer = module.mailer.function_name
+  }
+  function_name          = each.value
+  maximum_retry_attempts = 1
+  destination_config {
+    on_failure {
+      destination = aws_sns_topic.alarms.arn
+    }
+  }
 }
 
 # --- api: FastAPI via Mangum -------------------------------------------------------------------

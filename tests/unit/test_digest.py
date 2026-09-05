@@ -1,10 +1,9 @@
-import os
 from decimal import Decimal
 
 import boto3
+import pytest
 from moto import mock_aws
 
-from pricepulse.config import get_settings
 from pricepulse.lambda_handlers import notify
 from pricepulse.services.digest import RETAILER_FLAG_CAP, build_digests
 from pricepulse.services.ingest import AlertOut, ProcessResult
@@ -87,28 +86,53 @@ def test_render_templates() -> None:
     assert "<s>$100.00</s>" in html and "BILLY" in html and "-30.0%" in html
 
 
+class _Ses:
+    def __init__(self) -> None:
+        self.calls: list[dict] = []
+
+    def send_email(self, **kw: object) -> None:
+        self.calls.append(kw)
+
+
+def test_send_digests_unsubscribe_headers() -> None:
+    """Every digest containing a watch hit carries the recipient's one-click unsubscribe
+    headers; an owner-only digest carries none."""
+    ses = _Ses()
+    alerts = [
+        alert("new_deal", "KALLAX", "40.0"),
+        alert("watch_hit", "BILLY", "30.0", emails=["w@example.com", "o@example.com"]),
+    ]
+    digests = build_digests(result(alerts), ["o@example.com"], BASE)
+    assert send_digests(digests, "sender@example.com", ses) == 2
+    by_to = {c["Destination"]["ToAddresses"][0]: c["Content"]["Simple"] for c in ses.calls}
+    owner = by_to["o@example.com"]  # both a new_deal and a watch_hit
+    names = [h["Name"] for h in owner["Headers"]]
+    assert names == ["List-Unsubscribe", "List-Unsubscribe-Post"]
+    assert owner["Headers"][0]["Value"] == f"<{BASE}/watches/unsubscribe/tok-o>"
+    assert owner["Headers"][1]["Value"] == "List-Unsubscribe=One-Click"
+    assert by_to["w@example.com"]["Headers"][0]["Value"] == f"<{BASE}/watches/unsubscribe/tok-w>"
+
+    owner_only = build_digests(result([alert("new_deal", "K", "40.0")]), ["o@example.com"], BASE)
+    ses = _Ses()
+    assert send_digests(owner_only, "sender@example.com", ses) == 1
+    assert "Headers" not in ses.calls[0]["Content"]["Simple"]
+
+
 @mock_aws
-def test_send_digests_and_notify_handler() -> None:
+def test_notify_handler(monkeypatch: pytest.MonkeyPatch) -> None:
     ses = boto3.client("sesv2", region_name="us-east-1")
     ses.create_email_identity(EmailIdentity="sender@example.com")
     alerts = [
         alert("new_deal", "KALLAX", "40.0"),
         alert("watch_hit", "BILLY", "30.0", emails=["w@example.com"]),
     ]
-    os.environ.update(
-        SES_SENDER="sender@example.com",
-        ALERT_RECIPIENTS="o@example.com",
-        AWS_REGION="us-east-1",
-    )
-    get_settings.cache_clear()
-    digests = build_digests(result(alerts), ["o@example.com"], BASE)
-    assert send_digests(digests, "sender@example.com") == 2
-
+    monkeypatch.setenv("SES_SENDER", "sender@example.com")
+    monkeypatch.setenv("ALERT_RECIPIENTS", "o@example.com")
+    monkeypatch.setenv("AWS_REGION", "us-east-1")
     event = {"responsePayload": result(alerts).to_dict()}
     assert notify.handler(event, _Ctx()) == {"sent": 2}
     skipped = {"responsePayload": result([], skipped=True).to_dict()}
     assert notify.handler(skipped, _Ctx()) == {"sent": 0}
-    get_settings.cache_clear()
 
 
 def test_render_confirm_has_both_links() -> None:
@@ -130,7 +154,7 @@ def test_render_confirm_has_both_links() -> None:
 
 
 @mock_aws
-def test_notify_invalidates_cdn_when_data_landed(monkeypatch) -> None:  # noqa: ANN001
+def test_notify_invalidates_cdn_when_data_landed(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[dict] = []
 
     class _CF:
@@ -139,19 +163,15 @@ def test_notify_invalidates_cdn_when_data_landed(monkeypatch) -> None:  # noqa: 
             return {"Invalidation": {"Id": "I1"}}
 
     monkeypatch.setattr("boto3.client", lambda name, **_: _CF() if name == "cloudfront" else None)
-    os.environ.update(CLOUDFRONT_DISTRIBUTION_ID="E123", AWS_REGION="us-east-1")
-    get_settings.cache_clear()
-    try:
-        # data landed but nothing to send: still invalidates, sends nothing
-        assert notify.handler({"responsePayload": result([]).to_dict()}, _Ctx()) == {"sent": 0}
-        assert len(calls) == 1
-        assert calls[0]["DistributionId"] == "E123"
-        assert calls[0]["InvalidationBatch"]["Paths"]["Items"] == ["/*"]
-        assert calls[0]["InvalidationBatch"]["CallerReference"] == "raw/ikea/x.json.gz"
-        # re-delivered event (skipped) touches nothing
-        skipped = {"responsePayload": result([], skipped=True).to_dict()}
-        assert notify.handler(skipped, _Ctx()) == {"sent": 0}
-        assert len(calls) == 1
-    finally:
-        os.environ.pop("CLOUDFRONT_DISTRIBUTION_ID", None)
-        get_settings.cache_clear()
+    monkeypatch.setenv("CLOUDFRONT_DISTRIBUTION_ID", "E123")
+    monkeypatch.setenv("AWS_REGION", "us-east-1")
+    # data landed but nothing to send: still invalidates, sends nothing
+    assert notify.handler({"responsePayload": result([]).to_dict()}, _Ctx()) == {"sent": 0}
+    assert len(calls) == 1
+    assert calls[0]["DistributionId"] == "E123"
+    assert calls[0]["InvalidationBatch"]["Paths"]["Items"] == ["/*"]
+    assert calls[0]["InvalidationBatch"]["CallerReference"] == "raw/ikea/x.json.gz"
+    # re-delivered event (skipped) touches nothing
+    skipped = {"responsePayload": result([], skipped=True).to_dict()}
+    assert notify.handler(skipped, _Ctx()) == {"sent": 0}
+    assert len(calls) == 1

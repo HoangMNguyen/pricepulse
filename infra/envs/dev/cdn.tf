@@ -104,11 +104,11 @@ resource "aws_cloudfront_response_headers_policy" "security" {
       override        = true
     }
     content_security_policy {
-      # 'unsafe-inline': the pages carry small inline scripts/styles; the CDN files are SRI-pinned.
+      # No 'unsafe-inline': page CSS/JS live under /static; CDN files are SRI-pinned.
       content_security_policy = join("; ", [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
-        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+        "script-src 'self' https://cdn.jsdelivr.net",
+        "style-src 'self' https://cdn.jsdelivr.net",
         "img-src 'self' https: data:",
         "connect-src 'self'",
         "frame-ancestors 'none'",

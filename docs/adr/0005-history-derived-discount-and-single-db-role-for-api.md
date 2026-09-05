@@ -21,7 +21,7 @@ Alert kinds map onto this: `new_deal` (first sighting with a retailer list price
 
 The API Lambda connects as a single DB role, `app_rw`. Read routes set
 `postgresql_readonly=True` on the connection (Postgres enforces `SET TRANSACTION READ ONLY`);
-write routes (`/v1/watches`) use a plain connection. `app_ro` exists for humans via the Data API.
+write routes (`/v1/watches`) use a plain connection. `app_ro` exists for humans via `psql`.
 
 ## Consequences
 

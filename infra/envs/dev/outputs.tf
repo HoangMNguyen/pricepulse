@@ -6,14 +6,6 @@ output "raw_bucket" {
   value = aws_s3_bucket.raw.bucket
 }
 
-output "neon_project_id" {
-  value = neon_project.main.id
-}
-
-output "database_host" {
-  value = neon_project.main.database_host
-}
-
 output "migrator_database_url" {
   value     = replace(local.db_urls.app_migrator, "postgresql+psycopg://", "postgresql://")
   sensitive = true
@@ -45,6 +37,7 @@ output "function_names" {
     notify  = module.notify.function_name
     api     = module.api.function_name
     migrate = module.migrate.function_name
+    mailer  = module.mailer.function_name
   }
 }
 

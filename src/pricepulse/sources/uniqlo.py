@@ -25,6 +25,9 @@ PAGE_SIZE = 100  # server maximum
 
 class UniqloSource:
     code = "uniqlo"
+    name = "UNIQLO US"
+    base_url = "https://www.uniqlo.com/us/en/"
+    layout = "history"
 
     def fetch(self, client: httpx.Client) -> dict[str, Any]:
         raw = new_raw_payload(self.code)

@@ -16,7 +16,7 @@ at ≈ $0.
 ## Decision
 
 Move the database to **Neon Free** (PostgreSQL 16, `aws-us-east-1`, 0.25 CU fixed, suspend after
-5 idle minutes, resume in ≈ 0.5 s). The Neon project is managed by Terraform
+5 idle minutes, resume in ≈ 1 s). The Neon project is managed by Terraform
 (`kislerdm/neon` provider); its default role `app_migrator` owns the schema. Least-privilege
 `app_rw` / `app_ro` roles are created with SQL (`scripts/bootstrap_db.sh`) because roles created
 through Neon's API inherit `neon_superuser`. Connection URLs live in SSM Parameter Store
@@ -38,7 +38,7 @@ organization (`org_id`). The Terraform config encodes all three.
 
 - Cost: $0 for the database (100 CU-hours/month included; the pipeline plus dashboard use ≈ 15–20),
   $0 for secrets (standard SSM parameters). Total stack ≈ $0.50/month (Route 53 zone).
-- Latency: ≈ 0.5 s resume instead of 5–15 s; no user-visible "waking" state.
+- Latency: ≈ 1 s resume instead of 5–15 s; no user-visible "waking" state.
 - Limits accepted: 0.5 GB storage (≈ 150 MB/year at 1,600 observations/day, pruned after
   13 months), no SLA, 1-day restore window. Raw payloads in S3 remain the source of truth and can
   rebuild the database from scratch (`process` is replayable per key).

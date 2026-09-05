@@ -13,7 +13,7 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    pricepulse_env: Literal["local", "test", "dev"] = "local"
+    pricepulse_env: Literal["local", "test", "dev", "prod"] = "local"
     user_agent: str = "pricepulse/0.1"
     aws_region: str = Field(default="us-east-1", validation_alias="AWS_REGION")
 

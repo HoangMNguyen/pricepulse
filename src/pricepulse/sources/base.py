@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 import httpx
 
@@ -17,6 +17,11 @@ class SourceError(RuntimeError):
 
 class Source(Protocol):
     code: str
+    name: str
+    base_url: str
+    # Dashboard columns: `list_price` when the retailer publishes list prices and offer
+    # windows; `history` when it only flags sales and our 90-day history is the baseline.
+    layout: Literal["list_price", "history"]
 
     def fetch(self, client: httpx.Client) -> dict[str, Any]: ...
 
