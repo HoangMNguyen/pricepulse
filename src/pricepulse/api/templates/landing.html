@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}PricePulse · IKEA US and UNIQLO US price tracking{% endblock %}
+{% block content %}
+<header class="page-head landing-head">
+  <h1>PricePulse</h1>
+  <p class="tagline">Daily price tracking for IKEA US and UNIQLO US: real discounts measured against 90-day price history, with email alerts.</p>
+</header>
+
+<h2 class="pick">Pick a retailer</h2>
+<div class="retailers">
+  {% for code, s in stats.items() %}
+  <a class="retailer-card" href="/?source={{ code }}">
+    <span class="card-title"><i class="dot {{ code }}" aria-hidden="true"></i>{{ names[code] }}</span>
+    <span class="card-stats">
+      <span><strong>{{ s.products }}</strong> products</span>
+      <span><strong class="on-sale">{{ s.on_sale }}</strong> on sale</span>
+    </span>
+    <span class="card-foot">{% if s.last_run_at %}checked {{ s.last_run_at.strftime('%Y-%m-%d %H:%M UTC') }}{% else %}not checked yet{% endif %}{% if s.last_run_status and s.last_run_status != 'succeeded' %} · <span class="err">last run {{ s.last_run_status }}</span>{% endif %}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

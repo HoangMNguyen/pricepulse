@@ -108,6 +108,7 @@ aws lambda invoke --function-name pricepulse-dev-mailer --cli-binary-format raw-
 
 Pages are cached up to 24 h at CloudFront and invalidated by `notify` after every run. Force it:
 `aws cloudfront create-invalidation --distribution-id $(terraform -chdir=infra/envs/dev output -raw cloudfront_distribution_id) --paths '/*'`.
+A deploy invalidates `/*`; if a page still looks stale, run the same `aws cloudfront create-invalidation` manually.
 Custom domain: `terraform -chdir=infra/envs/dev output name_servers` → registrar; certificate status
 `aws acm list-certificates --query 'CertificateSummaryList[].[DomainName,Status]'`.
 The response-headers policy carries the CSP: no `'unsafe-inline'`, so a template must never add

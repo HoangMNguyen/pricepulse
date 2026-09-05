@@ -1,15 +1,16 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
   <title>{% block title %}PricePulse{% endblock %}</title>
   <meta name="description" content="{% block description %}Daily price tracking for IKEA US offers and the UNIQLO US catalog: real discounts measured against 90-day price history, with email alerts.{% endblock %}">
   {% if canonical %}<link rel="canonical" href="{{ canonical }}">
   <meta property="og:url" content="{{ canonical }}">{% endif %}
   <meta property="og:site_name" content="PricePulse">
   <meta name="htmx-config" content='{"includeIndicatorStyles": false}'>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%231a7f37'/%3E%3Cpolyline points='5,18 10,18 13,10 17,24 20,14 23,18 27,18' fill='none' stroke='%23fff' stroke-width='3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%237aa2f7'/%3E%3Cpolyline points='5,18 10,18 13,10 17,24 20,14 23,18 27,18' fill='none' stroke='%231a1b26' stroke-width='3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="{{ cdn.pico[0] }}" integrity="{{ cdn.pico[1] }}" crossorigin="anonymous">
   <link rel="stylesheet" href="/static/app.css?v={{ asset_v }}">
   <script src="{{ cdn.htmx[0] }}" integrity="{{ cdn.htmx[1] }}" crossorigin="anonymous" defer></script>
@@ -18,8 +19,8 @@
 </head>
 <body>
 <main class="container">
-  <nav>
-    <ul><li><strong><a href="/">PricePulse</a></strong></li></ul>
+  <nav class="top">
+    <ul><li><a href="/" class="brand">PricePulse</a></li></ul>
     <ul>
       <li><a href="/docs">API docs</a></li>
       <li><a href="https://github.com/HoangMNguyen/pricepulse">Source</a></li>

@@ -121,3 +121,8 @@ jobs:
           if grep -q '"errorMessage"' response.json; then
             echo "::error::migration failed"; exit 1
           fi
+
+      - name: Invalidate CDN (templates/CSP may have changed)
+        run: |
+          dist=$(terraform -chdir=infra/envs/dev output -raw cloudfront_distribution_id)
+          aws cloudfront create-invalidation --distribution-id "$dist" --paths '/*' --query Invalidation.Id --output text

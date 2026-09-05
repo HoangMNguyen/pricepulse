@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from datetime import date, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -67,7 +67,7 @@ def seed(engine: Engine, n: int = 12) -> None:
                     "pid": pid,
                     "run": run_id,
                     "price": Decimal(100 - 2 * i),
-                    "valid_to": date.today() + timedelta(days=2) if i == n else None,
+                    "valid_to": datetime.now(UTC).date() + timedelta(days=2) if i == n else None,
                 },
             )
         pid = c.execute(

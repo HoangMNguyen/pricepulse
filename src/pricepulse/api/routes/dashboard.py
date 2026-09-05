@@ -127,28 +127,31 @@ def _layout(source: str) -> str:
 
 @router.get("/", response_class=HTMLResponse)
 def index(request: Request, conn: ReadConn, f: Filters) -> HTMLResponse:
-    """One tab per retailer; `/` is the first tab, `/?source=<code>` the others."""
+    """`/` is the retailer picker; `/?source=<code>` is that retailer's deals table."""
     stats = {s["source"]: s for s in queries.stats(conn)}
-    tabs = list(stats)
-    source = f.source or tabs[0]
-    layout = _layout(source)
-    f = replace(f, source=source)
-    items, next_cursor, total = queries.list_deals(conn, f)
+    names = {code: get_source(code).name for code in stats}
     base = deps.get_settings().public_base_url
+    if not f.source:
+        return _render(request, "landing.html", stats=stats, names=names, canonical=f"{base}/")
+    if f.source not in stats:  # an adapter that has never run has no tab yet
+        raise HTTPException(404, "unknown source")
+    layout = _layout(f.source)
+    items, next_cursor, total = queries.list_deals(conn, f)
     return _render(
         request,
         "deals.html",
-        tabs=tabs,
-        source=source,
+        tabs=list(stats),
+        names=names,
+        source=f.source,
         layout=layout,
-        stat=stats[source],
+        stat=stats[f.source],
         stats=stats,
         items=items,
         next_cursor=next_cursor,
         total=total,
-        categories=[c for c in queries.categories(conn) if c["source"] == source],
+        categories=[c for c in queries.categories(conn) if c["source"] == f.source],
         params=template_params(f),
-        canonical=f"{base}/" if source == tabs[0] else f"{base}/?source={source}",
+        canonical=f"{base}/?source={f.source}",
     )
 
 
@@ -187,13 +190,12 @@ def robots() -> str:
 @router.get("/sitemap.xml")
 def sitemap(conn: ReadConn) -> Response:
     base = deps.get_settings().public_base_url
-    tabs = [s["source"] for s in queries.stats(conn)]
     parts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
         f"<url><loc>{base}/</loc></url>",
     ]
-    parts.extend(f"<url><loc>{base}/?source={code}</loc></url>" for code in tabs[1:])
+    parts.extend(f"<url><loc>{base}/?source={s['source']}</loc></url>" for s in queries.stats(conn))
     parts.extend(
         f"<url><loc>{base}/products/{pid}</loc><lastmod>{seen:%Y-%m-%d}</lastmod></url>"
         for pid, seen in queries.sitemap_entries(conn)

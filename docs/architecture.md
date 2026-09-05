@@ -27,11 +27,12 @@
    recipients + confirmed watchers) and sends via SES v2. Every digest that contains a watch hit
    carries the watcher's unsubscribe link plus `List-Unsubscribe` and
    `List-Unsubscribe-Post: List-Unsubscribe=One-Click` headers.
-5. **Read.** CloudFront → API Gateway → `api` (FastAPI via Mangum). The dashboard is one tab per
-   retailer: `/` is the first source (code order), `/?source=<code>` the others; tabs, stats and
+5. **Read.** CloudFront → API Gateway → `api` (FastAPI via Mangum). `/` is a retailer picker (one
+   card per source); `/?source=<code>` is that retailer's deals page; the switcher, stats and
    categories come from the `source` table, and the column layout (`list_price` vs `history`)
-   from the adapter's `layout`. Page CSS/JS are served from `/static/` (content-hashed query
-   string), so the CSP has no `'unsafe-inline'`. `/robots.txt` and `/sitemap.xml` (every current
+   from the adapter's `layout` (see [ui-design.md](ui-design.md)). Page CSS/JS are served from
+   `/static/` (content-hashed query string), so the CSP has no `'unsafe-inline'`. `/robots.txt`
+   and `/sitemap.xml` (`/`, every retailer page, every current
    product) are generated. Read pages carry `Cache-Control: public, max-age=300, s-maxage=86400`,
    so between runs CloudFront answers from cache and the database stays suspended.
    `/v1/watches*`, `/watches/*`, `/health`, `/v1/runs*` bypass the cache. Every listing read hits

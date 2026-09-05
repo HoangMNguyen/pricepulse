@@ -195,18 +195,38 @@ def test_watch_flow_public_post_keyed_admin(client: TestClient, api_headers: dic
     assert client.delete(f"/v1/watches/{wid}", headers=api_headers).status_code == 404
 
 
-def test_dashboard_renders(client: TestClient) -> None:
+def test_landing_is_retailer_picker(client: TestClient) -> None:
     home = client.get("/")
+    assert home.status_code == 200 and "<h1>PricePulse</h1>" in home.text
+    assert "<table" not in home.text and "<select" not in home.text and "<form" not in home.text
+    assert 'role="tablist"' not in home.text
+    for code, name in (("ikea", "IKEA US"), ("uniqlo", "UNIQLO US")):
+        card = rf'<a class="retailer-card" href="/\?source={code}">.*?{name}'
+        assert re.search(card, home.text, re.S)
+    assert '<link rel="canonical" href="http://localhost:8000/">' in home.text
+    assert client.get("/partials/deals", params={"sort": "name"}).status_code == 422
+
+
+def test_dashboard_renders(client: TestClient) -> None:
+    home = client.get("/", params={"source": "ikea"})
     assert home.status_code == 200 and "Current deals" in home.text
     assert 'role="tablist"' in home.text and 'id="deals-ikea"' in home.text
-    assert re.search(r'aria-selected="true"[^>]*>IKEA', home.text)
+    assert re.search(r'aria-selected="true"[^>]*>(<i[^>]*></i>)?IKEA US', home.text)
     assert '<input type="hidden" name="source" value="ikea">' in home.text
     assert "showing 13 of 13" in home.text and "Biggest % off" in home.text
     assert ">Until<" in home.text and "90-day low" not in home.text
+    # column headers are links (no JS needed) that toggle the price direction
+    now_head = '<th class="num"><a class="sort" href="/?source=ikea&amp;sort=price_asc"'
+    assert now_head in home.text
+    active = 'aria-sort="descending"><a class="sort active" href="/?source=ikea&amp;sort=discount'
+    assert active in home.text
+    asc = client.get("/", params={"source": "ikea", "sort": "price_asc"})
+    flipped = 'aria-sort="ascending"><a class="sort active" href="/?source=ikea&amp;sort=price_desc'
+    assert flipped in asc.text
+    assert '<section id="deals-ikea" data-sort="price_asc">' in asc.text
     partial = client.get("/partials/deals", params={"source": "ikea", "min_discount": 20})
     assert partial.status_code == 200 and partial.text.count("<tr>") == 3
     assert "<table" not in partial.text
-    assert client.get("/partials/deals", params={"sort": "name"}).status_code == 422
     pid = client.get("/v1/deals", params={"limit": 1}).json()["items"][0]["product_id"]
     page = client.get(f"/products/{pid}")
     assert page.status_code == 200 and "KALLAX shelf 12" in page.text
@@ -215,16 +235,39 @@ def test_dashboard_renders(client: TestClient) -> None:
     assert client.get("/products/999999").status_code == 404
 
 
-def test_dashboard_tabs(client: TestClient) -> None:
-    uniqlo = client.get("/", params={"source": "uniqlo"})
+def test_dashboard_tabs(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    uniqlo = client.get("/", params={"source": "uniqlo", "category": "MEN", "q": "x"})
     assert uniqlo.status_code == 200 and 'id="deals-uniqlo"' in uniqlo.text
     assert "90-day low" in uniqlo.text and ">Until<" not in uniqlo.text
     assert '<link rel="canonical" href="http://localhost:8000/?source=uniqlo">' in uniqlo.text
     options = re.findall(r'<option value="([^"]+)"[^>]*>[^<]*\(\d+\)</option>', uniqlo.text)
     assert options == ["MEN"]
+    # switching retailer drops the category (it belongs to the other retailer) but keeps the rest
+    other = 'aria-selected="false" class="pill" href="/?source=ikea&amp;q=x&amp;sort=discount"'
+    assert other in uniqlo.text
     filtered = client.get("/", params={"source": "uniqlo", "min_discount": 5})
     assert '<input type="hidden" name="source" value="uniqlo">' in filtered.text
-    assert client.get("/", params={"source": "nope"}).status_code == 404
+    for code in ("nope", "acme"):
+        missing = client.get("/", params={"source": code}, headers={"accept": "text/html"})
+        assert missing.status_code == 404 and "404 · Not found" in missing.text
+        assert "<table" not in missing.text and "/static/app.css?v=" in missing.text
+    # an adapter that exists but has never run has no stats row: also 404, never a KeyError
+    monkeypatch.setattr(
+        queries,
+        "stats",
+        lambda conn: [
+            {
+                "source": "ikea",
+                "products": 0,
+                "on_sale": 0,
+                "last_run_at": None,
+                "last_run_status": None,
+            }
+        ],
+    )
+    assert client.get("/", params={"source": "uniqlo"}).status_code == 404
+    assert client.get("/", params={"source": "ikea"}).status_code == 200
+    monkeypatch.undo()
     rows = client.get("/partials/deals", params={"source": "ikea", "sort": "name"})
     assert rows.status_code == 200 and "<tr" in rows.text and "<table" not in rows.text
     product = client.get("/v1/deals", params={"source": "uniqlo"}).json()["items"][0]
@@ -239,12 +282,14 @@ def test_dashboard_sort_and_filters_are_url_state(client: TestClient) -> None:
     prices = re.findall(now_cell, page.text)
     assert len(prices) == 13 and Decimal(prices[0]) <= Decimal(prices[1])
     assert "showing 13 of 13 · Price: low to high" in page.text
-    baby = client.get("/", params={"category": "Baby & kids"})
+    baby = client.get("/", params={"source": "ikea", "category": "Baby & kids"})
     assert "showing 6 of 6" in baby.text and baby.text.count("KALLAX shelf") == 6
     assert 'value="Baby &amp; kids" selected' in baby.text
     assert client.get("/", params={"sort": "sideways"}).status_code == 422
     # blank number inputs (what a browser submits for an empty <input type=number>) mean "unset"
-    blank = client.get("/", params={"min_price": "", "max_price": "", "min_discount": ""})
+    blank = client.get(
+        "/", params={"source": "ikea", "min_price": "", "max_price": "", "min_discount": ""}
+    )
     assert blank.status_code == 200 and "showing 13 of 13" in blank.text
     assert client.get("/", params={"min_price": "abc"}).status_code == 422
     assert client.get("/", params={"min_discount": "101"}).status_code == 422
@@ -266,7 +311,7 @@ def test_static_assets_and_no_inline_code(client: TestClient) -> None:
     js = client.get("/static/app.js")
     assert js.status_code == 200 and js.headers["cache-control"].startswith("public")
     pid = client.get("/v1/deals", params={"limit": 1}).json()["items"][0]["product_id"]
-    for path in ("/", f"/products/{pid}"):
+    for path in ("/", "/?source=ikea", f"/products/{pid}"):
         html = client.get(path).text
         assert "<style" not in html and "onclick=" not in html and "onsubmit=" not in html
         assert not NO_INLINE_SCRIPT.search(html), path
@@ -286,7 +331,8 @@ def test_robots_and_sitemap(client: TestClient) -> None:
     assert len(ids) == 14
     for pid in ids:
         assert sitemap.text.count(f"<loc>http://localhost:8000/products/{pid}</loc>") == 1
-    assert sitemap.text.count("<loc>") == len(ids) + 2  # "/" and "/?source=uniqlo"
+    assert sitemap.text.count("<loc>") == len(ids) + 3  # "/", "/?source=ikea", "/?source=uniqlo"
+    assert "<loc>http://localhost:8000/?source=ikea</loc>" in sitemap.text
     assert "<loc>http://localhost:8000/?source=uniqlo</loc>" in sitemap.text
 
 

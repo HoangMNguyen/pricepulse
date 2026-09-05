@@ -13,9 +13,9 @@ Daily price tracking for IKEA US offers and the UNIQLO US catalog: real discount
 - Measures discounts against each product's own 90-day history, not only against what the retailer
   claims. UNIQLO never publishes a list price — only a "sale" flag — so its percentage off can only
   come from history, and it shows `0 %` until a product has been seen more than once.
-- One tab per retailer with columns that fit it: IKEA shows list price, tag and offer end date;
-  UNIQLO shows the usual price, the 90-day low and the sale flag. Sort, filter, search and share
-  any view by URL; every product has a page with its price chart.
+- Pick a retailer on the landing page, then a page with columns that fit it: IKEA shows list
+  price, tag and offer end date; UNIQLO shows the usual price, the 90-day low and the sale flag.
+  Sort, filter, search and share any view by URL; every product has a page with its price chart.
 - Watch a product by email: double opt-in, a per-product threshold, and one-click unsubscribe.
 - A product that leaves a retailer's feed leaves the deals list the same day; its page and history
   stay reachable.

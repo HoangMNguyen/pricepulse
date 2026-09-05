@@ -1,28 +1,27 @@
-{% macro th(label, sort, alt=None) -%}
+{% macro th(label, sort, alt=None, num=False) -%}
 {%- set active = params.sort == sort or (alt and params.sort == alt) -%}
-<th{% if label in ('Now', 'Off', 'Save') %} class="num"{% endif %}>
-  <button type="button" class="sort{% if active %} active{% endif %}" data-sort="{{ sort }}"{% if alt %} data-alt="{{ alt }}"{% endif %}>{{ label }}{% if active %} {{ '▼' if params.sort in ('discount', 'savings', 'price_desc', 'newest') else '▲' }}{% endif %}</button>
-</th>
+{%- set desc = params.sort in ('discount', 'savings', 'price_desc', 'newest') -%}
+{%- set target = alt if (alt and params.sort == sort) else sort -%}
+<th{% if num %} class="num"{% endif %}{% if active %} aria-sort="{{ 'descending' if desc else 'ascending' }}"{% endif %}><a class="sort{% if active %} active{% endif %}" href="/?{{ qs(params, sort=target, cursor=None) }}" hx-get="/?{{ qs(params, sort=target, cursor=None) }}">{{ label }}{% if active %}<span class="ind" aria-hidden="true">{{ '▼' if desc else '▲' }}</span>{% endif %}</a></th>
 {%- endmacro %}
-<section id="deals-{{ source }}">
-  <header><p><small>{{ stat.products }} products, {{ stat.on_sale }} on sale{% if stat.last_run_at %} · checked {{ stat.last_run_at.strftime('%Y-%m-%d %H:%M UTC') }}{% endif %} · showing {{ items|length }} of {{ total }} · {{ sort_labels[params.sort] }}</small></p></header>
-  <table>
-    <thead>
+<section id="deals-{{ source }}" data-sort="{{ params.sort }}">
+  <table class="deals">
+    <thead hx-select="#deals-wrap > *" hx-target="#deals-wrap" hx-swap="innerHTML" hx-push-url="true" hx-indicator="#deals-wrap">
       <tr>
-        <th></th>
+        <th class="img"><span class="sr-only">Image</span></th>
         {{ th('Product', 'name') }}
-        {{ th('Now', 'price_asc', 'price_desc') }}
+        {{ th('Now', 'price_asc', 'price_desc', num=True) }}
         {% if layout == 'list_price' %}
         <th class="num">Was</th>
-        {{ th('Off', 'discount') }}
-        {{ th('Save', 'savings') }}
+        {{ th('Off', 'discount', num=True) }}
+        {{ th('Save', 'savings', num=True) }}
         <th>Tag</th>
         {{ th('Until', 'ending_soon') }}
         {% else %}
         <th class="num" title="Typical price over the last 90 days">Usual</th>
         <th class="num">90-day low</th>
-        {{ th('Off', 'discount') }}
-        {{ th('Save', 'savings') }}
+        {{ th('Off', 'discount', num=True) }}
+        {{ th('Save', 'savings', num=True) }}
         <th>Sale</th>
         {% endif %}
       </tr>

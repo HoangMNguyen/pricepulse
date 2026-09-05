@@ -1,57 +1,60 @@
 {% extends "base.html" %}
-{% block title %}{{ source|upper }} deals · PricePulse{% endblock %}
+{% block title %}{{ names[source] }} deals · PricePulse{% endblock %}
 {% block content %}
-<header>
+<header class="page-head">
   <h1>Current deals</h1>
+  <nav class="tabs" role="tablist" aria-label="Retailer">
+    {% for code in tabs %}
+    <a role="tab" aria-selected="{{ 'true' if code == source else 'false' }}" class="pill" href="/?{{ qs(params, source=code, category=None, cursor=None) }}"><i class="dot {{ code }}" aria-hidden="true"></i>{{ names[code] }}<small>{{ stats[code].on_sale }} on sale</small></a>
+    {% endfor %}
+  </nav>
 </header>
 
-<nav class="tabs" role="tablist">
-  {% for code in tabs %}
-  <a role="tab" aria-selected="{{ 'true' if code == source else 'false' }}" class="badge {{ code }}" href="/?{{ qs(params, source=code, cursor=None) }}">{{ code|upper }} · {{ stats[code].on_sale }} on sale</a>
-  {% endfor %}
-</nav>
-
-<form id="filters" method="get" action="/"
-      hx-get="/" hx-select="#deals-wrap" hx-target="#deals-wrap" hx-swap="outerHTML" hx-push-url="true"
+<form id="filters" class="toolbar" method="get" action="/"
+      hx-get="/" hx-select="#deals-wrap > *" hx-target="#deals-wrap" hx-swap="innerHTML" hx-push-url="true" hx-indicator="#deals-wrap"
       hx-trigger="change, keyup changed delay:300ms from:#q, submit">
   <input type="hidden" name="source" value="{{ source }}">
-  <div class="grid">
-    <label>Category
-      <select name="category">
-        <option value="" {% if not params.category %}selected{% endif %}>All</option>
-        {% for c in categories %}
-        <option value="{{ c.category }}" {% if params.category == c.category %}selected{% endif %}>{{ c.category }} ({{ c.products }})</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>Sort
-      <select name="sort">
-        {% for s in sorts %}
-        <option value="{{ s }}" {% if params.sort == s %}selected{% endif %}>{{ sort_labels[s] }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>Search
-      <input type="search" id="q" name="q" value="{{ params.q or '' }}" placeholder="name contains…" maxlength="100">
-    </label>
+  <label class="ctl grow"><span>Search</span>
+    <input type="search" id="q" name="q" value="{{ params.q or '' }}" placeholder="name contains…" maxlength="100">
+  </label>
+  <label class="ctl"><span>Category</span>
+    <select name="category">
+      <option value="" {% if not params.category %}selected{% endif %}>All</option>
+      {% for c in categories %}
+      <option value="{{ c.category }}" {% if params.category == c.category %}selected{% endif %}>{{ c.category }} ({{ c.products }})</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="ctl"><span>Sort</span>
+    <select name="sort">
+      {% for s in sorts %}
+      <option value="{{ s }}" {% if params.sort == s %}selected{% endif %}>{{ sort_labels[s] }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="ctl narrow"><span>Min % off</span>
+    <input type="number" name="min_discount" value="{{ params.min_discount or 0 }}" min="0" max="100" step="1" inputmode="numeric">
+  </label>
+  <label class="ctl narrow"><span>Min $</span>
+    <input type="number" name="min_price" value="{{ params.min_price if params.min_price is not none else '' }}" min="0" step="1" placeholder="0" inputmode="decimal">
+  </label>
+  <label class="ctl narrow"><span>Max $</span>
+    <input type="number" name="max_price" value="{{ params.max_price if params.max_price is not none else '' }}" min="0" step="1" placeholder="any" inputmode="decimal">
+  </label>
+  <div class="chips">
+    <label class="chip"><input type="checkbox" name="flagged_only" value="true" {% if params.flagged_only %}checked{% endif %}>Flagged</label>
+    <label class="chip"><input type="checkbox" name="on_sale_only" value="true" {% if params.on_sale_only %}checked{% endif %}>On sale</label>
   </div>
-  <div class="grid">
-    <label>Min discount %
-      <input type="number" name="min_discount" value="{{ params.min_discount or 0 }}" min="0" max="100" step="1">
-    </label>
-    <label>Min price $
-      <input type="number" name="min_price" value="{{ params.min_price if params.min_price is not none else '' }}" min="0" step="1" placeholder="0">
-    </label>
-    <label>Max price $
-      <input type="number" name="max_price" value="{{ params.max_price if params.max_price is not none else '' }}" min="0" step="1" placeholder="any">
-    </label>
+  <div class="ctl seg-wrap"><span id="thumbs-label">Images</span>
+    <div class="seg" role="group" aria-labelledby="thumbs-label">
+      <button type="button" data-thumbs="s" aria-pressed="false" title="Small thumbnails">S</button>
+      <button type="button" data-thumbs="m" aria-pressed="false" title="Medium thumbnails">M</button>
+      <button type="button" data-thumbs="l" aria-pressed="false" title="Large thumbnails">L</button>
+    </div>
   </div>
-  <fieldset>
-    <label><input type="checkbox" name="flagged_only" value="true" {% if params.flagged_only %}checked{% endif %}> Retailer-flagged only</label>
-    <label><input type="checkbox" name="on_sale_only" value="true" {% if params.on_sale_only %}checked{% endif %}> On sale only</label>
-    <noscript><button type="submit">Apply</button></noscript>
-  </fieldset>
+  <noscript><button type="submit" class="apply">Apply</button></noscript>
 </form>
 
+<p id="summary" class="summary" aria-live="polite" hx-swap-oob="innerHTML">{% if stat %}{{ stat.products }} products · {{ stat.on_sale }} on sale{% if stat.last_run_at %} · checked {{ stat.last_run_at.strftime('%Y-%m-%d %H:%M UTC') }}{% endif %} · {% endif %}showing {{ items|length }} of {{ total }} · {{ sort_labels[params.sort] }}</p>
 <div id="deals-wrap">{% include "partials/deals_table.html" %}</div>
 {% endblock %}

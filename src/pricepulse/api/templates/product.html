@@ -9,43 +9,48 @@
   <script src="{{ cdn.chart[0] }}" integrity="{{ cdn.chart[1] }}" crossorigin="anonymous" defer></script>
 {% endblock %}
 {% block content %}
-<p><a href="/">← Back to deals</a></p>
+<p class="crumb"><a href="/?source={{ product.source }}">← {{ product.source|upper }} deals</a></p>
 <article id="product" data-product-id="{{ product.product_id }}">
   <header>
-    <span class="badge {{ product.source }}">{{ product.source }}</span>
-    {% if not product.is_current %}<span class="badge ends">no longer listed · last seen {{ product.current_observed_at.strftime('%Y-%m-%d') }}</span>{% endif %}
-    <h2 class="tight">{{ product.name }}</h2>
-    <small>{{ product.category or '' }} · <a href="{{ product.url }}" rel="noopener" target="_blank">view at retailer</a></small>
+    <p class="meta">
+      <span class="chip-brand"><i class="dot {{ product.source }}" aria-hidden="true"></i>{{ product.source|upper }}</span>
+      {% if product.category %}<span class="cat">{{ product.category }}</span>{% endif %}
+      {% if not product.is_current %}<span class="badge ends">no longer listed · last seen {{ product.current_observed_at.strftime('%Y-%m-%d') }}</span>{% endif %}
+    </p>
+    <h1 class="product-name">{{ product.name }}</h1>
   </header>
-  <div class="grid">
-    {% if product.image_url %}<img src="{{ product.image_url }}" alt="{{ product.name }}" class="hero">{% endif %}
-    <div>
-      <p><strong class="price-now">${{ '%.2f' % product.current_price }}</strong>
+  <div class="product-body">
+    {% if product.image_url %}<figure class="hero-wrap"><img src="{{ product.image_url }}" alt="{{ product.name }}" class="hero"></figure>{% endif %}
+    <div class="facts">
+      <p class="price-line"><strong class="price-now">${{ '%.2f' % product.current_price }}</strong>
         {% if product.discount_pct > 0 %}<span class="pct">-{{ product.discount_pct }}%</span>
         <s>${{ '%.2f' % product.reference_price }}</s>{% endif %}</p>
-      <p><small>
-        {% if product.list_price %}Retailer list price ${{ '%.2f' % product.list_price }}.{% endif %}
-        {% if product.retailer_tag %}Flagged <code>{{ product.retailer_tag }}</code>{% if product.valid_to %} until {{ product.valid_to }}{% endif %}.{% endif %}
-        90-day history: {{ product.observations_90d }} observation{{ '' if product.observations_90d == 1 else 's' }}{% if product.mode_price_90d %} (typical ${{ '%.2f' % product.mode_price_90d }}, range ${{ '%.2f' % product.min_price_90d }}–${{ '%.2f' % product.max_price_90d }}){% endif %}.
-        Last seen {{ product.current_observed_at.strftime('%Y-%m-%d %H:%M UTC') }}.
-      </small></p>
+      <dl class="kv">
+        {% if product.list_price %}<dt>List price</dt><dd class="num">${{ '%.2f' % product.list_price }}</dd>{% endif %}
+        {% if product.retailer_tag %}<dt>Flagged</dt><dd><code>{{ product.retailer_tag }}</code>{% if product.valid_to %} until {{ product.valid_to }}{% endif %}</dd>{% endif %}
+        {% if product.mode_price_90d %}<dt>Typical (90d)</dt><dd class="num">${{ '%.2f' % product.mode_price_90d }}</dd>
+        <dt>Range (90d)</dt><dd class="num">${{ '%.2f' % product.min_price_90d }} – ${{ '%.2f' % product.max_price_90d }}</dd>{% endif %}
+        <dt>Observations</dt><dd>{{ product.observations_90d }} in 90 days</dd>
+        <dt>Last seen</dt><dd>{{ product.current_observed_at.strftime('%Y-%m-%d %H:%M UTC') }}</dd>
+      </dl>
+      <p><a href="{{ product.url }}" rel="noopener" target="_blank">View at retailer ↗</a></p>
     </div>
   </div>
-  <canvas id="history" height="110" role="img" aria-label="Price history, last 180 days"></canvas>
+  <div class="chart-wrap"><canvas id="history" role="img" aria-label="Price history, last 180 days"></canvas></div>
 </article>
 
-<article>
+<article class="watch-card">
   <header><strong>Watch this product</strong> <small>· email me when it drops by at least</small></header>
-  <form id="watch" class="grid">
-    <label for="watch-email">Email
+  <form id="watch" class="toolbar">
+    <label class="ctl grow" for="watch-email"><span>Email</span>
       <input id="watch-email" type="email" name="email" autocomplete="email" placeholder="you@example.com" required>
     </label>
-    <label for="watch-pct">Min % drop
+    <label class="ctl narrow" for="watch-pct"><span>Min % drop</span>
       <input id="watch-pct" type="number" name="min_discount_pct" value="10" min="0" max="100" step="0.5">
     </label>
-    <button type="submit">Watch</button>
+    <button type="submit" class="apply">Watch</button>
   </form>
-  <p id="watch-result" aria-live="polite"></p>
-  <p><small>You will get one confirmation email first; every alert carries an unsubscribe link.</small></p>
+  <p id="watch-result" class="watch-result" aria-live="polite"></p>
+  <p class="fine">You will get one confirmation email first; every alert carries an unsubscribe link.</p>
 </article>
 {% endblock %}
