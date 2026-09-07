@@ -9,8 +9,12 @@ Daily price tracking for IKEA US offers and the UNIQLO US catalog: real discount
 
 ## What it does
 
-- Checks every IKEA US offer and every last-chance item, and the full UNIQLO US catalog, once a
-  day and keeps the price history.
+- Checks IKEA US offers and last-chance items, and the full UNIQLO US catalog, once a day and
+  keeps the price history. IKEA coverage is bounded: every offer on the OFFERS filter (re-queried
+  per category if the page ever caps), and last-chance items as the union of four sort orders at
+  the maximum page size — complete as far as measurable, since the endpoint's own total
+  under-reports; products not sellable online are skipped. As of 2026-09-07 that is 2,165
+  current IKEA products (2,194 seen) and 1,302 UNIQLO (1,361 seen).
 - Measures discounts against each product's own 90-day history, not only against what the retailer
   claims. UNIQLO publishes no list price — only a "sale" flag, and the regular price only when a
   style's clearance colours are split into their own price group — so its percentage off usually
@@ -32,15 +36,20 @@ Daily price tracking for IKEA US offers and the UNIQLO US catalog: real discount
 
 - Scraping stores product metadata (name, category, URL, image URL) and prices — no reviews, no
   image files, no personal data.
-- A watch stores the email address, the product and the threshold. Unconfirmed watches are purged
-  by the operator after 30 days ([runbook](docs/RUNBOOK.md#watches)).
-- Every alert to a watcher carries an unsubscribe link and the `List-Unsubscribe` /
-  `List-Unsubscribe-Post` headers (RFC 8058). Confirmation and unsubscribe links show a page and act
-  only on the button press, so a mail scanner cannot confirm or unsubscribe on your behalf.
+- A watch stores the email address, the product and the threshold. While it is unconfirmed it
+  also carries a SHA-256 of the requesting IP (to budget confirmation mail per client); that hash
+  is cleared on confirmation, and unconfirmed watches are purged by the operator after 30 days
+  ([runbook](docs/RUNBOOK.md#watches)). The watch table is backed up daily to S3 (35-day retention).
+- Every alert to a watcher carries per-product unsubscribe links and the `List-Unsubscribe` /
+  `List-Unsubscribe-Post` headers (RFC 8058); the header's one-click target removes every watch of
+  that address. Confirmation and unsubscribe links show a page and act only on the button press,
+  so a mail scanner cannot confirm or unsubscribe on your behalf.
 - The adapters honour `robots.txt` (UNIQLO's disallowed filter parameters are never sent), identify
-  themselves as `User-Agent: pricepulse/0.1`, make ~40 requests a day in total, pause 500 ms after
-  every request, and retry at most 3 times with exponential backoff on connection errors, 429 and
-  500/502/503/504. Details in [ADR-0007](docs/adr/0007-respecting-robots-and-rate-limits.md).
+  themselves as `User-Agent: pricepulse/0.1`, make one run per retailer per day — 6 requests for
+  IKEA and 1,320 for UNIQLO (18 list pages plus one stock call per product/price group) as of
+  2026-09-07 — pause 500 ms after every request, and retry at most 3 times with exponential
+  backoff on connection errors, 429 and 500/502/503/504. Details in
+  [ADR-0007](docs/adr/0007-respecting-robots-and-rate-limits.md).
 
 ## Run locally
 
@@ -50,7 +59,7 @@ is optional. No AWS account needed.
 ```bash
 cp .env.example .env
 make up migrate            # Postgres 16 via docker compose on :5433, alembic upgrade head
-uv run pricepulse run --source ikea     # scrape -> data/raw -> Postgres, prints alerts as JSON
+uv run pricepulse run --source ikea > result.json   # scrape -> data/raw -> Postgres; the ProcessResult JSON (alerts) lands in result.json
 uv run pricepulse run --source uniqlo
 make serve                 # http://localhost:8000  (dashboard)  http://localhost:8000/docs (OpenAPI)
 ```
@@ -60,9 +69,9 @@ curl -s 'localhost:8000/v1/deals?min_discount=30&limit=3' | jq .
 curl -s 'localhost:8000/v1/products/2/history?days=90' | jq .
 curl -s 'localhost:8000/v1/deals?sort=savings&category=Storage%20%26%20organization&max_price=50' | jq .total
 curl -s -X POST localhost:8000/v1/watches -H 'content-type: application/json' \
-     -d '{"product_id": 2, "email": "you@example.com", "min_discount_pct": 10}'   # 202 -> data/raw/outbox/...
-uv run pricepulse mailer --key outbox/watch_confirm/<date>/<id>.json --dry-run     # the confirmation email
-uv run pricepulse notify --key-json result.json --dry-run   # render the email digest
+     -d '{"product_id": 2, "email": "you@example.com", "min_discount_pct": 10}'   # 202; product ids come from /v1/deals; writes data/raw/outbox/watch_confirm/<date>/<id>.json
+uv run pricepulse mailer --key outbox/watch_confirm/<date>/<id>.json --dry-run     # the confirmation email (key = path under data/raw)
+uv run pricepulse notify --key-json result.json --dry-run   # render the email digest for the run above
 make test-unit             # pytest without Postgres
 make lint test             # ruff + pytest (unit + Postgres integration)
 ```
@@ -94,7 +103,10 @@ flowchart LR
   own connection URL from an SSM SecureString parameter. ([ADR-0004](docs/adr/0004-partitioning-and-materialized-summary.md))
 - **Idempotent, retryable ETL.** Raw payloads are the source of truth (S3, gzip JSON). Processing
   is keyed on the object key: re-delivering an event is a no-op; a failed run — including a failed
-  summary refresh — is retried once by Lambda and yields the same alerts.
+  summary refresh — is retried once by Lambda and yields the same alerts. A run killed by the
+  Lambda timeout is reclaimed by that retry (the claim lease equals the timeout); an older payload
+  replayed after a newer one cannot hide or overwrite current data (chronology follows the
+  payload's timestamp); a short or malformed response fails before publishing.
 - **History-derived discounts.** `discount_pct` is computed against the 90-day mode of prior
   observations when the retailer publishes no list price, uniformly for both retailers.
   ([ADR-0005](docs/adr/0005-history-derived-discount-and-single-db-role-for-api.md))
@@ -106,8 +118,12 @@ flowchart LR
 - **Data-driven retailers.** Adapters carry their own metadata and register their `source` row on
   the first run; adding a retailer is one adapter plus one Terraform map entry
   ([how](docs/architecture.md#adding-a-retailer)).
+- **PostgreSQL, not DynamoDB.** DynamoDB would be cheaper for this access pattern; why Postgres
+  still wins — partitioning, one auditable SQL definition of a discount, trigram search — is in
+  [ADR-0008](docs/adr/0008-postgresql-not-dynamodb.md).
 
-More: [architecture.md](docs/architecture.md) · [ADRs](docs/adr) · [runbook](docs/RUNBOOK.md)
+More: [architecture.md](docs/architecture.md) · [ADRs](docs/adr) · [runbook](docs/RUNBOOK.md) ·
+where each engineering area lives in the repo: [engineering-evidence.md](docs/engineering-evidence.md)
 
 ## Deploy to AWS
 
@@ -116,10 +132,10 @@ personal API key exported as `NEON_API_KEY` and its organization id in `dev.auto
 (`neon_org_id`, from Organization settings), Terraform ≥ 1.10, `uv`, `psql`.
 
 ```bash
-terraform -chdir=infra/bootstrap init && terraform -chdir=infra/bootstrap apply   # state bucket
+terraform -chdir=infra/bootstrap init && terraform -chdir=infra/bootstrap apply   # state bucket + IAM permissions boundary
 scripts/build_lambda.sh                                                           # build/*.zip (arm64, reproducible)
 terraform -chdir=infra/envs/dev init -backend-config="bucket=$(terraform -chdir=infra/bootstrap output -raw state_bucket)"
-terraform -chdir=infra/envs/dev apply          # edit infra/envs/dev/dev.auto.tfvars first
+terraform -chdir=infra/envs/dev apply          # edit infra/envs/dev/dev.auto.tfvars first; run as a human (see ADR-0006)
 # click the SES verification email(s) and confirm the SNS subscription
 scripts/bootstrap_db.sh                        # least-privilege DB roles via psql (one time)
 aws lambda invoke --function-name pricepulse-dev-migrate --cli-binary-format raw-in-base64-out --payload '{}' /dev/stdout
@@ -158,8 +174,12 @@ DNS delegation, and tear-down.
 
 ## Cost
 
-Estimated from the account's Cost Explorer and free-tier usage after the cutover (the account's
-12-month free tiers have expired; only always-free allowances apply):
+Estimated from the account's Cost Explorer and free-tier usage as of 2026-09-07 (the account's
+12-month free tiers have expired; only always-free allowances apply). Workload assumed: one
+scrape per retailer per day — 6 IKEA and 1,320 UNIQLO requests — over 2,165 current / 2,194
+IKEA and 1,302 / 1,361 UNIQLO products, ~10k origin requests and ~60 emails a month. The August
+2026 bill was $0.001 unblended: the Route 53 zone was created in September and first appears on
+that month's bill, so the table stays an estimate.
 
 | Item | Basis | Monthly |
 | --- | --- | --- |
@@ -175,36 +195,23 @@ Estimated from the account's Cost Explorer and free-tier usage after the cutover
 | **Total** | | **≈ $0.55** |
 
 Before the move, Aurora Serverless v2 at 0–1 ACU alone cost ≈ $1–3/month and resumed in 5–15 s;
-Neon resumes in ≈ 1 s ([ADR-0009](docs/adr/0009-neon-instead-of-aurora.md)). Cold path today:
-Lambda init 2.5 s + first request ≈ 3 s; warm 0.1 s; CloudFront serves cached pages regardless.
+Neon resumes in ≈ 1 s ([ADR-0009](docs/adr/0009-neon-instead-of-aurora.md)). Cold path: api init
+≈ 2.3 s averaged over 120 cold starts in the week to 2026-09-07, then first request ≈ 3 s;
+warm 0.1 s; CloudFront serves cached pages regardless.
 A $5 AWS Budget with 80 %/100 % notifications guards the account.
 `terraform -chdir=infra/envs/dev destroy` removes the stack, the Neon project included (empty the
 raw bucket first, or set `force_destroy`); the state bucket lives in `infra/bootstrap` and is
 destroyed separately.
 
-## Engineering notes
+## Limitations
 
-- **Least-privilege roles end to end.** Per-function IAM policies scoped to one bucket prefix, one
-  SSM parameter and one SNS topic; DB roles split into migrator / read-write / read-only, with the
-  app role's DDL needs behind `SECURITY DEFINER` helpers.
-  ([ADR-0004](docs/adr/0004-partitioning-and-materialized-summary.md), [ADR-0005](docs/adr/0005-history-derived-discount-and-single-db-role-for-api.md))
-- **Idempotent, retryable ingestion.** Runs are claimed by object key; observations insert with
-  `ON CONFLICT DO NOTHING`; alerts are computed against observations older than the payload, so a
-  retry after a failed summary refresh produces the same digest instead of none.
-  ([ADR-0003](docs/adr/0003-vpc-without-nat-and-lambda-destinations.md) for the Destinations chain)
-- **PostgreSQL, not DynamoDB.** DynamoDB would be cheaper and simpler for this access pattern; the
-  comparison and why Postgres still wins — partitioning, one auditable SQL definition of a
-  discount, trigram search — is in [ADR-0008](docs/adr/0008-postgresql-not-dynamodb.md).
-- **A CDN, not a bigger database.** 24-hour CloudFront caching plus a post-run invalidation keeps
-  the database suspended between runs. ([ADR-0010](docs/adr/0010-public-watches-and-cdn.md))
-- **Measured, not assumed.** The Aurora → Neon move was made on measured resume times and cost
-  ([ADR-0009](docs/adr/0009-neon-instead-of-aurora.md)); the cost table above comes from Cost
-  Explorer.
-- **Known gap.** The GitHub deploy role still uses `PowerUserAccess` plus a scoped IAM statement
-  ([ADR-0006](docs/adr/0006-github-oidc-deploy-role-scope.md)); a resource-scoped replacement is
-  the next infrastructure change.
-
-A map of where each engineering area lives in the repo: [docs/engineering-evidence.md](docs/engineering-evidence.md).
+- **Coverage is bounded, not exhaustive.** IKEA last-chance items come from the union of four
+  sort orders and the endpoint's own total under-reports, so completeness there is "as far as
+  measurable"; UNIQLO's percentage off is `0 %` until a product has a history (see above).
+- **The GitHub deploy role still uses `PowerUserAccess`.** A permissions boundary and explicit
+  denies keep it from escalating through the IAM it manages, but it can still touch any non-IAM
+  resource in the account ([ADR-0006](docs/adr/0006-github-oidc-deploy-role-scope.md)). A
+  resource-scoped replacement is the next infrastructure change.
 
 ## Contributing & license
 

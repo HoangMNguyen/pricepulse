@@ -44,12 +44,18 @@ check: `dig NS pricepulse.hoangmnguyen.com @1.1.1.1`.
 ## Re-run a failed key
 
 ```bash
-sql "SELECT id, raw_object_key, status, error FROM ingestion_run WHERE status = 'failed' ORDER BY id DESC LIMIT 5"
+sql "SELECT id, raw_object_key, status, started_at, error FROM ingestion_run WHERE status = 'failed' OR (status = 'running' AND started_at < now() - INTERVAL '10 minutes') ORDER BY id DESC LIMIT 5"
 aws lambda invoke --function-name pricepulse-dev-process --cli-binary-format raw-in-base64-out \
   --payload '{"raw_object_key":"raw/ikea/2026-09-04/130001-abcd1234.json.gz"}' /dev/stdout
 ```
 
-A `succeeded` key is never reprocessed. To force it: `sql "UPDATE ingestion_run SET status='failed' WHERE raw_object_key='…'"` first.
+A `running` row older than `RUN_LEASE_S` (= the function timeout, 600 s) is a worker Lambda
+already killed; the re-run reclaims it. Inside the lease the re-run fails with
+`RunInProgressError` — wait for the lease, do not force the status. A `succeeded` key is never
+reprocessed. To force it: `sql "UPDATE ingestion_run SET status='failed' WHERE raw_object_key='…'"`
+first. Re-running an older key after a newer one is safe: chronology follows the payload's
+`observed_at`, not the run id. A run that parsed fewer than `MIN_PRODUCTS` products fails before
+writing anything (`SourceError: ... < MIN_PRODUCTS`): inspect the raw object before retrying.
 
 ## Re-run a scrape now
 
@@ -103,6 +109,36 @@ after fixing the cause:
 aws lambda invoke --function-name pricepulse-dev-mailer --cli-binary-format raw-in-base64-out \
   --payload '{"Records":[{"s3":{"object":{"key":"outbox/watch_confirm/<date>/<id>.json"}}}]}' /dev/stdout
 ```
+
+## Watch backups and restore
+
+`watch` is the only table raw payloads cannot rebuild (emails, tokens, confirmations), and Neon
+keeps six hours of history. The `backup` Lambda dumps it daily at 14:00 UTC to
+`backup/watch/<YYYY-MM-DD>/<HHMMSS>.json.gz` in the raw bucket (35-day expiry); a failure lands
+on the alarms topic. Tested RPO: 24 h (one schedule interval); the dump also runs on demand.
+
+```bash
+aws lambda invoke --function-name pricepulse-dev-backup /dev/stdout                                 # {"key": ..., "watches": n}
+aws s3 ls s3://$(terraform -chdir=infra/envs/dev output -raw raw_bucket)/backup/watch/ --recursive | tail
+```
+
+Restore runs the CLI against the live database and bucket (`--dry-run` first: it only counts).
+The `migrator_database_url` output is psql-flavoured; the app needs the `+psycopg` driver prefix:
+
+```bash
+PRICEPULSE_ENV=dev \
+RAW_BUCKET=$(terraform -chdir=infra/envs/dev output -raw raw_bucket) \
+DATABASE_URL=$(terraform -chdir=infra/envs/dev output -raw migrator_database_url | sed 's#^postgresql://#postgresql+psycopg://#') \
+  uv run pricepulse restore-watches --key backup/watch/<YYYY-MM-DD>/<HHMMSS>.json.gz --dry-run
+```
+
+Rows are re-keyed on (retailer, external id, email), so a restore works after a product-id reset
+(fresh database + replayed raw payloads). Restored: email, threshold, token (existing unsubscribe
+links keep working), `created_at`, `confirmed_at`, `confirmation_sent_at`. Not restored: rows
+whose product is no longer in `product` (`skipped_missing_product` — replay the retailer's raw
+payloads first, then restore again), rows whose (product, email) already exists
+(`skipped_existing` — the live row wins, nothing is overwritten), watch ids, alerts and outbox
+state. Run the alembic migrations before restoring into an empty database.
 
 ## CDN
 

@@ -14,22 +14,34 @@
    last-chance pages are tagged `role: last_chance` and parsed like offer pages.
 3. **Process.** The S3 `ObjectCreated` event invokes `process`, which:
    - upserts the adapter's `source` row (`ensure_source`: code, name, base URL) and claims the key
-     in `ingestion_run` (`ON CONFLICT ... WHERE status='failed' OR stale`) — a duplicate delivery
-     returns `skipped=true` and does nothing;
-   - parses the raw payload into `ProductSnapshot`s (pure function, unit-tested on fixtures);
+     in `ingestion_run` (`ON CONFLICT ... WHERE status='failed' OR running past RUN_LEASE_S`) —
+     a key that already `succeeded` returns `skipped=true` and does nothing; a key another
+     worker is still processing raises, so a retry never reports work it did not do;
+   - parses the raw payload into `ProductSnapshot`s (pure function, unit-tested on fixtures) and
+     fails the run if fewer than `MIN_PRODUCTS` came back — a broken response is never published
+     as an empty catalog;
    - ensures the month's partition exists, upserts `product` (one `unnest` statement per 500
-     products), reads the previous observation per product **older than the payload's
-     `fetched_at`**, inserts `price_observation` rows (`ON CONFLICT DO NOTHING`), classifies
-     alerts, records them in `alert`, marks the run `succeeded` — all in one transaction;
+     products; current-state columns only move forward in payload time), reads the previous
+     observation and 90-day peak per product **older than the payload's `fetched_at`**, inserts
+     `price_observation` rows (`ON CONFLICT DO NOTHING`), classifies alerts (`price_drop` and
+     `watch_hit` fire when the price fell since the previous observation, sized against the
+     peak), records them in `alert`, marks the run `succeeded` — all in one transaction;
    - refreshes `product_price_summary` concurrently and prunes partitions older than
      `RETENTION_MONTHS` (autocommit, outside the transaction but inside the same failure boundary:
      an error here marks the run `failed` too);
    - returns `{run_id, source, products_seen, observations_inserted, alerts[], skipped}`.
 4. **Notify.** The Lambda Destination (`on_success`) delivers that return value to `notify`,
    which invalidates the CloudFront cache (`/*`), then builds one digest per recipient (default
-   recipients + confirmed watchers) and sends via SES v2. Every digest that contains a watch hit
-   carries the watcher's unsubscribe link plus `List-Unsubscribe` and
-   `List-Unsubscribe-Post: List-Unsubscribe=One-Click` headers.
+   recipients + confirmed watchers) and sends via SES v2, one call per recipient. After SES
+   accepts a digest an empty marker `sent/<run>/<sha256(email)>` is written to the raw bucket;
+   a re-invocation (crash retry, manual re-run) skips marked recipients, so nothing is resent
+   except the one recipient in flight when a worker died. A rejected recipient is skipped, the
+   rest still go out, and the failures are published to the alarms topic (`ALARMS_TOPIC_ARN`)
+   instead of raised — a raise would retry the batch. Every digest that contains a watch hit
+   carries per-product unsubscribe links in the body plus `List-Unsubscribe` /
+   `List-Unsubscribe-Post: List-Unsubscribe=One-Click` headers pointing at
+   `/watches/unsubscribe-all/<token>`: mail clients present that as "unsubscribe from this
+   sender", so it removes every watch of the address.
 5. **Read.** CloudFront → API Gateway → `api` (FastAPI via Mangum). `/` is a retailer picker (one
    card per source); `/?source=<code>` is that retailer's deals page; the switcher, stats and
    categories come from the `source` table, and the column layout (`list_price` vs `history`)
@@ -41,13 +53,22 @@
    `/v1/watches*`, `/watches/*`, `/health`, `/v1/runs*` bypass the cache. Every listing read hits
    the materialized summary filtered on `is_current`; sort keys are index-served and pagination
    is a sort-bound keyset cursor. Product pages and history stay reachable for delisted items.
-6. **Watch.** `POST /v1/watches` (public) inserts an unconfirmed row and writes
+6. **Watch.** `POST /v1/watches` (public) inserts an unconfirmed row, **commits**, then writes
    `outbox/watch_confirm/<date>/<id>.json`; the S3 event invokes `mailer`, which sends the
-   confirmation. The links in email render a page on GET and act on POST — mail scanners
-   prefetch GETs: `GET /watches/confirm/<token>` shows a Confirm button, `POST` confirms;
-   `GET /watches/unsubscribe/<token>` shows an Unsubscribe button, `POST` deletes (this POST is
-   also the RFC 8058 one-click target). Only confirmed watches reach `classify_alerts`. Admin
-   list/delete need `X-API-Key`.
+   confirmation. Commit-first means a crash between the two leaves a row without mail; the next
+   request for the same (product, email) re-queues the confirmation (once per 10 minutes, same
+   token) instead of answering 409, so that window heals itself — the reverse order would mail
+   a token that never commits. Quotas are checked under one transaction advisory lock: 5
+   unconfirmed watches per email, 10 confirmation mails per hour per client (SHA-256 of the
+   first `X-Forwarded-For` hop, stored on the unconfirmed row only and cleared on confirmation)
+   and 30 per hour overall. The links in email render a page on GET and act on POST — mail
+   scanners prefetch GETs: `GET /watches/confirm/<token>` shows a Confirm button, `POST`
+   confirms; `GET /watches/unsubscribe/<token>` shows an Unsubscribe button, `POST` deletes;
+   `/watches/unsubscribe-all/<token>` does the same for every watch of the address (the
+   one-click target). Only confirmed watches reach `classify_alerts`. Admin list/delete need
+   `X-API-Key`. A daily `backup` Lambda dumps the `watch` table to `backup/watch/<date>/` in the
+   raw bucket (35-day retention); `pricepulse restore-watches` puts it back keyed on
+   (source, external id, email) — see the runbook.
 
 ## Functions
 
@@ -59,8 +80,9 @@
 | mailer | S3 ObjectCreated (`outbox/`) | — | 256 MB / 60 s | one transactional email per object; `on_failure` → SNS |
 | api | API Gateway HTTP API | app_rw | 1024 MB / 29 s | read routes are `READ ONLY` transactions |
 | migrate | manual / deploy.yml | app_migrator | 512 MB / 300 s | `alembic upgrade head` |
+| backup | EventBridge Scheduler (14:00 UTC) | app_rw | 256 MB / 60 s | dumps `watch` to `backup/watch/<date>/`; `on_failure` → SNS |
 
-Every asynchronously invoked function (`scrape`, `process`, `notify`, `mailer`) has
+Every asynchronously invoked function (`scrape`, `process`, `notify`, `mailer`, `backup`) has
 `maximum_retry_attempts = 1` and an `on_failure` Destination to the SNS alarms topic; `api` and
 `migrate` are invoked synchronously. No function is in a VPC: the database is Neon, reached over
 TLS; each function reads its role's connection URL from SSM at cold start.
@@ -81,7 +103,9 @@ TLS; each function reads its role's connection URL from SSM at cold start.
   `coming_soon`; vocabulary in `domain/models.py`). Both are current-state columns overwritten by
   every upsert, like `name` and `image_url`, and are read through a PK join from the summary —
   they are not part of the materialized view or of `price_observation`.
-- `ingestion_run` — one row per raw object key (`UNIQUE`), status machine `running → succeeded | failed`.
+- `ingestion_run` — one row per raw object key (`UNIQUE`), status machine `running → succeeded | failed`;
+  `observed_at` is the payload's `fetched_at` and defines run chronology (ids only reflect
+  processing order).
 - `price_observation` — `PARTITION BY RANGE (observed_at)`, monthly, PK `(product_id, observed_at)`.
 - `watch` — email + per-product threshold + `token` (unique) + `confirmed_at`; partial index on
   unconfirmed rows per email backs the 5-pending limit. `alert` — what each run raised
@@ -91,8 +115,10 @@ TLS; each function reads its role's connection URL from SSM at cold start.
   indexes are partial on `WHERE is_current`, plus the unique `product_id` index that
   `REFRESH … CONCURRENTLY` needs.
   - `is_current` means "the product's latest observation came from its source's latest
-    *succeeded* run". IKEA's feed is offers and last-chance items only, so an item that leaves
-    the feed must leave the deals list instead of lingering with its last sale price.
+    *succeeded* run by `observed_at`". IKEA's feed is offers and last-chance items only, so an
+    item that leaves the feed must leave the deals list instead of lingering with its last sale
+    price. Replaying an older raw object later cannot un-current anything: chronology is the
+    payload's timestamp, not the run id.
     Consequence: if an adapter ever runs more than once a day, products missing from the newer
     run become non-current until the next run that lists them — accepted.
 - Helpers: `ensure_price_partition(timestamptz)`, `refresh_price_summary()`,
@@ -136,15 +162,21 @@ TLS; each function reads its role's connection URL from SSM at cold start.
 | --- | --- |
 | Retailer 429/500/502/503/504 or transport error | 3 attempts with exponential backoff (1–8 s); the run fails loudly (alarm) rather than storing a partial payload |
 | Retailer changes response shape | `parse()` raises → run `failed` with the error text; raw payload preserved for a fix + retry |
-| S3 delivers the same event twice | `ingestion_run` claim returns no row → `skipped=true`, no email |
-| `process` dies mid-run | row stays `running`; after 30 min the next attempt reclaims it; Lambda retries once, then `on_failure` → SNS |
+| S3 delivers the same event twice | key already `succeeded` → `skipped=true`, no email; key still `running` inside `RUN_LEASE_S` → the invocation fails (Lambda retries once, then `on_failure` → SNS) rather than reporting a duplicate as done |
+| `process` dies mid-run (timeout) | row stays `running`; `RUN_LEASE_S` equals the function timeout, so Lambda's retry (~1 min later) reclaims it |
+| Older raw object processed after a newer one (delayed event, manual re-run) | run gets a higher id but an older `observed_at`; `is_current` and the product's current-state columns follow `observed_at`, so nothing is hidden or overwritten |
+| Retailer answers with a structurally valid but empty/partial page | `parse()` raises on a page without `items`; below `MIN_PRODUCTS` the run fails before any write, the previous catalog stays current |
 | Post-processing (refresh/prune) fails | run `failed`; Lambda retries once, the retry reclaims it, inserts nothing new (`ON CONFLICT DO NOTHING`) and recomputes the same alerts (previous observations are read `before` the payload's timestamp), so the digest still goes out |
 | Neon compute suspended | first connection retried for up to `DB_CONNECT_WAIT_S` (`wait_for_db`); resume ≈ 1 s |
 | Cost creep | $5 budget at 80 % actual / 100 % forecast, all logs 14-day retention; Neon Free hard-stops compute at 100 CU-h |
 | Scrape silently missing or short | `no-scrape-<source>` (ScrapeRuns < 1/day, missing = breaching) and `low-products-<source>` (ProductsSeen < the source's `min_products`) alarms → SNS |
 | Database down | API answers 503 + `Retry-After: 5` (HTML page for browsers); cached pages keep serving from CloudFront |
 | Unhandled exception in `api` | branded 500 page for browsers, `{"detail": "internal server error"}` otherwise, `Cache-Control: no-store` |
-| Watch spam | 5 unconfirmed watches per email, unique `(product, email)`, outbox objects expire after 7 days |
+| SES rejects one digest recipient | that recipient is skipped, the others are sent and marked in `sent/`, one SNS message lists the failures; the operator re-sends by hand (`pricepulse notify --key-json`), and marked recipients are not resent |
+| Watch spam | quotas checked under a transaction advisory lock: 5 unconfirmed watches per email, `MAX_CONFIRMATIONS_PER_CLIENT_PER_HOUR` (10) per hashed client IP, `MAX_CONFIRMATIONS_PER_HOUR` (30) across all addresses (429), unique `(product, email)`, outbox objects expire after 7 days |
+| Crash between watch commit and outbox publish | row exists without mail; the next request for the same (product, email) re-queues the confirmation with the same token |
+| Neon project replaced by a plan / subscriber data lost | `prevent_destroy` on `neon_project.main`; daily `backup/watch/` dump (RPO 24 h) restored with `pricepulse restore-watches` (runbook) |
+| Product sells out (per-SKU stock known, no size in stock) | hidden from the default deals list; `include_sold_out=true` shows it; the product page and history stay reachable |
 
 ## Adding a retailer
 

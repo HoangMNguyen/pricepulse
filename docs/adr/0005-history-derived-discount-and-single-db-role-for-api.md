@@ -15,9 +15,13 @@ For IKEA this equals the retailer's own figure; for UNIQLO it emerges from our h
 the second observation. The retailer flag is stored separately (`retailer_sale_flag`,
 `retailer_tag`) and surfaced as `is_on_sale = discount_pct > 0 OR retailer_sale_flag`.
 
-Alert kinds map onto this: `new_deal` (first sighting with a retailer list price),
-`price_drop` (below previous price by ≥ threshold), `retailer_flag` (flag turned on),
-`watch_hit` (per-watch threshold).
+Alert kinds map onto this: `new_deal` (first sighting with a retailer list price, `discount_pct`
+as above), `retailer_flag` (flag turned on). `price_drop` and `watch_hit` are a different
+quantity: they fire when the price fell since the previous observation and report the drop
+from the peak price of the prior 90 days (`repo.PEAK_WINDOW_DAYS`), which is what the product
+page promises ("email me when it drops by at least"). The list price never enters a drop: an
+$80 → $79 dip on an item listed at $100 is a 1.25 % drop, not a 21 % one (2026-09-07 review,
+finding 3).
 
 The API Lambda connects as a single DB role, `app_rw`. Read routes set
 `postgresql_readonly=True` on the connection (Postgres enforces `SET TRANSACTION READ ONLY`);

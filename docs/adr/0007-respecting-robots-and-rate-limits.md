@@ -23,3 +23,11 @@ non-commercial price tracking.
   preserve history and the adapters are isolated behind `Source.fetch/parse` so a change is a
   one-file fix.
 - Total daily request volume is far below what a single human browsing session generates.
+
+## 2026-09-07 update
+
+The "~40 requests total" figure above predates per-product stock lookups for UNIQLO. Measured on
+2026-09-07: IKEA makes 6 requests per daily run; UNIQLO makes 1,320 (18 list pages plus one
+stock (`l2s`) call per product/price group for a catalog of 1,302 current products), spread
+over ~6 minutes by the 500 ms pause. Still one run per retailer per day, still bounded retries.
+The decision stands; the numbers are corrected here rather than in the original text.
