@@ -1,4 +1,4 @@
-# One daily scrape per retailer, staggered by 10 minutes.
+# One daily scrape per retailer, staggered by 10 minutes, and one daily watch backup.
 
 resource "aws_scheduler_schedule_group" "main" {
   name = local.name
@@ -22,13 +22,14 @@ data "aws_iam_policy_document" "scheduler_assume" {
 data "aws_iam_policy_document" "scheduler" {
   statement {
     actions   = ["lambda:InvokeFunction"]
-    resources = [module.scrape.function_arn]
+    resources = [module.scrape.function_arn, module.backup.function_arn]
   }
 }
 
 resource "aws_iam_role" "scheduler" {
-  name               = "${local.name}-scheduler"
-  assume_role_policy = data.aws_iam_policy_document.scheduler_assume.json
+  name                 = "${local.name}-scheduler"
+  assume_role_policy   = data.aws_iam_policy_document.scheduler_assume.json
+  permissions_boundary = data.aws_iam_policy.boundary.arn
 }
 
 resource "aws_iam_role_policy" "scheduler" {
@@ -53,6 +54,27 @@ resource "aws_scheduler_schedule" "scrape" {
     arn      = module.scrape.function_arn
     role_arn = aws_iam_role.scheduler.arn
     input    = jsonencode({ source = each.key })
+    retry_policy {
+      maximum_retry_attempts       = 2
+      maximum_event_age_in_seconds = 3600
+    }
+  }
+}
+
+resource "aws_scheduler_schedule" "backup" {
+  # checkov:skip=CKV_AWS_297: no input to encrypt; a CMK adds $1/mo for nothing
+  name                         = "${local.name}-backup"
+  group_name                   = aws_scheduler_schedule_group.main.name
+  schedule_expression          = "cron(0 14 * * ? *)"
+  schedule_expression_timezone = "UTC"
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+
+  target {
+    arn      = module.backup.function_arn
+    role_arn = aws_iam_role.scheduler.arn
     retry_policy {
       maximum_retry_attempts       = 2
       maximum_event_age_in_seconds = 3600

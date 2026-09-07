@@ -21,6 +21,12 @@ resource "neon_project" "main" {
     autoscaling_limit_max_cu = 0.25
     # suspend_timeout_seconds is not settable on the Free plan; its default is the 300 s we want.
   }
+
+  # The only persistent store of subscriber data (watches, tokens); Neon Free keeps 6 h of
+  # history and there is no backup. A plan that wants to replace this resource must fail.
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "random_password" "app_rw" {

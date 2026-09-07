@@ -21,6 +21,11 @@ variable "role_policy_json" {
   description = "Inline IAM policy document granting this function's permissions beyond logging/VPC."
 }
 
+variable "permissions_boundary" {
+  type        = string
+  description = "ARN of the permissions boundary attached to the function's role (required: every pricepulse role carries one)."
+}
+
 variable "environment" {
   type    = map(string)
   default = {}

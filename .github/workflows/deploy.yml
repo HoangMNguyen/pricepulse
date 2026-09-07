@@ -21,20 +21,22 @@ env:
 jobs:
   # Builds the artifacts and publishes a human-readable plan to the run summary. Terraform prints
   # `(sensitive value)` for the API key and database URLs, so nothing secret reaches the summary.
+  #
+  # Trust: `workflow_run` fires for ci runs from pull requests too, including forks, and the
+  # `branches` filter only matches the head branch name. Deploy only when ci succeeded for a push
+  # to this repository's own main; otherwise a fork PR could run its build script with AWS
+  # credentials in the environment. Credentials are configured after the build for the same reason.
   plan:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success'
+          && github.event.workflow_run.event == 'push'
+          && github.event.workflow_run.head_repository.full_name == github.repository
+          && github.event.workflow_run.head_branch == 'main' }}
     runs-on: ubuntu-latest
-    env:
-      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
-
-      - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
-        with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
 
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
       - run: uv sync --locked --no-dev
@@ -50,11 +52,18 @@ jobs:
       - name: preflight Neon API key
         # The neon provider only fails at apply time; an empty/invalid key must never reach a
         # plan that also destroys resources.
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
         run: |
           set -euo pipefail
           test -n "$NEON_API_KEY" || { echo "::error::NEON_API_KEY secret is not set"; exit 1; }
           curl -fsS -H "Authorization: Bearer $NEON_API_KEY" https://console.neon.tech/api/v2/users/me -o /dev/null \
             || { echo "::error::NEON_API_KEY was rejected by the Neon API"; exit 1; }
+
+      - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
@@ -67,6 +76,8 @@ jobs:
           -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
 
       - name: terraform plan
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
         run: |
           set -euo pipefail
           terraform -chdir=infra/envs/dev plan -input=false -no-color -out=tf.plan | tee plan.txt
@@ -78,8 +89,6 @@ jobs:
     needs: plan
     runs-on: ubuntu-latest
     environment: dev # configure a required reviewer on this environment for a manual apply gate
-    env:
-      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -106,17 +115,23 @@ jobs:
           -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
 
       - name: terraform plan
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
         run: terraform -chdir=infra/envs/dev plan -input=false -out=tf.plan
 
       - name: terraform apply
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
         run: terraform -chdir=infra/envs/dev apply -input=false -auto-approve tf.plan
 
       - name: run migrations
+        # The migrate function may run up to 300 s; the CLI's default 60 s read timeout would
+        # report a failure for a migration that is still running.
         run: |
           set -euo pipefail
           fn=$(terraform -chdir=infra/envs/dev output -json function_names | jq -r .migrate)
           aws lambda invoke --function-name "$fn" --cli-binary-format raw-in-base64-out \
-            --payload '{}' response.json >/dev/null
+            --cli-read-timeout 330 --payload '{}' response.json >/dev/null
           cat response.json
           if grep -q '"errorMessage"' response.json; then
             echo "::error::migration failed"; exit 1

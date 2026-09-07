@@ -55,6 +55,32 @@ resource "aws_s3_bucket_lifecycle_configuration" "raw" {
       days_after_initiation = 7
     }
   }
+  rule {
+    id     = "expire-sent"
+    status = "Enabled"
+    filter {
+      prefix = "sent/"
+    }
+    expiration {
+      days = 35
+    }
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+  rule {
+    id     = "expire-backup"
+    status = "Enabled"
+    filter {
+      prefix = "backup/"
+    }
+    expiration {
+      days = 35
+    }
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
 }
 
 resource "aws_lambda_permission" "s3_invoke_process" {
