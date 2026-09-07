@@ -27,11 +27,19 @@ class Settings(BaseSettings):
     raw_local_dir: str | None = None
     raw_bucket: str | None = None
 
+    # Ingestion. `run_lease_s` must equal the process Lambda's timeout: a `running` claim older
+    # than that belongs to a worker Lambda has already killed, so a retry may take it over.
+    # `min_products` (JSON, source code -> floor) is the count below which a payload is a broken
+    # response, not a catalog; the same floors drive the low-products alarm.
+    run_lease_s: int = 600
+    min_products: dict[str, int] = Field(default_factory=dict)
+
     # Alerts.
     alert_recipients: Annotated[list[str], NoDecode] = Field(default_factory=list)
     alert_min_discount_pct: Decimal = Decimal("20")
     retention_months: int = 13
     ses_sender: str | None = None
+    alarms_topic_arn: str | None = None  # set on AWS: notify reports undelivered digests here
 
     # API.
     api_key: str = "dev-key"

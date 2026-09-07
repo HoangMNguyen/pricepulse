@@ -34,10 +34,12 @@ class Digest:
 
     @property
     def subject(self) -> str:
-        return (
-            f"PricePulse: {len(self.new_deals)} new deals, {len(self.price_drops)} price drops "
-            f"({self.source}, {self.date})"
-        )
+        if self.watcher_only:
+            n = len(self.watch_hits)
+            what = f"{n} watched product{'s' if n != 1 else ''} dropped in price"
+        else:
+            what = f"{len(self.new_deals)} new deals, {len(self.price_drops)} price drops"
+        return f"PricePulse: {what} ({self.source}, {self.date})"
 
 
 def _sorted(alerts: list[AlertOut]) -> list[AlertOut]:

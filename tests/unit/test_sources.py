@@ -8,6 +8,7 @@ import httpx
 import pytest
 
 from pricepulse.config import Settings
+from pricepulse.sources.base import SourceError
 from pricepulse.sources.http import make_client
 from pricepulse.sources.ikea import LAST_CHANCE_SORTS, IkeaSource
 from pricepulse.sources.uniqlo import UniqloSource
@@ -78,6 +79,22 @@ def test_ikea_parse_labels_and_price_tag() -> None:
     item["product"]["salesPrice"]["tag"] = "NEW_PRODUCT"
     s = {x.external_id: x for x in IkeaSource().parse(raw)}["00473546"]
     assert s.retailer_tag == "FAMILY_PRICE"
+    # Legacy single `tag` carrying the informational value must not become a sale flag.
+    item["product"]["salesPrice"]["tags"] = ["NEW_PRODUCT"]
+    s = {x.external_id: x for x in IkeaSource().parse(raw)}["00473546"]
+    assert s.retailer_tag is None and s.retailer_sale_flag is False
+
+
+def test_ikea_parse_rejects_page_without_items() -> None:
+    """A page that reports products but carries no `items` array is a broken response;
+    only `max == 0` is an empty catalog."""
+    raw = ikea_raw()
+    main = raw["requests"][1]["body"]["searchResultPage"]["products"]["main"]
+    del main["items"]
+    with pytest.raises(SourceError, match="no items"):
+        IkeaSource().parse(raw)
+    main["max"] = main["end"] = 0
+    assert IkeaSource().parse(raw) == []
 
 
 def test_ikea_parse_merges_last_chance_page() -> None:

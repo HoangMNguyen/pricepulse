@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import date, datetime
 from decimal import Decimal
@@ -17,6 +18,17 @@ from pricepulse.config import Settings
 pytestmark = pytest.mark.integration
 
 NO_INLINE_SCRIPT = re.compile(r"<script(?![^>]*\bsrc=)")
+
+
+def tag(html: str, elem: str, /, **attrs: str | None) -> re.Match[str] | None:
+    """First `<name ...>` carrying every given attribute (value `None` = present, any value),
+    whatever the attribute order. Keys use `_` for `-` and a trailing `_` for `class`."""
+    wanted = {k.rstrip("_").replace("_", "-"): v for k, v in attrs.items()}
+    for m in re.finditer(rf"<{elem}\b([^>]*)>", html):
+        got = dict(re.findall(r'([\w:-]+)(?:="([^"]*)")?', m.group(1)))
+        if all(k in got and (v is None or got[k] == v) for k, v in wanted.items()):
+            return m
+    return None
 
 
 def test_health(client: TestClient) -> None:
@@ -182,7 +194,7 @@ def test_watch_flow_public_post_keyed_admin(client: TestClient, api_headers: dic
     created = client.post("/v1/watches", json=body)  # no key needed
     assert created.status_code == 202
     assert created.json() == {"email": "w@example.com", "product_id": pid, "min_discount_pct": "5"}
-    assert client.post("/v1/watches", json=body).status_code == 409
+    assert client.post("/v1/watches", json=body).status_code == 202  # pending: re-queued, same row
     assert client.post("/v1/watches", json={**body, "product_id": 999999}).status_code == 404
     assert client.get("/v1/watches", params={"email": "w@example.com"}).status_code == 401
     listed = client.get(
@@ -212,18 +224,17 @@ def test_dashboard_renders(client: TestClient) -> None:
     assert home.status_code == 200 and "Current deals" in home.text
     assert 'role="tablist"' in home.text and 'id="deals-ikea"' in home.text
     assert re.search(r'aria-selected="true"[^>]*>(<i[^>]*></i>)?IKEA US', home.text)
-    assert '<input type="hidden" name="source" value="ikea">' in home.text
+    assert tag(home.text, "input", type="hidden", name="source", value="ikea")
     assert "showing 13 of 13" in home.text and "Biggest % off" in home.text
     assert ">Until<" in home.text and "90-day low" not in home.text
     # column headers are links (no JS needed) that toggle the price direction
-    now_head = '<th class="num"><a class="sort" href="/?source=ikea&amp;sort=price_asc"'
-    assert now_head in home.text
-    active = 'aria-sort="descending"><a class="sort active" href="/?source=ikea&amp;sort=discount'
-    assert active in home.text
+    assert tag(home.text, "a", class_="sort", href="/?source=ikea&amp;sort=price_asc")
+    assert tag(home.text, "th", aria_sort="descending")
+    assert tag(home.text, "a", class_="sort active", href="/?source=ikea&amp;sort=discount")
     asc = client.get("/", params={"source": "ikea", "sort": "price_asc"})
-    flipped = 'aria-sort="ascending"><a class="sort active" href="/?source=ikea&amp;sort=price_desc'
-    assert flipped in asc.text
-    assert '<section id="deals-ikea" data-sort="price_asc">' in asc.text
+    assert tag(asc.text, "th", aria_sort="ascending")
+    assert tag(asc.text, "a", class_="sort active", href="/?source=ikea&amp;sort=price_desc")
+    assert tag(asc.text, "section", id="deals-ikea", data_sort="price_asc")
     partial = client.get("/partials/deals", params={"source": "ikea", "min_discount": 20})
     assert partial.status_code == 200 and partial.text.count("<tr>") == 3
     assert "<table" not in partial.text
@@ -243,10 +254,15 @@ def test_dashboard_tabs(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> 
     options = re.findall(r'<option value="([^"]+)"[^>]*>[^<]*\(\d+\)</option>', uniqlo.text)
     assert options == ["MEN"]
     # switching retailer drops the category (it belongs to the other retailer) but keeps the rest
-    other = 'aria-selected="false" class="pill" href="/?source=ikea&amp;q=x&amp;sort=discount"'
-    assert other in uniqlo.text
+    assert tag(
+        uniqlo.text,
+        "a",
+        aria_selected="false",
+        class_="pill",
+        href="/?source=ikea&amp;q=x&amp;sort=discount",
+    )
     filtered = client.get("/", params={"source": "uniqlo", "min_discount": 5})
-    assert '<input type="hidden" name="source" value="uniqlo">' in filtered.text
+    assert tag(filtered.text, "input", type="hidden", name="source", value="uniqlo")
     for code in ("nope", "acme"):
         missing = client.get("/", params={"source": code}, headers={"accept": "text/html"})
         assert missing.status_code == 404 and "404 · Not found" in missing.text
@@ -312,26 +328,66 @@ def test_variants_and_labels_on_api_and_pages(client: TestClient, seeded_variant
     # product page: swatch buttons carry the colour's image and in-stock sizes; every size is a
     # chip, sold-out ones dimmed; the retailer link is kept and JS points "Buy this colour"
     page_html = client.get(f"/products/{tee['product_id']}").text
-    swatch = (
-        '<button type="button" class="swatch" data-colour="64" data-image=""'
-        ' data-sizes=\'["M"]\' aria-pressed="false" title="BLUE">'
-        '<img src="https://img.example/64_chip.jpg" alt="BLUE" width="28"'
-    )
-    assert swatch in page_html
-    assert 'title="BLACK">BLACK</button>' in page_html  # no chip: name fallback
-    assert "<small>2 of 5 available</small>" in page_html
-    assert page_html.count('<li class="chip"') == 2
-    assert (
-        '<li class="chip out" data-size="L" aria-disabled="true" title="Sold out">L</li>'
-        in page_html
-    )
-    assert '<time datetime="2026-09-04T13:10:00+00:00">2026-09-04</time>' in page_html
-    assert (
-        'href="https://uniqlo.example/E1" rel="noopener" target="_blank">View at retailer'
-        in page_html
-    )
-    assert '<a id="buy-colour" href="https://uniqlo.example/E1"' in page_html
+    blue = tag(page_html, "button", class_="swatch", data_colour="64", title="BLUE")
+    assert blue and "data-sizes='[\"M\"]'" in blue.group(0)
+    assert tag(page_html, "img", src="https://img.example/64_chip.jpg", alt="BLUE")
+    assert re.search(r'title="BLACK"[^>]*>BLACK</button>', page_html)  # no chip: name fallback
+    assert "2 of 5 colours in stock" in page_html  # both listed colours have a size
+    assert len(re.findall(r'<li class="chip"', page_html)) == 2
+    sold_out = tag(page_html, "li", class_="chip out", data_size="L", aria_disabled="true")
+    assert sold_out and sold_out.group(0).endswith('title="Sold out">')
+    assert tag(page_html, "time", datetime="2026-09-04T13:10:00+00:00")
+    assert re.search(r'href="https://uniqlo.example/E1"[^>]*>View at retailer', page_html)
+    assert tag(page_html, "a", id="buy-colour", href="https://uniqlo.example/E1")
     assert 'class="badge label last_chance">last chance</span>' in page_html
+
+
+def test_sold_out_products_hidden_from_deals_by_default(client: TestClient, conn: Engine) -> None:
+    """Known per-SKU stock with no in-stock size hides the item from the list (JSON and HTML)
+    unless include_sold_out=true; unknown stock (no sizes) is not 'sold out'; the product page
+    stays reachable."""
+    variants = {
+        "colours": [{"code": "09", "name": "BLACK", "image": None, "chip": None, "sizes": []}],
+        "sizes": [{"code": "003", "name": "S", "in_stock": False}],
+        "colour_total": 1,
+        "stock_at": "2026-09-04T13:10:00+00:00",
+    }
+    with conn.begin() as c:
+        run_id = c.execute(
+            text(
+                "SELECT id FROM ingestion_run WHERE source_id = 2 ORDER BY observed_at DESC LIMIT 1"
+            )
+        ).scalar_one()
+        for ext, name, v in (("E2-000", "Gone hoodie", variants), ("E3-000", "Tote bag", None)):
+            pid = c.execute(
+                text(
+                    "INSERT INTO product (source_id, external_id, name, category, url, variants) "
+                    "VALUES (2, :ext, :name, 'MEN', 'https://uniqlo.example/' || :ext, "
+                    "CAST(:v AS jsonb)) RETURNING id"
+                ),
+                {"ext": ext, "name": name, "v": json.dumps(v) if v else None},
+            ).scalar_one()
+            c.execute(
+                text(
+                    "INSERT INTO price_observation (product_id, observed_at, run_id, price, "
+                    "retailer_sale_flag) VALUES (:pid, now(), :run, 29.9, true)"
+                ),
+                {"pid": pid, "run": run_id},
+            )
+        c.execute(text("REFRESH MATERIALIZED VIEW product_price_summary"))
+
+    def names(**p: str) -> set[str]:
+        params = {"source": "uniqlo", "limit": 200, **p}
+        return {i["name"] for i in client.get("/v1/deals", params=params).json()["items"]}
+
+    assert "Gone hoodie" not in names() and {"AIRism tee", "Tote bag"} <= names()
+    assert "Gone hoodie" in names(include_sold_out="true")
+    html = client.get("/", params={"source": "uniqlo"}).text
+    assert "Gone hoodie" not in html and tag(html, "input", name="include_sold_out")
+    html = client.get("/", params={"source": "uniqlo", "include_sold_out": "true"}).text
+    assert "Gone hoodie" in html and tag(html, "input", name="include_sold_out", checked=None)
+    gone = client.get("/v1/deals", params={"q": "Gone", "include_sold_out": "true"}).json()
+    assert client.get(f"/products/{gone['items'][0]['product_id']}").status_code == 200
 
 
 def test_dashboard_sort_and_filters_are_url_state(client: TestClient) -> None:
@@ -405,8 +461,9 @@ def test_delisted_product_hidden_from_deals_but_page_works(
     with conn.begin() as c:
         run_id = c.execute(
             text(
-                "INSERT INTO ingestion_run (source_id, raw_object_key, status, finished_at) "
-                "VALUES (1, 'raw/seed-2', 'succeeded', now()) RETURNING id"
+                "INSERT INTO ingestion_run (source_id, raw_object_key, status, observed_at, "
+                "finished_at) VALUES (1, 'raw/seed-2', 'succeeded', now() + INTERVAL '1 minute', "
+                "now()) RETURNING id"
             )
         ).scalar()
         c.execute(

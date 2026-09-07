@@ -31,6 +31,14 @@ CDN = {
         "https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js",
         "sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC",
     ),
+    "swagger_css": (
+        "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.32.15/swagger-ui.css",
+        "sha384-fgyWYkUAamzuI8mJFu/xpRP0JWCJRwkwUwsYDoOYVHUJ8NQE5cENn8ib3ppwFFSX",
+    ),
+    "swagger_js": (
+        "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.32.15/swagger-ui-bundle.js",
+        "sha384-m7zaGj7MPzU+G4lz2eyy73GxK9bbRDr9bB2CSdj8wodg2wu/Wnt6wsoLP3JD+RS9",
+    ),
 }
 
 PAGE_SIZE = 50
@@ -55,6 +63,9 @@ def _number(value: str, name: str, upper: int | None = None) -> Decimal | None:
         number = Decimal(value)
     except InvalidOperation as exc:
         raise HTTPException(422, f"{name} must be a number") from exc
+    # Decimal("NaN") parses; comparing it raises InvalidOperation (a 500), and Infinity passes.
+    if not number.is_finite():
+        raise HTTPException(422, f"{name} must be a number")
     if number < 0 or (upper is not None and number > upper):
         raise HTTPException(422, f"{name} out of range")
     return number
@@ -71,6 +82,7 @@ def page_params(
     size: str = Query("", max_length=20),
     flagged_only: bool = False,
     on_sale_only: bool = False,
+    include_sold_out: bool = False,
     sort: SortKey = queries.DEFAULT_SORT,
 ) -> queries.DealFilters:
     return queries.DealFilters(
@@ -84,6 +96,7 @@ def page_params(
         size=size or None,
         flagged_only=flagged_only,
         on_sale_only=on_sale_only,
+        include_sold_out=include_sold_out,
         sort=sort,
         limit=PAGE_SIZE,
     )
@@ -105,6 +118,7 @@ def template_params(f: queries.DealFilters) -> dict[str, Any]:
         "size": f.size,
         "flagged_only": f.flagged_only,
         "on_sale_only": f.on_sale_only,
+        "include_sold_out": f.include_sold_out,
         "sort": f.sort,
     }
 
@@ -186,6 +200,13 @@ def product_page(request: Request, conn: ReadConn, product_id: int) -> HTMLRespo
     return _render(request, "product.html", product=queries.get_product(conn, product_id))
 
 
+@router.get("/docs", response_class=HTMLResponse)
+def docs(request: Request) -> HTMLResponse:
+    """FastAPI's built-in page bootstraps Swagger UI from an inline script, which the CSP
+    blocks; this one loads the same bootstrap from /static/docs.js."""
+    return _render(request, "docs.html")
+
+
 @router.get("/robots.txt", response_class=PlainTextResponse)
 def robots() -> str:
     base = deps.get_settings().public_base_url
@@ -242,5 +263,18 @@ def unsubscribe_prompt(request: Request, conn: ReadConn, token: str) -> HTMLResp
 
 @router.post("/watches/unsubscribe/{token}", response_class=HTMLResponse)
 def unsubscribe_watch(request: Request, conn: WriteConn, token: str) -> HTMLResponse:
-    """Also the RFC 8058 one-click target: the form body is ignored."""
     return _watch_status(request, watches.delete_by_token(conn, token), "unsubscribed", token)
+
+
+@router.get("/watches/unsubscribe-all/{token}", response_class=HTMLResponse)
+def unsubscribe_all_prompt(request: Request, conn: ReadConn, token: str) -> HTMLResponse:
+    return _watch_status(request, watches.by_token(conn, token), "unsubscribe_all_prompt", token)
+
+
+@router.post("/watches/unsubscribe-all/{token}", response_class=HTMLResponse)
+def unsubscribe_all(request: Request, conn: WriteConn, token: str) -> HTMLResponse:
+    """The RFC 8058 one-click target (List-Unsubscribe header): every watch of the address
+    that owns `token` goes, since mail clients present it as "unsubscribe from this sender".
+    The form body is ignored."""
+    view = watches.delete_all_for_token(conn, token)
+    return _watch_status(request, view, "unsubscribed_all", token)

@@ -83,16 +83,19 @@ class IkeaSource:
 
     def parse(self, raw: dict[str, Any]) -> list[ProductSnapshot]:
         """One snapshot per itemNo. An item listed both as an offer and as last chance keeps
-        its first record and the union of the labels."""
+        its first record and the union of the labels. A page without its `items` array is a
+        broken response (raises), not an empty catalog: only `max == 0` means empty."""
         seen: dict[str, ProductSnapshot] = {}
         for request in raw["requests"]:
             if request.get("role") == "index":
                 continue
-            body = request["body"]
-            main = body.get("searchResultPage", {}).get("products", {}).get("main")
-            if not main:
-                continue
-            for item in main.get("items", []):
+            main = _main(request["body"])
+            items = main.get("items")
+            if items is None:
+                if main.get("max", 0) == 0:
+                    continue
+                raise SourceError(f"ikea: page reports max={main['max']} but has no items")
+            for item in items:
                 if item.get("type") != "PRODUCT":
                     continue
                 snapshot = _to_snapshot(item["product"])
@@ -121,10 +124,10 @@ def _money(part: dict[str, Any] | None) -> Decimal | None:
 
 def _price_tag(sales: dict[str, Any]) -> str | None:
     """First price tag that is not the informational NEW_PRODUCT; `tags[]` is multi-valued,
-    `tag` the legacy single value."""
+    `tag` the legacy single value (which may itself be NEW_PRODUCT)."""
     tags = [t for t in sales.get("tags") or [] if t and t != "NEW_PRODUCT"]
     tag = tags[0] if tags else sales.get("tag")
-    return tag if tag not in (None, "", "NONE") else None
+    return tag if tag not in (None, "", "NONE", "NEW_PRODUCT") else None
 
 
 def _labels(p: dict[str, Any], sales: dict[str, Any]) -> tuple[str, ...]:

@@ -1,13 +1,17 @@
 from decimal import Decimal
+from pathlib import Path
 
 import boto3
 import pytest
 from moto import mock_aws
 
+from pricepulse.config import Settings
 from pricepulse.lambda_handlers import notify
 from pricepulse.services.digest import RETAILER_FLAG_CAP, build_digests
 from pricepulse.services.ingest import AlertOut, ProcessResult
 from pricepulse.services.mail import render_confirm, render_html, render_text, send_digests
+from pricepulse.services.notify import run_notify
+from pricepulse.storage.delivery import LocalDeliveryLog, marker_key
 
 BASE = "https://pp.example"
 
@@ -71,6 +75,8 @@ def test_build_digests_drops_empty_and_skipped() -> None:
     only_watch = [alert("watch_hit", "C", "30.0", emails=["w@example.com"])]
     digests = build_digests(result(only_watch), ["o@example.com"], BASE)
     assert set(digests) == {"w@example.com"}  # owner has nothing -> dropped
+    subject = digests["w@example.com"].subject
+    assert subject.startswith("PricePulse: 1 watched product dropped in price (ikea, ")
 
 
 def test_render_templates() -> None:
@@ -87,41 +93,113 @@ def test_render_templates() -> None:
 
 
 class _Ses:
-    def __init__(self) -> None:
+    def __init__(self, reject: set[str] = frozenset()) -> None:
         self.calls: list[dict] = []
+        self.reject = reject
 
     def send_email(self, **kw: object) -> None:
+        to = kw["Destination"]["ToAddresses"][0]  # type: ignore[index]
+        if to in self.reject:
+            raise RuntimeError(f"MessageRejected for {to}")
         self.calls.append(kw)
 
 
-def test_send_digests_unsubscribe_headers() -> None:
+RUN = "raw/ikea/x.json.gz"
+
+
+def test_send_digests_unsubscribe_headers(tmp_path: Path) -> None:
     """Every digest containing a watch hit carries the recipient's one-click unsubscribe
-    headers; an owner-only digest carries none."""
+    headers, targeting all of the address's watches; an owner-only digest carries none."""
     ses = _Ses()
     alerts = [
         alert("new_deal", "KALLAX", "40.0"),
         alert("watch_hit", "BILLY", "30.0", emails=["w@example.com", "o@example.com"]),
     ]
     digests = build_digests(result(alerts), ["o@example.com"], BASE)
-    assert send_digests(digests, "sender@example.com", ses) == 2
+    log = LocalDeliveryLog(tmp_path)
+    assert send_digests(digests, "sender@example.com", ses, log, RUN) == (2, {})
     by_to = {c["Destination"]["ToAddresses"][0]: c["Content"]["Simple"] for c in ses.calls}
     owner = by_to["o@example.com"]  # both a new_deal and a watch_hit
     names = [h["Name"] for h in owner["Headers"]]
     assert names == ["List-Unsubscribe", "List-Unsubscribe-Post"]
-    assert owner["Headers"][0]["Value"] == f"<{BASE}/watches/unsubscribe/tok-o>"
+    assert owner["Headers"][0]["Value"] == f"<{BASE}/watches/unsubscribe-all/tok-o>"
     assert owner["Headers"][1]["Value"] == "List-Unsubscribe=One-Click"
-    assert by_to["w@example.com"]["Headers"][0]["Value"] == f"<{BASE}/watches/unsubscribe/tok-w>"
+    assert by_to["w@example.com"]["Headers"][0]["Value"] == (
+        f"<{BASE}/watches/unsubscribe-all/tok-w>"
+    )
 
     owner_only = build_digests(result([alert("new_deal", "K", "40.0")]), ["o@example.com"], BASE)
     ses = _Ses()
-    assert send_digests(owner_only, "sender@example.com", ses) == 1
+    assert send_digests(owner_only, "sender@example.com", ses, log, "raw/ikea/y.json.gz") == (
+        1,
+        {},
+    )
     assert "Headers" not in ses.calls[0]["Content"]["Simple"]
+
+
+def test_send_digests_isolates_a_rejected_recipient_and_skips_delivered(tmp_path: Path) -> None:
+    """One rejected recipient neither blocks the rest nor raises (a raise would make Lambda
+    retry the batch); the failure is returned. A re-invocation for the same run sends only to
+    recipients without a delivery marker, so the accepted digest is never resent."""
+    alerts = [alert("watch_hit", "BILLY", "30.0", emails=["a@example.com", "b@example.com"])]
+    digests = build_digests(result(alerts), ["o@example.com"], BASE)
+    log = LocalDeliveryLog(tmp_path)
+    ses = _Ses(reject={"a@example.com"})
+    sent, failed = send_digests(digests, "sender@example.com", ses, log, RUN)
+    assert sent == 1 and list(failed) == ["a@example.com"]
+    assert failed["a@example.com"].startswith("RuntimeError: MessageRejected")
+    assert [c["Destination"]["ToAddresses"][0] for c in ses.calls] == ["b@example.com"]
+    assert log.was_sent(RUN, "b@example.com") and not log.was_sent(RUN, "a@example.com")
+    # retry: SES accepts a@ now; b@ is skipped, not resent
+    ses = _Ses()
+    assert send_digests(digests, "sender@example.com", ses, log, RUN) == (1, {})
+    assert [c["Destination"]["ToAddresses"][0] for c in ses.calls] == ["a@example.com"]
+    # a different run is a different marker
+    ses = _Ses()
+    assert send_digests(digests, "sender@example.com", ses, log, "raw/ikea/z.json.gz")[0] == 2
+
+
+def test_marker_key_hides_addresses() -> None:
+    key = marker_key("raw/ikea/2026-09-07/130100-abcd.json.gz", "Someone@Example.com")
+    assert key.startswith("sent/ikea/2026-09-07/130100-abcd/") and "example" not in key
+    assert key == marker_key("raw/ikea/2026-09-07/130100-abcd.json.gz", "someone@example.com")
+
+
+def test_run_notify_reports_failures_to_alarms_topic(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    published: list[dict] = []
+
+    class _Sns:
+        def publish(self, **kw: object) -> None:
+            published.append(kw)
+
+    monkeypatch.setattr("boto3.client", lambda name, **_: _Sns() if name == "sns" else None)
+    monkeypatch.setattr(
+        "pricepulse.services.notify.ses_client", lambda _s: _Ses(reject={"a@example.com"})
+    )
+    alerts = [alert("watch_hit", "BILLY", "30.0", emails=["a@example.com", "b@example.com"])]
+    settings = Settings(
+        ses_sender="sender@example.com",
+        alarms_topic_arn="arn:aws:sns:us-east-1:1:alarms",
+        raw_local_dir=str(tmp_path),
+    )
+    assert run_notify(result(alerts), settings) == 1
+    assert len(published) == 1 and published[0]["TopicArn"] == settings.alarms_topic_arn
+    assert "a@example.com: RuntimeError" in published[0]["Message"]
+    assert "raw/ikea/x.json.gz" in published[0]["Message"]
+    # Without a topic (local) the failure is loud instead.
+    with pytest.raises(RuntimeError, match="1 digest"):
+        run_notify(
+            result(alerts), Settings(ses_sender="sender@example.com", raw_local_dir=str(tmp_path))
+        )
 
 
 @mock_aws
 def test_notify_handler(monkeypatch: pytest.MonkeyPatch) -> None:
     ses = boto3.client("sesv2", region_name="us-east-1")
     ses.create_email_identity(EmailIdentity="sender@example.com")
+    boto3.client("s3", region_name="us-east-1").create_bucket(Bucket="pricepulse-test-raw")
     alerts = [
         alert("new_deal", "KALLAX", "40.0"),
         alert("watch_hit", "BILLY", "30.0", emails=["w@example.com"]),
@@ -129,8 +207,15 @@ def test_notify_handler(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SES_SENDER", "sender@example.com")
     monkeypatch.setenv("ALERT_RECIPIENTS", "o@example.com")
     monkeypatch.setenv("AWS_REGION", "us-east-1")
+    monkeypatch.setenv("RAW_BUCKET", "pricepulse-test-raw")
     event = {"responsePayload": result(alerts).to_dict()}
     assert notify.handler(event, _Ctx()) == {"sent": 2}
+    # Lambda re-delivers the same payload: both recipients carry S3 markers, nothing resent.
+    assert notify.handler(event, _Ctx()) == {"sent": 0}
+    keys = boto3.client("s3", region_name="us-east-1").list_objects_v2(
+        Bucket="pricepulse-test-raw", Prefix="sent/"
+    )["Contents"]
+    assert len(keys) == 2 and all(k["Key"].startswith("sent/ikea/x/") for k in keys)
     skipped = {"responsePayload": result([], skipped=True).to_dict()}
     assert notify.handler(skipped, _Ctx()) == {"sent": 0}
 

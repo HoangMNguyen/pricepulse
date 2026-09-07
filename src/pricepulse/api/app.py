@@ -18,13 +18,13 @@ from pricepulse.api.routes import dashboard, products, system, watches
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 STATIC_DIR = Path(__file__).parent / "static"
-STATIC_FILES = ("app.css", "app.js")
+STATIC_FILES = ("app.css", "app.js", "docs.js")
 
 # CloudFront honours s-maxage; the daily pipeline invalidates after each run.
 CACHEABLE = "public, max-age=300, s-maxage=86400"
 NO_STORE = "no-store"
 CACHEABLE_EXACT = frozenset(
-    {"/", "/v1/deals", "/v1/categories", "/v1/stats", "/robots.txt", "/sitemap.xml"}
+    {"/", "/docs", "/v1/deals", "/v1/categories", "/v1/stats", "/robots.txt", "/sitemap.xml"}
 )
 CACHEABLE_PREFIXES = ("/products/", "/partials/", "/v1/products/", "/static/")
 
@@ -73,6 +73,9 @@ def create_app() -> FastAPI:
         title="PricePulse",
         version=pricepulse.__version__,
         description="IKEA US + UNIQLO US price history, sale detection, and alerts.",
+        # The built-in pages bootstrap from inline scripts the CSP blocks; dashboard serves /docs.
+        docs_url=None,
+        redoc_url=None,
     )
     templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
     templates.env.globals["qs"] = dashboard.qs

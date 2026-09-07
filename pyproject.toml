@@ -34,6 +34,7 @@ dev = [
     "ruff",
     "pre-commit",
     "uvicorn",
+    "awscrt",  # boto3 reads `aws login` sessions only with the CRT provider (operator CLI runs)
 ]
 infra = ["checkov"]
 

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}API docs · PricePulse{% endblock %}
+{% block description %}OpenAPI reference for the PricePulse JSON API.{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="{{ cdn.swagger_css[0] }}" integrity="{{ cdn.swagger_css[1] }}" crossorigin="anonymous">
+  <script src="{{ cdn.swagger_js[0] }}" integrity="{{ cdn.swagger_js[1] }}" crossorigin="anonymous" defer></script>
+  <script src="/static/docs.js?v={{ asset_v }}" defer></script>
+{% endblock %}
+{% block content %}
+<div id="swagger-ui"></div>
+{% endblock %}

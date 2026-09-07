@@ -26,6 +26,17 @@
   <header><h2>Unsubscribed</h2></header>
   <p><strong>{{ watch.email }}</strong> will no longer receive alerts for
     <a href="/products/{{ watch.product_id }}">{{ watch.product_name }}</a>.</p>
+  {% elif state == "unsubscribe_all_prompt" %}
+  <header><h2>Unsubscribe from all alerts</h2></header>
+  <form method="post" action="/watches/unsubscribe-all/{{ token }}">
+    <p>Stop every PricePulse alert for <strong>{{ watch.email }}</strong>{% if watch.watch_count > 1 %}
+      ({{ watch.watch_count }} watched products){% endif %}.</p>
+    <button type="submit" class="secondary">Unsubscribe from all</button>
+  </form>
+  {% elif state == "unsubscribed_all" %}
+  <header><h2>Unsubscribed</h2></header>
+  <p><strong>{{ watch.email }}</strong> will no longer receive any PricePulse alerts
+    ({{ watch.watch_count }} watch{{ 'es' if watch.watch_count != 1 }} removed).</p>
   {% else %}
   <header><h2>Link not found</h2></header>
   <p>This confirmation or unsubscribe link is unknown or was already used.</p>

@@ -1,6 +1,9 @@
 """The production DB-role contract: app_rw (DML only) must be able to run a full ingestion,
 including partition creation and the materialized-view refresh, via the SECURITY DEFINER helpers.
-Grants mirror scripts/bootstrap_db.sh; the migrator here is the test DB owner."""
+
+Production order is mirrored: scripts/bootstrap_db.sh (role + default privileges) runs before
+`alembic upgrade head`, so the EXECUTE / matview SELECT grants must come from the migrations'
+conditional GRANT blocks — nothing here grants them. The migrator is the test DB owner."""
 
 from __future__ import annotations
 
@@ -8,6 +11,8 @@ import json
 from pathlib import Path
 
 import pytest
+from alembic import command
+from alembic.config import Config
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.engine import make_url
 
@@ -17,26 +22,40 @@ from pricepulse.storage.raw import LocalRawStore
 
 pytestmark = pytest.mark.integration
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
+ROOT = FIXTURES.parents[1]
 
-BOOTSTRAP_GRANTS = [
+# Exactly what scripts/bootstrap_db.sh does (the default privileges there are FOR ROLE
+# app_migrator; here the migrator is the connected user, so no FOR ROLE).
+BOOTSTRAP_SQL = [
+    "CREATE EXTENSION IF NOT EXISTS pg_trgm",
+    "GRANT CONNECT ON DATABASE {db} TO app_rw",
     "GRANT USAGE ON SCHEMA public TO app_rw",
-    "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_rw",
-    "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_rw",
-    "GRANT EXECUTE ON FUNCTION ensure_price_partition(TIMESTAMPTZ) TO app_rw",
-    "GRANT EXECUTE ON FUNCTION refresh_price_summary() TO app_rw",
-    "GRANT EXECUTE ON FUNCTION prune_price_partitions(INT) TO app_rw",
-    "GRANT SELECT ON product_price_summary TO app_rw",
+    "ALTER DEFAULT PRIVILEGES IN SCHEMA public "
+    "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_rw",
+    "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO app_rw",
 ]
 
 
-@pytest.fixture
-def app_rw_engine(conn: Engine, test_db_url: str) -> Engine:
-    with conn.begin() as c:
+@pytest.fixture(scope="module")
+def _bootstrapped_schema(db_engine: Engine, test_db_url: str) -> None:
+    """Role + bootstrap grants first, then a fresh migration run on top (conftest's db_engine
+    migrated before the role existed, so its conditional GRANTs were skipped)."""
+    db = make_url(test_db_url).database
+    with db_engine.begin() as c:
         exists = c.execute(text("SELECT 1 FROM pg_roles WHERE rolname = 'app_rw'")).scalar()
         if not exists:
             c.execute(text("CREATE ROLE app_rw LOGIN PASSWORD 'app_rw'"))
-        for grant in BOOTSTRAP_GRANTS:
-            c.execute(text(grant))
+        for stmt in BOOTSTRAP_SQL:
+            c.execute(text(stmt.format(db=f'"{db}"')))
+    cfg = Config(str(ROOT / "alembic.ini"))
+    with db_engine.begin() as c:
+        cfg.attributes["connection"] = c
+        command.downgrade(cfg, "base")
+        command.upgrade(cfg, "head")
+
+
+@pytest.fixture
+def app_rw_engine(_bootstrapped_schema: None, conn: Engine, test_db_url: str) -> Engine:
     url = make_url(test_db_url).set(username="app_rw", password="app_rw")
     engine = create_engine(url)
     yield engine

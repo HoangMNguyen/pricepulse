@@ -10,6 +10,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from pricepulse.config import Settings
 from pricepulse.services.digest import Digest
+from pricepulse.storage.delivery import DeliveryLog
 from pricepulse.storage.outbox import Outbox
 
 log = logging.getLogger(__name__)
@@ -33,6 +34,10 @@ def render_text(digest: Digest) -> str:
 
 def unsubscribe_url(base_url: str, token: str) -> str:
     return f"{base_url}/watches/unsubscribe/{token}"
+
+
+def unsubscribe_all_url(base_url: str, token: str) -> str:
+    return f"{base_url}/watches/unsubscribe-all/{token}"
 
 
 def render_confirm(message: dict[str, Any], base_url: str) -> tuple[str, str, str, str]:
@@ -82,27 +87,44 @@ def send_email(
     )
 
 
-def send_digests(digests: dict[str, Digest], sender: str, ses: Any) -> int:
+def send_digests(
+    digests: dict[str, Digest], sender: str, ses: Any, delivery: DeliveryLog, run_key: str
+) -> tuple[int, dict[str, str]]:
+    """Send every digest, one SES call per recipient; returns (sent, {recipient: error}).
+    Recipients already marked in `delivery` for this run are skipped, so a re-invocation
+    (Lambda retry after a crash, manual re-run) never resends what SES accepted. A failure
+    never raises: raising would retry the batch. The caller reports the failures instead."""
     sent = 0
+    failed: dict[str, str] = {}
     for to, digest in digests.items():
-        # Every digest that contains a watch hit gets the recipient's unsubscribe header.
+        if delivery.was_sent(run_key, to):
+            log.info("digest to %s already sent for %s", to, run_key)
+            continue
+        # The header targets every watch of the address (RFC 8058 clients present it as
+        # "unsubscribe from this sender"); per-product links in the body stay per-watch.
         unsubscribe = (
-            unsubscribe_url(digest.base_url, digest.watch_hits[0].watch_tokens[to])
+            unsubscribe_all_url(digest.base_url, digest.watch_hits[0].watch_tokens[to])
             if digest.watch_hits
             else None
         )
-        send_email(
-            to,
-            digest.subject,
-            render_html(digest),
-            render_text(digest),
-            sender,
-            unsubscribe,
-            ses=ses,
-        )
+        try:
+            send_email(
+                to,
+                digest.subject,
+                render_html(digest),
+                render_text(digest),
+                sender,
+                unsubscribe,
+                ses=ses,
+            )
+        except Exception as exc:  # noqa: BLE001 - one recipient must not block the others
+            failed[to] = f"{type(exc).__name__}: {exc}"
+            log.exception("digest to %s failed", to)
+            continue
+        delivery.mark_sent(run_key, to)
         sent += 1
         log.info("sent digest to %s: %s", to, digest.subject)
-    return sent
+    return sent, failed
 
 
 def send_outbox_message(outbox: Outbox, key: str, settings: Settings, ses: Any) -> str:

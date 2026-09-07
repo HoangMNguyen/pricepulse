@@ -1,7 +1,7 @@
 """SQLAlchemy engine factory.
 
 Locally: `DATABASE_URL` with a pooled engine. On AWS: the URL (with credentials) lives in an SSM
-SecureString parameter named by `DATABASE_URL_SSM`, fetched once per cold start; `NullPool`
+SecureString parameter named by `DATABASE_URL_SSM`, fetched when the engine is created; `NullPool`
 because a Lambda invocation holds at most one connection.
 """
 
@@ -30,10 +30,12 @@ def resolve_database_url(settings: Settings) -> str:
 def make_engine(settings: Settings) -> Engine:
     url = resolve_database_url(settings)
     # `local`/`test` are long-lived processes; every other stage is Lambda, one connection
-    # per invocation.
+    # per invocation. `stop_after_delay` cannot interrupt one attempt, so bound it in libpq.
     if settings.pricepulse_env in ("local", "test"):
         return create_engine(url, pool_pre_ping=True)
-    return create_engine(url, pool_pre_ping=True, poolclass=NullPool)
+    return create_engine(
+        url, pool_pre_ping=True, poolclass=NullPool, connect_args={"connect_timeout": 10}
+    )
 
 
 def wait_for_db(engine: Engine, max_wait_s: int) -> None:
@@ -49,10 +51,15 @@ def wait_for_db(engine: Engine, max_wait_s: int) -> None:
 
 
 def get_engine() -> Engine:
-    """Process-wide singleton so warm Lambda containers reuse the engine."""
+    """Process-wide singleton so warm Lambda containers reuse the engine. A failed wait drops
+    it so the next invocation re-resolves the URL (the SSM value changes on password rotation)."""
     global _engine  # noqa: PLW0603
     if _engine is None:
         settings = get_settings()
         _engine = make_engine(settings)
-        wait_for_db(_engine, settings.db_connect_wait_s)
+        try:
+            wait_for_db(_engine, settings.db_connect_wait_s)
+        except Exception:
+            _engine = None
+            raise
     return _engine

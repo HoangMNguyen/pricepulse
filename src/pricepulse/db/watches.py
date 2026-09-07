@@ -24,10 +24,12 @@ class WatchView:
     email: str
     min_discount_pct: Decimal
     product_name: str
+    watch_count: int  # every watch of the address, including this one (unsubscribe-all pages)
 
 
 _VIEW_SELECT = """
-    SELECT w.product_id, w.email, w.min_discount_pct, p.name AS product_name
+    SELECT w.product_id, w.email, w.min_discount_pct, p.name AS product_name,
+           (SELECT count(*) FROM watch x WHERE x.email = w.email) AS watch_count
     FROM w JOIN product p ON p.id = w.product_id
 """
 
@@ -35,7 +37,13 @@ _VIEW_SELECT = """
 def _view(row: Any) -> WatchView | None:
     if row is None:
         return None
-    return WatchView(int(row.product_id), row.email, row.min_discount_pct, row.product_name)
+    return WatchView(
+        int(row.product_id),
+        row.email,
+        row.min_discount_pct,
+        row.product_name,
+        int(row.watch_count),
+    )
 
 
 def watches_for(conn: Connection, product_ids: Iterable[int]) -> dict[int, list[WatchRow]]:
@@ -63,6 +71,12 @@ def product_for_watch(conn: Connection, product_id: int) -> tuple[str, str] | No
     return None if row is None else (row.name, row.url)
 
 
+def lock_requests(conn: Connection) -> None:
+    """Serialize watch requests for the rest of the transaction so count-then-insert quotas
+    cannot be raced past. One global lock: a handful of requests a day, nothing to shard."""
+    conn.execute(text("SELECT pg_advisory_xact_lock(hashtext('watch_request'))"))
+
+
 def pending_count(conn: Connection, email: str) -> int:
     return int(
         conn.execute(
@@ -72,18 +86,73 @@ def pending_count(conn: Connection, email: str) -> int:
     )
 
 
+def confirmations_last_hour(conn: Connection, client_hash: str | None = None) -> int:
+    """Confirmation mails queued in the last hour: across every address (the global budget),
+    or for one client when `client_hash` is given."""
+    return int(
+        conn.execute(
+            text(
+                """
+                SELECT count(*) FROM watch
+                WHERE confirmation_sent_at > now() - INTERVAL '1 hour'
+                  AND (CAST(:client AS text) IS NULL OR client_hash = :client)
+                """
+            ),
+            {"client": client_hash},
+        ).scalar_one()
+    )
+
+
 def insert(
-    conn: Connection, product_id: int, email: str, min_discount_pct: Decimal, token: str
+    conn: Connection,
+    product_id: int,
+    email: str,
+    min_discount_pct: Decimal,
+    token: str,
+    client_hash: str | None,
 ) -> None:
     """Unconfirmed watch; lets IntegrityError (one watch per product and email) propagate."""
     conn.execute(
         text(
             """
-            INSERT INTO watch (product_id, email, min_discount_pct, token, confirmation_sent_at)
-            VALUES (:product_id, :email, :pct, :token, now())
+            INSERT INTO watch (product_id, email, min_discount_pct, token, confirmation_sent_at,
+                               client_hash)
+            VALUES (:product_id, :email, :pct, :token, now(), :client)
             """
         ),
-        {"product_id": product_id, "email": email, "pct": min_discount_pct, "token": token},
+        {
+            "product_id": product_id,
+            "email": email,
+            "pct": min_discount_pct,
+            "token": token,
+            "client": client_hash,
+        },
+    )
+
+
+def pending_token(conn: Connection, product_id: int, email: str) -> tuple[str, bool] | None:
+    """(token, resend_allowed) of an existing unconfirmed watch for (product, email), or None
+    when there is no watch or it is already confirmed. A resend is allowed once the previous
+    confirmation mail is older than 10 minutes."""
+    row = conn.execute(
+        text(
+            """
+            SELECT token, confirmation_sent_at < now() - INTERVAL '10 minutes' AS resend_ok
+            FROM watch WHERE product_id = :pid AND email = :email AND confirmed_at IS NULL
+            """
+        ),
+        {"pid": product_id, "email": email},
+    ).first()
+    return None if row is None else (row.token, bool(row.resend_ok))
+
+
+def touch_confirmation(conn: Connection, token: str, client_hash: str | None) -> None:
+    """A confirmation mail is being re-queued for this watch: counts against the budgets."""
+    conn.execute(
+        text(
+            "UPDATE watch SET confirmation_sent_at = now(), client_hash = :client WHERE token = :t"
+        ),
+        {"t": token, "client": client_hash},
     )
 
 
@@ -101,7 +170,7 @@ def confirm(conn: Connection, token: str) -> WatchView | None:
         text(
             f"""
             WITH w AS (
-              UPDATE watch SET confirmed_at = COALESCE(confirmed_at, now())
+              UPDATE watch SET confirmed_at = COALESCE(confirmed_at, now()), client_hash = NULL
               WHERE token = :t RETURNING product_id, email, min_discount_pct
             ) {_VIEW_SELECT}
             """  # noqa: S608 - constant fragment
@@ -119,6 +188,27 @@ def delete_by_token(conn: Connection, token: str) -> WatchView | None:
               DELETE FROM watch WHERE token = :t RETURNING product_id, email, min_discount_pct
             ) {_VIEW_SELECT}
             """  # noqa: S608 - constant fragment
+        ),
+        {"t": token},
+    ).first()
+    return _view(row)
+
+
+def delete_all_for_token(conn: Connection, token: str) -> WatchView | None:
+    """Delete every watch of the address owning `token`; the view reports how many went."""
+    row = conn.execute(
+        text(
+            """
+            WITH w AS (
+              DELETE FROM watch
+              WHERE email = (SELECT email FROM watch WHERE token = :t)
+              RETURNING product_id, email, min_discount_pct, token
+            )
+            SELECT w.product_id, w.email, w.min_discount_pct, p.name AS product_name,
+                   (SELECT count(*) FROM w) AS watch_count
+            FROM w JOIN product p ON p.id = w.product_id
+            WHERE w.token = :t
+            """
         ),
         {"t": token},
     ).first()

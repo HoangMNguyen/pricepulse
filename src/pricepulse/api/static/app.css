@@ -263,10 +263,16 @@ article > header h2 { margin: 0; font-size: 1.2rem; }
 .sizes { display: flex; flex-wrap: wrap; gap: .3rem; margin: 0; padding: 0; list-style: none; }
 .sizes .chip { height: 28px; min-width: 2.2rem; justify-content: center; padding: 0 .5rem; font-family: var(--mono); font-size: .78rem; cursor: default; user-select: text; }
 .sizes .chip.out { opacity: .45; text-decoration: line-through; }
+#buy-colour.out { opacity: .45; text-decoration: line-through; }
 .chart-wrap { position: relative; height: 240px; margin-top: 1.25rem; }
 .watch-card .toolbar { margin: 0 0 .6rem; padding: 0; border: 0; background: transparent; }
 .watch-result { margin: 0 0 .4rem; font-size: .9rem; min-height: 1.2em; }
 .fine { margin: 0; font-size: .78rem; color: var(--tn-fg-dark); }
+
+/* ---- /docs ---- */
+/* Swagger UI's greys assume a white page; give it one instead of re-theming it. */
+#swagger-ui { margin-top: 1rem; padding: 0 1rem 1rem; border-radius: .5rem; background: #fff; color-scheme: light; }
+#swagger-ui :is(th, td) { background: transparent; color: inherit; }
 
 /* ---- narrow screens ---- */
 @media (max-width: 720px) {

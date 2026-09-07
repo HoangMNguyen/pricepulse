@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from sqlalchemy import Engine, text
 from pricepulse.config import Settings
 from pricepulse.db import repo
 from pricepulse.services.ingest import run_process
+from pricepulse.sources import SourceError
 from pricepulse.storage.raw import LocalRawStore
 
 pytestmark = pytest.mark.integration
@@ -122,8 +124,8 @@ def test_failed_run_can_be_retried(conn: Engine, settings: Settings) -> None:
     with conn.begin() as c:
         c.execute(
             text(
-                "INSERT INTO ingestion_run (source_id, raw_object_key, status, error) "
-                "VALUES (1, :k, 'failed', 'boom')"
+                "INSERT INTO ingestion_run (source_id, raw_object_key, status, observed_at, "
+                "error) VALUES (1, :k, 'failed', now(), 'boom')"
             ),
             {"k": key},
         )
@@ -132,6 +134,71 @@ def test_failed_run_can_be_retried(conn: Engine, settings: Settings) -> None:
     with conn.connect() as c:
         row = c.execute(text("SELECT status, error FROM ingestion_run")).one()
         assert (row.status, row.error) == ("succeeded", None)
+
+
+def test_running_claim_is_reclaimed_only_after_the_lease(conn: Engine, settings: Settings) -> None:
+    """A worker that died mid-run (Lambda timeout) leaves the row `running`. Inside the lease a
+    retry must not report success for work nobody did; after it, the retry takes over."""
+    key = store(settings).put("raw/ikea/2026-09-04/l.json.gz", ikea_raw())
+    with conn.begin() as c:
+        c.execute(
+            text(
+                "INSERT INTO ingestion_run (source_id, raw_object_key, status, observed_at, "
+                "started_at) VALUES (1, :k, 'running', now(), now() - INTERVAL '5 minutes')"
+            ),
+            {"k": key},
+        )
+    with pytest.raises(repo.RunInProgressError):
+        run_process(key, settings.model_copy(update={"run_lease_s": 600}), conn)
+    result = run_process(key, settings.model_copy(update={"run_lease_s": 60}), conn)
+    assert result.skipped is False and result.products_seen == 5
+    with conn.connect() as c:
+        assert c.execute(text("SELECT status FROM ingestion_run")).scalar_one() == "succeeded"
+
+
+def test_older_payload_processed_later_does_not_hide_the_catalog(
+    conn: Engine, settings: Settings
+) -> None:
+    """Chronology comes from the payload, not from processing order: replaying an older raw
+    object after a newer one neither un-currents the catalog nor overwrites product state."""
+    s = store(settings)
+    newer = ikea_raw("2026-09-05T13:00:00+00:00")
+    older = ikea_raw("2026-09-04T13:00:00+00:00")
+    for req in older["requests"]:
+        for item in req["body"]["searchResultPage"]["products"]["main"]["items"]:
+            item["product"]["name"] = "OLD " + item["product"]["name"]
+    run_process(s.put("raw/ikea/2026-09-05/n.json.gz", newer), settings, conn)
+    run_process(s.put("raw/ikea/2026-09-04/o.json.gz", older), settings, conn)
+    with conn.connect() as c:
+        current = c.execute(
+            text("SELECT count(*) FROM product_price_summary WHERE is_current")
+        ).scalar_one()
+        assert current == 5
+        assert c.execute(text("SELECT count(*) FROM product WHERE name LIKE 'OLD %'")).scalar() == 0
+        seen = c.execute(text("SELECT DISTINCT last_seen_at FROM product")).scalars().all()
+        assert seen == [datetime.fromisoformat("2026-09-05T13:00:00+00:00")]
+
+
+def test_short_catalog_fails_before_publishing(conn: Engine, settings: Settings) -> None:
+    """Below MIN_PRODUCTS the payload is treated as a broken response: the run fails, nothing
+    is written, and the previous run's products stay current."""
+    s = store(settings)
+    run_process(s.put("raw/ikea/2026-09-04/p.json.gz", ikea_raw()), settings, conn)
+    short = ikea_raw("2026-09-05T13:00:00+00:00")
+    short["requests"][0]["body"]["searchResultPage"]["products"]["main"]["items"] = []
+    key = s.put("raw/ikea/2026-09-05/q.json.gz", short)
+    with pytest.raises(SourceError, match="MIN_PRODUCTS=1"):
+        run_process(key, settings.model_copy(update={"min_products": {"ikea": 1}}), conn)
+    with conn.connect() as c:
+        status = c.execute(
+            text("SELECT status FROM ingestion_run WHERE raw_object_key = :k"), {"k": key}
+        ).scalar_one()
+        assert status == "failed"
+        assert c.execute(text("SELECT count(*) FROM price_observation")).scalar() == 5
+        current = c.execute(
+            text("SELECT count(*) FROM product_price_summary WHERE is_current")
+        ).scalar_one()
+        assert current == 5
 
 
 def test_post_processing_failure_is_retryable_with_alerts(

@@ -50,14 +50,15 @@ def seed(engine: Engine, n: int = 12) -> None:
     with engine.begin() as c:
         run_id = c.execute(
             text(
-                "INSERT INTO ingestion_run (source_id, raw_object_key, status, finished_at) "
-                "VALUES (1, 'raw/seed', 'succeeded', now()) RETURNING id"
+                "INSERT INTO ingestion_run (source_id, raw_object_key, status, observed_at, "
+                "finished_at) VALUES (1, 'raw/seed', 'succeeded', now(), now()) RETURNING id"
             )
         ).scalar()
         uniqlo_run_id = c.execute(
             text(
-                "INSERT INTO ingestion_run (source_id, raw_object_key, status, finished_at) "
-                "VALUES (2, 'raw/seed-uniqlo', 'succeeded', now()) RETURNING id"
+                "INSERT INTO ingestion_run (source_id, raw_object_key, status, observed_at, "
+                "finished_at) VALUES (2, 'raw/seed-uniqlo', 'succeeded', now(), now()) "
+                "RETURNING id"
             )
         ).scalar()
         c.execute(text("SELECT ensure_price_partition(now())"))

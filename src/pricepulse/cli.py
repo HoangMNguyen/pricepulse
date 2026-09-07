@@ -97,6 +97,36 @@ def migrate() -> None:
 
 
 @app.command()
+def backup_watches() -> None:
+    """Dump every watch to the raw store (what the backup Lambda does daily); prints the key."""
+    from pricepulse.config import get_settings
+    from pricepulse.db.engine import get_engine
+    from pricepulse.services.backup import backup_watches as run_backup
+
+    key, watches = run_backup(get_settings(), get_engine())
+    typer.echo(key)
+    logging.getLogger(__name__).info("%d watch(es) backed up", watches)
+
+
+@app.command()
+def restore_watches(
+    key: str = typer.Option(..., help="backup key, e.g. backup/watch/2026-09-07/140000.json.gz"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="count what would be restored"),
+) -> None:
+    """Re-insert watches from a backup; existing (product, email) rows are left untouched.
+    Prints the RestoreResult as JSON."""
+    from pricepulse.config import get_settings
+    from pricepulse.db.engine import get_engine
+    from pricepulse.services.backup import restore_watches as run_restore
+    from pricepulse.storage.raw import make_raw_store
+
+    payload = make_raw_store(get_settings()).get(key)
+    with get_engine().begin() as conn:
+        result = run_restore(conn, payload, dry_run=dry_run)
+    typer.echo(json.dumps(result.to_dict(), indent=2))
+
+
+@app.command()
 def serve(port: int = 8000) -> None:
     """Run the API + dashboard with uvicorn (dev only)."""
     import uvicorn

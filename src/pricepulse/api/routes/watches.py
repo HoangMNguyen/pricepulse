@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
 from pricepulse.api import deps
 from pricepulse.api.deps import ReadConn, WriteConn, require_api_key
@@ -10,6 +10,7 @@ from pricepulse.services.watches import (
     AlreadyWatchingError,
     ProductNotFoundError,
     TooManyPendingError,
+    TooManyRequestsError,
     request_watch,
 )
 from pricepulse.storage.outbox import make_outbox
@@ -18,8 +19,9 @@ router = APIRouter(prefix="/v1/watches")
 
 
 @router.post("", response_model=WatchPendingOut, status_code=status.HTTP_202_ACCEPTED)
-def create_watch(body: WatchIn, conn: WriteConn) -> dict:
-    """Public. Creates an unconfirmed watch and queues a confirmation email."""
+def create_watch(body: WatchIn, conn: WriteConn, request: Request) -> dict:
+    """Public. Creates an unconfirmed watch and queues a confirmation email. A pending
+    duplicate re-queues its confirmation instead of failing."""
     try:
         request_watch(
             conn,
@@ -27,11 +29,14 @@ def create_watch(body: WatchIn, conn: WriteConn) -> dict:
             body.product_id,
             body.email,
             body.min_discount_pct,
+            client=deps.client_ip(request),
         )
     except ProductNotFoundError as exc:
         raise HTTPException(404, "product not found") from exc
     except TooManyPendingError as exc:
         raise HTTPException(429, "too many unconfirmed watches for this email") from exc
+    except TooManyRequestsError as exc:
+        raise HTTPException(429, "too many watch requests right now, try again later") from exc
     except AlreadyWatchingError as exc:
         raise HTTPException(
             409, "already watching this product (check your inbox if you have not confirmed)"

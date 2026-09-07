@@ -105,7 +105,12 @@ if (page) {
         if (inStock) { n++; c.removeAttribute('aria-disabled'); c.removeAttribute('title'); }
         else { c.setAttribute('aria-disabled', 'true'); c.title = 'Sold out'; }
       });
-      name.textContent = chips.length ? `${b.title} · ${n} of ${chips.length} sizes` : b.title;
+      // Only per-SKU stock can say a colour is sold out; without it the link stays live.
+      const soldOut = sizes !== null && chips.length > 0 && n === 0;
+      buy.classList.toggle('out', soldOut);
+      if (soldOut) buy.setAttribute('aria-disabled', 'true'); else buy.removeAttribute('aria-disabled');
+      const stock = soldOut ? 'sold out' : `${n} of ${chips.length} sizes`;
+      name.textContent = chips.length ? `${b.title} · ${stock}` : b.title;
     }
     document.getElementById('swatches').addEventListener('click', e => {
       const b = e.target.closest('.swatch');

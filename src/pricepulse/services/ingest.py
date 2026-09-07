@@ -4,6 +4,12 @@
 and a failed run (including a failed summary refresh) can be retried; alerts are recomputed
 against observations older than the payload, so a retry yields the same alerts.
 Alert classification happens here, in Python, against the previous observation per product.
+
+Pricing vocabulary (kept apart on purpose):
+- retailer discount: `price` vs the retailer's own `list_price` (drives `new_deal`);
+- drop: `price` fell below the previous observation, measured against the peak price of the
+  preceding PEAK_WINDOW_DAYS (drives `price_drop` and `watch_hit`, what the product page
+  promises as "drops by at least").
 """
 
 from __future__ import annotations
@@ -22,7 +28,7 @@ from pricepulse.db.engine import get_engine
 from pricepulse.db.watches import WatchRow, watches_for
 from pricepulse.domain.models import ProductSnapshot
 from pricepulse.domain.pricing import discount_pct
-from pricepulse.sources import get_source
+from pricepulse.sources import SourceError, get_source
 from pricepulse.sources.http import make_client
 from pricepulse.storage.raw import make_key, make_raw_store
 
@@ -124,30 +130,34 @@ def classify_alerts(
                     AlertOut(kind="new_deal", old_price=snap.list_price, discount_pct=pct, **common)
                 )
             continue
-        reference = snap.list_price or before.price
+        # A drop is an event (the price went down since last time); its size is measured from
+        # the recent peak, so a $100 -> $80 -> $79 sequence reports 21%, not 1.25%. The list
+        # price never enters here: a 1% dip on a listed-at-$100 item is not a 21% drop.
         dropped = snap.price < before.price
-        pct = discount_pct(snap.price, reference) if dropped else Decimal("0.0")
-        if dropped and pct >= threshold:
+        drop_pct = discount_pct(snap.price, before.peak_price) if dropped else Decimal("0.0")
+        if dropped and drop_pct >= threshold:
             alerts.append(
-                AlertOut(kind="price_drop", old_price=before.price, discount_pct=pct, **common)
+                AlertOut(
+                    kind="price_drop", old_price=before.peak_price, discount_pct=drop_pct, **common
+                )
             )
         if not before.retailer_sale_flag and snap.retailer_sale_flag:
             alerts.append(
                 AlertOut(
                     kind="retailer_flag",
                     old_price=before.price,
-                    discount_pct=discount_pct(snap.price, reference),
+                    discount_pct=discount_pct(snap.price, snap.list_price or before.peak_price),
                     **common,
                 )
             )
         if dropped:
-            hits = [w for w in watches.get(pid, []) if pct >= w.min_discount_pct]
+            hits = [w for w in watches.get(pid, []) if drop_pct >= w.min_discount_pct]
             if hits:
                 alerts.append(
                     AlertOut(
                         kind="watch_hit",
-                        old_price=before.price,
-                        discount_pct=pct,
+                        old_price=before.peak_price,
+                        discount_pct=drop_pct,
                         emails=[w.email for w in hits],
                         watch_tokens={w.email: w.token for w in hits},
                         **common,
@@ -168,7 +178,7 @@ def run_process(
 
     with engine.begin() as conn:
         source_id = repo.ensure_source(conn, source.code, source.name, source.base_url)
-        run_id = repo.claim_run(conn, source_id, key)
+        run_id = repo.claim_run(conn, source_id, key, observed_at, settings.run_lease_s)
     if run_id is None:
         log.info("skip %s: already processed", key)
         return ProcessResult(None, source_code, key, 0, 0, [], skipped=True)
@@ -178,9 +188,14 @@ def run_process(
     # than this payload, so the retry returns the same alerts and the digest still goes out.
     try:
         snapshots = source.parse(raw)
+        # A short catalog is a broken response, not a small catalog: publishing it would make
+        # every product from the previous run non-current. Fail before any state changes.
+        floor = settings.min_products.get(source_code, 0)
+        if len(snapshots) < floor:
+            raise SourceError(f"{source_code}: {len(snapshots)} products < MIN_PRODUCTS={floor}")
         with engine.begin() as conn:
             repo.ensure_partition(conn, observed_at)
-            ids = repo.upsert_products(conn, source_id, snapshots)
+            ids = repo.upsert_products(conn, source_id, snapshots, observed_at)
             rows = [(ids[s.external_id], s) for s in snapshots]
             prev = repo.latest_observations(conn, ids.values(), before=observed_at)
             inserted = repo.insert_observations(conn, run_id, observed_at, rows)

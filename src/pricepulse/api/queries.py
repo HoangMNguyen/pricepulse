@@ -67,6 +67,7 @@ class DealFilters:
     min_discount: Decimal = Decimal("0")
     flagged_only: bool = False
     on_sale_only: bool = False
+    include_sold_out: bool = False  # per-SKU stock known and no size in stock -> hidden by default
     category: str | None = None
     min_price: Decimal | None = None
     max_price: Decimal | None = None
@@ -142,6 +143,14 @@ def _where(f: DealFilters, with_cursor: bool) -> tuple[list[str], dict[str, Any]
         where.append("s.retailer_sale_flag")
     if f.on_sale_only:
         where.append("(s.discount_pct > 0 OR s.retailer_sale_flag)")
+    if not f.include_sold_out:
+        # "Sold out" needs known per-SKU stock and no in-stock size; no variants, or no sizes at
+        # all, is unknown, not sold out. Containment keeps it on the same GIN index as ?size=.
+        where.append(
+            "(p.variants IS NULL OR COALESCE(jsonb_array_length(p.variants->'sizes'), 0) = 0"
+            " OR p.variants @> CAST(:any_in_stock AS jsonb))"
+        )
+        params["any_in_stock"] = json.dumps({"sizes": [{"in_stock": True}]})
     if f.category:
         where.append("s.category = :category")
         params["category"] = f.category
