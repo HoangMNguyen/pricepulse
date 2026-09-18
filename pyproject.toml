@@ -13,7 +13,7 @@ dependencies = [
     "mangum",
     "jinja2",
     "pydantic-settings",
-    "sqlalchemy>=2.0",
+    "sqlalchemy>=2.0.53",
     "psycopg[binary]",
     "alembic",
     "httpx",
