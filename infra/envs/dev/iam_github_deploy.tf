@@ -75,6 +75,10 @@ data "aws_iam_policy_document" "github_deploy_core" {
     actions = [
       "s3:CreateBucket",
       "s3:DeleteBucket",
+      # HeadBucket, the provider's existence check on every refresh, is authorized as ListBucket.
+      # Without it the read gets a 403 that the provider reports as "bucket deleted", and the
+      # plan then recreates the bucket. (A data event, so it never showed in CloudTrail history.)
+      "s3:ListBucket",
       "s3:GetBucket*",
       "s3:GetAccelerateConfiguration",
       "s3:GetEncryptionConfiguration",
