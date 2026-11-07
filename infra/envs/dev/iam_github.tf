@@ -53,10 +53,8 @@ resource "aws_iam_role" "github_deploy" {
   permissions_boundary = data.aws_iam_policy.boundary.arn
 }
 
-resource "aws_iam_role_policy_attachment" "github_poweruser" {
-  role       = aws_iam_role.github_deploy.name
-  policy_arn = "arn:aws:iam::aws:policy/PowerUserAccess"
-}
+# Non-IAM permissions: the scoped inline policies in iam_github_deploy.tf (they replaced the
+# AWS-managed PowerUserAccess attachment).
 
 # Roles are only created or granted permissions under the boundary, so a pricepulse-* role can
 # never exceed the boundary's ceiling; the Deny statements keep the deploy role from loosening
@@ -124,6 +122,8 @@ data "aws_iam_policy_document" "github_iam" {
     not_actions = ["iam:Get*", "iam:List*"]
     resources = [
       "arn:aws:iam::${local.account_id}:role/${local.name}-github-deploy",
+      # The role's own managed policies (iam_github_deploy.tf).
+      "arn:aws:iam::${local.account_id}:policy/${local.name}-github-deploy-*",
       data.aws_iam_policy.boundary.arn,
       data.aws_iam_openid_connect_provider.github.arn,
     ]

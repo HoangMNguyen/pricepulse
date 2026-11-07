@@ -37,7 +37,8 @@ data "aws_caller_identity" "current" {}
 # Ceiling for every role in the stack, the deploy role included (ADR-0006): PowerUserAccess
 # semantics plus IAM limited to pricepulse-* roles/policies. A bounded role can only create or
 # grant permissions to roles that carry this same boundary, and nothing bounded can edit the
-# boundary, the deploy role or the OIDC provider, so no chain of pricepulse-* roles escapes it.
+# boundary, the deploy role, its managed policies or the OIDC provider, so no chain of
+# pricepulse-* roles escapes it.
 # Mirrors data.aws_iam_policy_document.github_iam in infra/envs/dev/iam_github.tf: keep the two
 # in step. Bootstrap has no per-environment naming; the name is hardcoded and referenced by ARN
 # from the dev environment.
@@ -115,6 +116,8 @@ data "aws_iam_policy_document" "boundary" {
     resources = [
       local.boundary_arn,
       "arn:aws:iam::${local.account_id}:role/pricepulse-dev-github-deploy",
+      # The deploy role's managed policies (infra/envs/dev/iam_github_deploy.tf).
+      "arn:aws:iam::${local.account_id}:policy/pricepulse-dev-github-deploy-*",
       "arn:aws:iam::${local.account_id}:oidc-provider/token.actions.githubusercontent.com",
     ]
   }
