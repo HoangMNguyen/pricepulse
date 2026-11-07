@@ -1,7 +1,13 @@
-# One-time bootstrap: the S3 bucket that holds Terraform state for every environment, and the
-# permissions boundary every pricepulse role carries. Both live outside the deploy role's reach.
-# Uses local state on purpose (chicken-and-egg). Run once:
-#   terraform -chdir=infra/bootstrap init && terraform -chdir=infra/bootstrap apply
+# One-time bootstrap: the permissions boundary every pricepulse role carries. It lives outside the
+# deploy role's reach, so it is applied locally with an admin login:
+#   terraform -chdir=infra/bootstrap init -backend-config="bucket=pricepulse-tfstate-<acct>"
+#   terraform -chdir=infra/bootstrap apply
+#
+# The Terraform state bucket (pricepulse-tfstate-<acct>) and the GitHub OIDC provider are shared
+# with other projects in the account and are owned by the account foundations stack
+# (HoangMNguyen/hoangmnguyen.com, infra/account). This stack used to create the bucket and keep
+# local state for that chicken-and-egg reason; with the bucket owned elsewhere, its state now lives
+# in the bucket under bootstrap/, a key the deploy role cannot read or write.
 
 terraform {
   required_version = ">= 1.10"
@@ -10,6 +16,12 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.0"
     }
+  }
+  backend "s3" {
+    key          = "bootstrap/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true
+    encrypt      = true
   }
 }
 
@@ -21,39 +33,6 @@ provider "aws" {
 }
 
 data "aws_caller_identity" "current" {}
-
-resource "aws_s3_bucket" "tfstate" {
-  bucket = "pricepulse-tfstate-${data.aws_caller_identity.current.account_id}"
-  # checkov:skip=CKV_AWS_144: cross-region replication is unnecessary for a personal project
-  # checkov:skip=CKV_AWS_18: access logging bucket would cost more than the state it logs
-  # checkov:skip=CKV2_AWS_62: no event notifications needed for state
-  # checkov:skip=CKV_AWS_145: SSE-S3 is sufficient; no KMS key to manage
-  # checkov:skip=CKV2_AWS_61: state must be retained; no lifecycle expiry
-}
-
-resource "aws_s3_bucket_versioning" "tfstate" {
-  bucket = aws_s3_bucket.tfstate.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
-  bucket = aws_s3_bucket.tfstate.id
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-resource "aws_s3_bucket_public_access_block" "tfstate" {
-  bucket                  = aws_s3_bucket.tfstate.id
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
 
 # Ceiling for every role in the stack, the deploy role included (ADR-0006): PowerUserAccess
 # semantics plus IAM limited to pricepulse-* roles/policies. A bounded role can only create or
@@ -152,10 +131,6 @@ data "aws_iam_policy_document" "boundary" {
 resource "aws_iam_policy" "boundary" {
   name   = "pricepulse-dev-boundary"
   policy = data.aws_iam_policy_document.boundary.json
-}
-
-output "state_bucket" {
-  value = aws_s3_bucket.tfstate.bucket
 }
 
 output "permissions_boundary_arn" {

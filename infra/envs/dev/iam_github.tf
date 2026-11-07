@@ -5,11 +5,13 @@ locals {
   github_repo_name = split("/", var.github_repo)[1]
 }
 
-resource "aws_iam_openid_connect_provider" "github" {
-  url            = "https://token.actions.githubusercontent.com"
-  client_id_list = ["sts.amazonaws.com"]
-  # AWS validates GitHub's certificate chain via its own trust store; thumbprints are legacy.
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+# The account's GitHub OIDC provider is shared with other projects (hoangmnguyen.com's deploy role
+# trusts it too) and is owned by the account foundations stack (HoangMNguyen/hoangmnguyen.com,
+# infra/account). Read it, never create it: an account allows one provider per URL. Looked up by
+# ARN rather than URL because a URL lookup calls iam:ListOpenIDConnectProviders, which has no
+# resource-level permission and is outside both the deploy role's policy and the boundary.
+data "aws_iam_openid_connect_provider" "github" {
+  arn = "arn:aws:iam::${local.account_id}:oidc-provider/token.actions.githubusercontent.com"
 }
 
 data "aws_iam_policy_document" "github_assume" {
@@ -17,7 +19,7 @@ data "aws_iam_policy_document" "github_assume" {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
+      identifiers = [data.aws_iam_openid_connect_provider.github.arn]
     }
     condition {
       test     = "StringEquals"
@@ -108,7 +110,7 @@ data "aws_iam_policy_document" "github_iam" {
   statement {
     sid       = "ReadOidcProvider"
     actions   = ["iam:GetOpenIDConnectProvider"]
-    resources = [aws_iam_openid_connect_provider.github.arn]
+    resources = [data.aws_iam_openid_connect_provider.github.arn]
   }
   statement {
     sid       = "KeepBoundaries"
@@ -123,7 +125,7 @@ data "aws_iam_policy_document" "github_iam" {
     resources = [
       "arn:aws:iam::${local.account_id}:role/${local.name}-github-deploy",
       data.aws_iam_policy.boundary.arn,
-      aws_iam_openid_connect_provider.github.arn,
+      data.aws_iam_openid_connect_provider.github.arn,
     ]
   }
   # checkov:skip=CKV_AWS_109: writes are constrained to pricepulse-* roles/policies under the boundary (ADR-0006)

@@ -46,26 +46,5 @@ resource "aws_cloudwatch_metric_alarm" "low_products" {
   alarm_actions       = [aws_sns_topic.alarms.arn]
 }
 
-resource "aws_budgets_budget" "monthly" {
-  name         = "${local.name}-monthly"
-  budget_type  = "COST"
-  limit_amount = "5"
-  limit_unit   = "USD"
-  time_unit    = "MONTHLY"
-
-  notification {
-    comparison_operator        = "GREATER_THAN"
-    threshold                  = 80
-    threshold_type             = "PERCENTAGE"
-    notification_type          = "ACTUAL"
-    subscriber_email_addresses = [var.alert_recipients[0]]
-  }
-
-  notification {
-    comparison_operator        = "GREATER_THAN"
-    threshold                  = 100
-    threshold_type             = "PERCENTAGE"
-    notification_type          = "FORECASTED"
-    subscriber_email_addresses = [var.alert_recipients[0]]
-  }
-}
+# No budget here: AWS budgets are account-wide whatever their name, so the account's single cost
+# budget lives in the account foundations stack (HoangMNguyen/hoangmnguyen.com, infra/account).
