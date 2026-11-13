@@ -21,7 +21,7 @@ dependencies = [
     "typer",
     "aws-lambda-powertools",
     "boto3",
-    "pydantic[email]>=2.13.5",
+    "pydantic[email]>=2.14.3",
 ]
 
 [project.scripts]
